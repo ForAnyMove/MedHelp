@@ -8,15 +8,33 @@ import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
 import LogoSvg from '../../assets/logo.svg';
+import { useSession } from '../../src/context/SessionContext';
 
 export default function DoctorUpload() {
   const router = useRouter();
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
+  const { login } = useSession();
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
+    // Save doctor session so app restores correctly on restart
+    await login({
+      userId: 'd1',
+      role: 'doctor',
+      accessToken: `mock_token_doctor_${Date.now()}`,
+    });
     router.replace('/(auth)/doctor-pending');
+  };
+
+
+  const handleSkip = async () => {
+    await login({
+      userId: 'd1',
+      role: 'doctor',
+      accessToken: `mock_token_doctor_${Date.now()}`,
+    });
+    router.replace('/home');
   };
 
   return (
@@ -26,8 +44,9 @@ export default function DoctorUpload() {
         <View style={styles.logoContainer}>
           <LogoSvg width={sizes.scale(64)} height={sizes.scale(48)} />
         </View>
-        <Text style={styles.skipText} onPress={() => router.replace('/(doctor)/')}>{t('auth.skip')}</Text>
+        <Text style={styles.skipText} onPress={handleSkip}>{t('auth.skip')}</Text>
       </View>
+
 
       <View style={styles.content}>
         <Text style={styles.title}>{t('auth.doctor_upload_title')}</Text>

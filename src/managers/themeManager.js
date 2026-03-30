@@ -4,7 +4,7 @@ import { scaleByHeight, scaleByHeightMobile } from '../utils/resizeFuncs';
 
 const lightColors = {
   p500: '#19D2B5', 
-  p400: '#4CE0C9',
+  p400: '#7EF1E4',
   p300: '#80EEDD',
   p200: '#B3FBF1',
   p100: '#E5FFFC',
@@ -23,7 +23,7 @@ const lightColors = {
   bg: '#F6FAFB', 
   success: '#47C27B',
   warning: '#F5A623',
-  danger: '#F05252',
+  danger: '#FF7E7E',
   info: '#3F83F8',
 };
 

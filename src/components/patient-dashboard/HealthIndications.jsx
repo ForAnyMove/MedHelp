@@ -11,12 +11,12 @@ export function HealthIndications() {
   const styles = useStyles(themeStyles);
 
   const indicators = [
-    { id: 'pulse', label: t('dashboard.pulse'), icon: 'Activity', color: colors.sCoral, isAdd: false, extra: '68 bpm' },
+    { id: 'pulse', label: t('dashboard.pulse'), icon: 'Activity', color: colors.sCoral, isAdd: false, extra: `68 ${t('dashboard.bpm')}` },
     { id: 'bp', label: t('dashboard.blood_pressure'), icon: 'Heart', color: colors.primary, isAdd: false, extra: '120/80' },
     { id: 'temp', label: t('dashboard.temperature'), icon: 'Thermometer', color: colors.warning, isAdd: false, extra: '36.6 °C' },
     { id: 'bmi', label: t('dashboard.bmi'), icon: 'User', color: colors.info, isAdd: false, extra: '22.5' },
     { id: 'devices', label: t('dashboard.my_devices'), icon: 'Smartphone', color: colors.n400, isAdd: true },
-    { id: 'waist', label: t('dashboard.w_circumference'), icon: 'Scissors', color: colors.primary, isAdd: false, extra: '82 cm' },
+    { id: 'waist', label: t('dashboard.w_circumference'), icon: 'Scissors', color: colors.primary, isAdd: false, extra: `82 ${t('dashboard.cm')}` },
   ];
 
   return (

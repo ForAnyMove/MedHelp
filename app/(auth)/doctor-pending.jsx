@@ -7,16 +7,25 @@ import { Button } from '../../src/components/ui/Button';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
+import { useSession } from '../../src/context/SessionContext';
 
 export default function DoctorPending() {
   const router = useRouter();
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
+  const { login } = useSession();
 
-  const handleOk = () => {
-    router.replace('/(doctor)/');
+  const handleOk = async () => {
+    // Ensure session is persisted so the app restores to doctor dashboard on restart
+    await login({
+      userId: 'd1',
+      role: 'doctor',
+      accessToken: `mock_token_doctor_${Date.now()}`,
+    });
+    router.replace('/home');
   };
+
 
   return (
     <Screen style={styles.container}>

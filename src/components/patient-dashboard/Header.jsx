@@ -5,6 +5,7 @@ import i18n from '../../locales/i18n';
 import { useTheme } from '../../theme/ThemeContext';
 import { useComponentContext } from '../../context/GlobalContext';
 import { useStyles } from '../../theme/useStyles';
+import { Icon } from '../ui/Icon';
 
 export function Header() {
   const { sizes, colors } = useTheme();

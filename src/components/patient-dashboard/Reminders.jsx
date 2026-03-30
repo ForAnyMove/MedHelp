@@ -1,14 +1,25 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useComponentContext } from '../../context/GlobalContext';
 import { Icon } from '../ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
+import { formatIsoDate } from '../../utils/dateUtils';
 
 export function Reminders() {
   const { sizes, colors } = useTheme();
   const { t } = useTranslation();
+  const { consultationController } = useComponentContext();
   const styles = useStyles(themeStyles);
+  
+  const booking = consultationController.upcomingBooking;
+
+  if (!booking) return null;
+
+  const { slot, doctor } = booking;
+  const day = formatIsoDate(slot.date, 'day', t);
+  const localizedMonth = formatIsoDate(slot.date, 'month', t);
 
   return (
     <View style={styles.container}>
@@ -16,16 +27,13 @@ export function Reminders() {
       <TouchableOpacity style={styles.card} activeOpacity={0.7}>
         <View style={styles.leftContent}>
           <View style={styles.dateBox}>
-            <Text style={styles.dateTop}>18</Text>
-            <Text style={styles.dateBottom}>Feb</Text>
+            <Text style={styles.dateTop}>{day}</Text>
+            <Text style={styles.dateBottom}>{localizedMonth}</Text>
           </View>
-          {/* Right Info */}
-        <View style={styles.infoCol}>
-          <Text style={styles.cardType}>{t('dashboard.consultation_title')}</Text>
-          <Text style={styles.cardTime}>{t('dashboard.consultation_time')}</Text>
-          <View style={styles.doctorRow}>
+          <View style={styles.infoCol}>
+            <Text style={styles.title}>{t('dashboard.consultation_title')}</Text>
+            <Text style={styles.desc}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName} • {slot.time}</Text>
           </View>
-        </View>
         </View>
         <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p400} />
       </TouchableOpacity>

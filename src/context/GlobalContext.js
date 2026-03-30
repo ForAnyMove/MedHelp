@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import themeManager from '../managers/themeManager';
 import userManager from '../managers/userManager';
+import doctorManager from '../managers/doctorManager';
+import consultationManager from '../managers/consultationManager';
+import historyManager from '../managers/historyManager';
 
 const ComponentContext = createContext();
 
@@ -18,9 +21,16 @@ export const ComponentProvider = ({ children }) => {
     });
   };
 
+  const consultationController = consultationManager(setAppLoading);
+  const doctorController = doctorManager(consultationController, setAppLoading);
+  const historyController = historyManager(setAppLoading);
+
   const value = {
     themeController,
-    ...userController, // Flattens user, session, initials, logout, etc.
+    ...userController,
+    doctorController,
+    consultationController,
+    historyController,
     setAppLoading,
   };
 

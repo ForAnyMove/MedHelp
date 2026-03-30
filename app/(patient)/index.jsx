@@ -1,22 +1,27 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../../src/components/ui/Screen';
 import { Icon } from '../../src/components/ui/Icon';
 import { useStyles } from '../../src/theme/useStyles';
-import { HomeDashboard } from '../../src/screens/patient/HomeDashboard';
-import { UploadAnalysis } from '../../src/screens/patient/UploadAnalysis';
+import { NotificationBadge } from '../../src/components/common/NotificationBadge';
+import { HomeTab } from '../../src/screens/patient/home/HomeTab';
 import { PatientDashboardProvider, usePatientDashboard } from '../../src/context/PatientDashboardContext';
+import { useComponentContext } from '../../src/context/GlobalContext';
+import { DoctorsTab } from '../../src/screens/patient/doctors/DoctorsTab';
+import { ConsultationTab } from '../../src/screens/patient/consultation/ConsultationTab';
+import { HistoryTab } from '../../src/screens/patient/history/HistoryTab';
+import { ProfileTab } from '../../src/screens/universal/profile/ProfileTab';
 
 const HomeRouteWrapper = () => {
-  return <HomeDashboard />;
+  return <HomeTab />;
 };
 
-const DoctorsRoute = () => <Screen><Text>Doctors</Text></Screen>;
-const ConsultationRoute = () => <Screen><Text>Consultation</Text></Screen>;
-const HistoryRoute = () => <Screen><Text>History</Text></Screen>;
-const ProfileRoute = () => <Screen><Text>Profile</Text></Screen>;
+const DoctorsRoute = () => <DoctorsTab />;
+const ConsultationRoute = () => <ConsultationTab />;
+const HistoryRoute = () => <HistoryTab />;
+const ProfileRoute = () => <ProfileTab role="patient" />;
 
 const renderScene = SceneMap({
   home: HomeRouteWrapper,
@@ -30,14 +35,27 @@ function PatientTabs() {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
   const { t } = useTranslation();
-  const { currentView, navigateToDashboard, scrollToTop } = usePatientDashboard();
-  
-  const [index, setIndex] = useState(0);
+  const { 
+    currentView,
+    isSwipeEnabled: baseSwipeEnabled,
+    consultationView,
+    isConsultationDetailsVisible,
+    navigateToDashboard, 
+    scrollToTop, 
+    tabIndex: index, 
+    setTabIndex: setIndex,
+    navigateToConsultationMain 
+  } = usePatientDashboard();
+
+  const { doctorController } = useComponentContext();
+
+  // Also block swipe if the doctor-search inner view is active (GlobalContext)
+  const isSwipeEnabled = baseSwipeEnabled && doctorController.currentDoctorView === 'main';
   
   const routes = useMemo(() => [
     { key: 'home', title: t('patient_tabs.home'), icon: 'Home' },
     { key: 'doctors', title: t('patient_tabs.doctors'), icon: 'Briefcase' },
-    { key: 'consultation', title: t('patient_tabs.consultation'), icon: 'Video' },
+    { key: 'consultation', title: t('patient_tabs.consultation'), icon: 'Stethoscope' },
     { key: 'history', title: t('patient_tabs.history'), icon: 'Clock' },
     { key: 'profile', title: t('patient_tabs.profile'), icon: 'User' },
   ], [t]);
@@ -60,20 +78,28 @@ function PatientTabs() {
                      } else {
                        scrollToTop();
                      }
+                   } else if (route.key === 'consultation') {
+                     navigateToConsultationMain();
                    }
                 } else {
+                   // When switching tabs, reset sub-views if any
                    if (currentView !== 'dashboard') {
                      navigateToDashboard();
                    }
+                   navigateToConsultationMain();
                    setIndex(i);
                 }
               }}
             >
-              <Icon 
-                name={route.icon} 
-                color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color} 
-                size={24}
-              />
+              <View>
+                <Icon 
+                  name={route.icon} 
+                  color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color} 
+                  size={24}
+                />
+                {route.key === 'history' && <NotificationBadge count={2} />}
+                {route.key === 'consultation' && <NotificationBadge count={1} />}
+              </View>
               <Text style={[styles.tabText, isFocused && styles.tabTextFocused]}>
                 {route.title}
               </Text>
@@ -97,7 +123,7 @@ function PatientTabs() {
            setIndex(i);
         }}
         initialLayout={{ width: layout.width }}
-        swipeEnabled={currentView === 'dashboard'}
+        swipeEnabled={isSwipeEnabled}
         tabBarPosition="bottom"
       />
     </Screen>

@@ -8,25 +8,38 @@ import LogoSvg from '../../assets/logo.svg';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
+import { useSession } from '../../src/context/SessionContext';
 
 export default function Verify() {
   const router = useRouter();
-  const { role } = useLocalSearchParams();
+  const { role, contact } = useLocalSearchParams();
   const { t } = useTranslation();
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const pinRef = useRef(null);
+  const { verifyOtp, session, isLoading } = useSession();
   
   const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const isDoctor = role === 'doctor';
 
-  const handleConfirm = () => {
-    // Navigate to respective flow
-    if (isDoctor) {
-      router.replace('/(auth)/doctor-upload');
+  const handleConfirm = async () => {
+    setLoading(true);
+    setError('');
+    const result = await verifyOtp(contact || 'user@example.com', code, role || 'patient');
+    setLoading(false);
+    if (result.success) {
+      // SessionContext has saved the session and set state.
+      // Now navigate to the correct dashboard.
+      if (isDoctor) {
+        router.replace('/home');
+      } else {
+        router.replace('/home');
+      }
     } else {
-      router.replace('/(patient)/');
+      setError(result.error || 'Invalid code');
     }
   };
 

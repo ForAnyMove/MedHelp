@@ -12,8 +12,11 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 
 import { ComponentProvider } from '../src/context/GlobalContext';
+import { SessionProvider } from '../src/context/SessionContext';
 
 SplashScreen.preventAutoHideAsync();
+
+import { NavigationManager } from '../src/managers/NavigationManager';
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -34,10 +37,15 @@ export default function RootLayout() {
   }
 
   return (
-    <ComponentProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-      </Stack>
-    </ComponentProvider>
+    <SessionProvider>
+      <ComponentProvider>
+        <NavigationManager>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+          </Stack>
+        </NavigationManager>
+      </ComponentProvider>
+    </SessionProvider>
   );
 }
+

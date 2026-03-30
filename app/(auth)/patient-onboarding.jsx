@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../../src/components/ui/Screen';
 import { Button } from '../../src/components/ui/Button';
+import { Input } from '../../src/components/ui/Input';
 import { Icon } from '../../src/components/ui/Icon';
 import LogoSvg from '../../assets/logo.svg';
 import { useTheme } from '../../src/theme/ThemeContext';
@@ -15,6 +16,8 @@ export default function PatientOnboarding() {
   const { t } = useTranslation();
   const pagerRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [allergies, setAllergies] = useState('');
+  const [chronicConditions, setChronicConditions] = useState('');
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
 
@@ -43,12 +46,14 @@ export default function PatientOnboarding() {
     if (currentPage < ONBOARDING_DATA.length - 1) {
       pagerRef.current?.setPage(currentPage + 1);
     } else {
-      router.replace('/(patient)/');
+      if (!allergies.trim()) setAllergies('None');
+      if (!chronicConditions.trim()) setChronicConditions('None');
+      router.replace('/home');
     }
   };
 
   const handleSkip = () => {
-    router.replace('/(patient)/');
+    router.replace('/home');
   };
 
   return (
@@ -68,13 +73,32 @@ export default function PatientOnboarding() {
         initialPage={0}
         onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
       >
-        {ONBOARDING_DATA.map((page) => (
+        {ONBOARDING_DATA.map((page, index) => (
           <View key={page.key} style={styles.page}>
             <View style={styles.illustration}>
               <Icon name={page.icon} size={sizes.scale(80)} color={styles.iconColor.color} />
             </View>
             <Text style={styles.title}>{page.title}</Text>
-            <Text style={styles.description}>{page.description}</Text>
+            {index === 2 ? (
+               <View style={styles.formContainer}>
+                 <Text style={styles.description}>{t('onboarding.medical_info_desc') || 'Please enter medical information below:'}</Text>
+                 <Input 
+                   placeholder={t('onboarding.allergies') || 'Allergies (e.g. Penicillin)'} 
+                   value={allergies}
+                   onChangeText={setAllergies}
+                   icon="AlertTriangle"
+                   style={{ marginBottom: 16 }}
+                 />
+                 <Input 
+                   placeholder={t('onboarding.chronic') || 'Chronic conditions (e.g. Asthma)'} 
+                   value={chronicConditions}
+                   onChangeText={setChronicConditions}
+                   icon="Activity"
+                 />
+               </View>
+            ) : (
+                <Text style={styles.description}>{page.description}</Text>
+            )}
           </View>
         ))}
       </PagerView>
@@ -158,6 +182,12 @@ const themeStyles = (theme) => ({
     color: theme.colors.n700,
     textAlign: 'center',
     paddingHorizontal: theme.sizes.spacing.l,
+    marginBottom: theme.sizes.spacing.l,
+  },
+  formContainer: {
+    width: '100%',
+    paddingHorizontal: theme.sizes.spacing.l,
+    marginTop: theme.sizes.spacing.s,
   },
   footer: {
     paddingBottom: theme.sizes.scale(40),

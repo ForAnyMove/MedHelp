@@ -1,26 +1,42 @@
 import { useState, useMemo } from 'react';
 
 /**
- * Manager for User Data and Session
- * Placeholder for future API calls
+ * Manager for User Profile Data.
+ * Auth (session, login, logout) is owned exclusively by SessionContext.
+ * Placeholder for future Supabase API calls.
  */
 export default function userManager() {
   const [user, setUser] = useState({
     id: 'u1',
     firstName: 'Olga',
-    lastName: 'Petrova',
-    email: 'olga.p@example.com',
-    avatarUrl: null, // Placeholder for URL
+    lastName: 'Golovko',
+    email: 'oksana@gmail.com',
+    avatarUrl: 'https://i.pravatar.cc/300?u=olga',
     role: 'patient',
-  });
-
-  const [session, setSession] = useState({
-    token: 'mock-token-123',
-    isLoggedIn: true,
+    phone: '+380987654321',
+    dob: '07.10.1995',
+    gender: 'Female',
+    height: '165 cm',
+    weight: '60 kg',
+    bloodType: 'A+',
+    medicalData: {
+      chronicConditions: 'Not detected',
+      allergies: 'Ambrosia',
+      medications: 'Not detected',
+      pregnancy: false,
+    },
+    preferences: {
+      language: 'English',
+      consultationFormat: 'Online (video)',
+      preferredGender: 'No preference',
+    },
+    privacy: {
+      faceId: true,
+    }
   });
 
   const initials = useMemo(() => {
-    if (!user.firstName && !user.lastName) return '?';
+    if (!user?.firstName && !user?.lastName) return '?';
     return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
   }, [user]);
 
@@ -28,17 +44,18 @@ export default function userManager() {
     setUser(prev => ({ ...prev, ...newData }));
   };
 
-  const logout = () => {
-    setSession({ token: null, isLoggedIn: false });
-    setUser(null);
+  const addBooking = (booking) => {
+    setUser(prev => ({
+      ...prev,
+      bookings: [...(prev.bookings || []), booking]
+    }));
   };
 
   return {
     user,
-    session,
     initials,
     updateProfile,
-    logout,
-    isLoader: false, // For future global loading state if needed here
+    addBooking,
+    isLoader: false,
   };
 }
