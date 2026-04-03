@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, KeyboardAvoidingView, ScrollView, Platform, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../../src/components/ui/Screen';
 import { Button } from '../../src/components/ui/Button';
 import { Input } from '../../src/components/ui/Input';
-import LogoSvg from '../../assets/logo.svg';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
+import { Images } from '../../src/assets';
 
 export default function Login() {
   const router = useRouter();
@@ -40,16 +40,20 @@ export default function Login() {
                 name="ArrowLeft" 
                 size={sizes.scale(24)} 
                 color={styles.iconColor.color} 
-                onPress={() => router.back()}
+                onPress={() => router.push('/(auth)/welcome')}
               />
             </View>
             <View style={styles.logoContainer}>
-              <LogoSvg width={sizes.scale(100)} height={sizes.scale(75)} />
+              <Image 
+                source={Images.logo} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
           </View>
 
           {/* Form Area */}
-          <View style={styles.formContainer}>
+          <View style={styles.formContainer} accessibilityRole="form">
             <Text style={styles.title}>
               {isDoctor ? t('auth.login_doctor_title') : t('auth.welcome_subtitle')}
             </Text>
@@ -59,9 +63,19 @@ export default function Login() {
                 placeholder={t('auth.login_placeholder')} 
                 value={contact}
                 onChangeText={setContact}
+                rounded
+                autoComplete="email"
+                textContentType="emailAddress"
+                keyboardType="email-address"
+                inputMode="email"
+                id="email"
+                onSubmitEditing={handleContinue}
               />
             </View>
-            
+          </View>
+          
+          {/* Footer Area */}
+          <View style={styles.footerContainer}>
             <Text style={styles.termsText}>
               {t('auth.terms_text')} <Text style={styles.link}>{t('auth.privacy_policy')}</Text> & <Text style={styles.link}>{t('auth.terms_of_use')}</Text>
             </Text>
@@ -76,7 +90,6 @@ export default function Login() {
             <Button 
               title={t('auth.login_google_btn')} 
               variant="outlined" 
-              icon="Mail" 
               onPress={() => console.log('Google login')}
               style={styles.button}
             />
@@ -96,12 +109,13 @@ const themeStyles = (theme) => ({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: theme.sizes.scale(20),
+    marginTop: theme.sizes.scale(40),
     position: 'relative',
     height: theme.sizes.scale(50),
   },
@@ -117,6 +131,10 @@ const themeStyles = (theme) => ({
   logoContainer: {
     alignItems: 'center',
   },
+  logoImage: {
+    width: theme.sizes.scale(100),
+    height: theme.sizes.scale(76),
+  },
   logoColor: {
     color: theme.colors.p500,
   },
@@ -127,6 +145,7 @@ const themeStyles = (theme) => ({
   formContainer: {
     flex: 1,
     justifyContent: 'center',
+    marginTop: theme.sizes.scale(40), // Shift slightly down to balance
   },
   title: {
     ...theme.sizes.typography.h2,
@@ -136,6 +155,9 @@ const themeStyles = (theme) => ({
   },
   inputWrapper: {
     marginBottom: theme.sizes.spacing.xl,
+  },
+  footerContainer: {
+    paddingBottom: theme.sizes.scale(40),
   },
   termsText: {
     ...theme.sizes.typography.caption,

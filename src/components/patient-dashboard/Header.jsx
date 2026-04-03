@@ -32,7 +32,7 @@ export function Header() {
         >
           <Text style={styles.langText}>{i18n.language.toUpperCase()}</Text>
         </TouchableOpacity>
-        <Icon name="Bell" size={sizes.scale(24)} color={colors.p500} onPress={() => console.log('Notifications')} />
+        <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} onPress={() => console.log('Notifications')} />
       </View>
     </View>
   );
@@ -43,27 +43,27 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.s,
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: theme.sizes.scale(40),
-    height: theme.sizes.scale(40),
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     borderRadius: theme.sizes.scale(20),
-    backgroundColor: theme.colors.p100,
+    backgroundColor: theme.colors.p500,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.sizes.spacing.s,
   },
   avatarText: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.p500,
+    color: theme.colors.white,
   },
   greeting: {
-    ...theme.sizes.typography.h2,
+    ...theme.sizes.typography.h4,
     color: theme.colors.n900,
   },
   langBtn: {
@@ -74,7 +74,7 @@ const themeStyles = (theme) => ({
   },
   langText: {
     ...theme.sizes.typography.caption,
-    fontWeight: '700',
+    fontWeight: '600',
     color: theme.colors.n700,
   }
 });

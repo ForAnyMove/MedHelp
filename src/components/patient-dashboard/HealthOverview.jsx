@@ -18,7 +18,9 @@ export function HealthOverview() {
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.statusChip}>
-            <Icon name="CheckCircle2" size={sizes.scale(16)} color={colors.white} />
+            <View  style={styles.statusChipIcon}>
+              <Icon name="check2" size={sizes.scale(16)} color={colors.white} />
+            </View>
             <Text style={styles.statusText}>{t('dashboard.all_good')}</Text>
           </View>
           <Text style={styles.timeText}>{t('dashboard.last_2_months')}</Text>
@@ -30,6 +32,7 @@ export function HealthOverview() {
           title={t('dashboard.explain_results_btn')} 
           variant="primary" 
           style={styles.button}
+          textStyle={styles.buttonText}
         />
       </View>
     </View>
@@ -40,24 +43,27 @@ const themeStyles = (theme) => ({
   container: {
     backgroundColor: theme.colors.p400,
     borderRadius: theme.sizes.borderRadius.large,
-    padding: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.xl,
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.s,
+    paddingBottom: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.l,
   },
   title: {
-    ...theme.sizes.typography.h3,
+    ...theme.sizes.typography.h4,
     color: theme.colors.white,
-    marginBottom: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.s,
   },
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: theme.sizes.borderRadius.medium,
+    borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.scale(2),
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.sizes.spacing.s,
+    marginBottom: theme.sizes.spacing.m,
   },
   statusChip: {
     flexDirection: 'row',
@@ -67,22 +73,34 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.scale(4),
     borderRadius: theme.sizes.borderRadius.full,
   },
+  statusChipIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.sizes.borderRadius.full,
+    borderWidth: 1,
+    borderColor: theme.colors.white,
+  },
   statusText: {
-    ...theme.sizes.typography.caption,
+    fontSize: theme.sizes.scale(16),
+    fontFamily: 'Manrope_600SemiBold',
     color: theme.colors.white,
     marginLeft: theme.sizes.spacing.xs,
-    fontWeight: 'bold',
   },
   timeText: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodySmall,
     color: theme.colors.n500,
   },
   description: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     marginBottom: theme.sizes.spacing.m,
   },
   button: {
     paddingVertical: theme.sizes.scale(10), // Slightly smaller button suitable for inside cards
+  },
+  buttonText: {
+    fontSize: theme.sizes.scale(18),
+    fontFamily: 'Manrope_600SemiBold',
+    color: theme.colors.white,
   }
 });

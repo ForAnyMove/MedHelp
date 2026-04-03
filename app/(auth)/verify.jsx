@@ -1,14 +1,14 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, KeyboardAvoidingView, Platform, TextInput, ScrollView, Pressable } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, KeyboardAvoidingView, Platform, TextInput, ScrollView, Pressable, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../../src/components/ui/Screen';
 import { Button } from '../../src/components/ui/Button';
-import LogoSvg from '../../assets/logo.svg';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
 import { useSession } from '../../src/context/SessionContext';
+import { Images } from '../../src/assets';
 
 export default function Verify() {
   const router = useRouter();
@@ -22,22 +22,40 @@ export default function Verify() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [timer, setTimer] = useState(30);
+
+  // Timer logic for resending code
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [timer]);
+
+  const handleResend = () => {
+    if (timer === 0) {
+      setTimer(30);
+      setCode('');
+      // In a real app: call API to resend code here
+      console.log('OTP Resent');
+    }
+  };
 
   const isDoctor = role === 'doctor';
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (overrideCode) => {
+    const codeToVerify = overrideCode || code;
+    if (codeToVerify.length < 6) return;
+
     setLoading(true);
     setError('');
-    const result = await verifyOtp(contact || 'user@example.com', code, role || 'patient');
+    const result = await verifyOtp(contact || 'user@example.com', codeToVerify, role || 'patient');
     setLoading(false);
     if (result.success) {
-      // SessionContext has saved the session and set state.
-      // Now navigate to the correct dashboard.
-      if (isDoctor) {
-        router.replace('/home');
-      } else {
-        router.replace('/home');
-      }
+      // Session is now set via verifyOtp → login.
+      // NavigationManager will redirect based on session.onboarded.
     } else {
       setError(result.error || 'Invalid code');
     }
@@ -58,7 +76,11 @@ export default function Verify() {
               />
             </View>
             <View style={styles.logoContainer}>
-              <LogoSvg width={sizes.scale(100)} height={sizes.scale(75)} />
+              <Image 
+                source={Images.logo} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
           </View>
 
@@ -71,13 +93,20 @@ export default function Verify() {
                 ref={pinRef}
                 style={styles.hiddenInput}
                 value={code}
-                onChangeText={(text) => setCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                onChangeText={(text) => {
+                  const cleaned = text.replace(/[^0-9]/g, '').slice(0, 6);
+                  setCode(cleaned);
+                  if (cleaned.length === 6) {
+                    handleConfirm(cleaned);
+                  }
+                }}
                 keyboardType="number-pad"
                 autoFocus
                 maxLength={6}
                 caretHidden
                 autoComplete="one-time-code"
                 textContentType="oneTimeCode"
+                editable={!loading}
               />
 
               <View style={styles.pinContainer} pointerEvents="none">
@@ -93,16 +122,21 @@ export default function Verify() {
               </View>
             </Pressable>
 
-            <Text style={styles.resendText}>{t('auth.resend_code')}</Text>
+            <Pressable onPress={handleResend} style={styles.resendWrapper}>
+              <Text style={[styles.resendText, timer === 0 && styles.resendActive]}>
+                {timer > 0 ? t('auth.resend_code') + ` (${timer}s)` : t('auth.resend_code')}
+              </Text>
+            </Pressable>
 
             <View style={styles.spacer} />
 
             <Button 
               title={t('auth.confirm_btn')} 
               variant="primary" 
-              onPress={handleConfirm}
+              onPress={() => handleConfirm()}
               style={styles.button}
-              disabled={code.length < 6}
+              disabled={code.length < 6 || loading}
+              loading={loading}
             />
           </View>
         </ScrollView>
@@ -122,16 +156,16 @@ const themeStyles = (theme) => ({
     flexGrow: 1,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: theme.sizes.scale(20),
-    position: 'relative',
-    height: theme.sizes.scale(50),
+    marginTop: theme.sizes.scale(60), // Space for status bar
+    marginBottom: theme.sizes.scale(60),
+    height: theme.sizes.scale(100),
   },
   backButton: {
     position: 'absolute',
     left: 0,
+    top: -theme.sizes.scale(40), // Position slightly above the header if needed
     zIndex: 10,
     padding: theme.sizes.spacing.xs,
   },
@@ -139,8 +173,11 @@ const themeStyles = (theme) => ({
     color: theme.colors.n900,
   },
   logoContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+  },
+  logoImage: {
+    width: theme.sizes.scale(100),
+    height: theme.sizes.scale(76),
   },
   logoColor: {
     color: theme.colors.p500,
@@ -152,13 +189,15 @@ const themeStyles = (theme) => ({
   },
   formContainer: {
     flex: 1,
-    paddingTop: theme.sizes.scale(60),
+    paddingTop: theme.sizes.scale(40),
+    alignItems: 'center',
   },
   title: {
     ...theme.sizes.typography.bodyLarge,
-    color: theme.colors.n900,
+    color: theme.colors.n700,
     textAlign: 'center',
-    marginBottom: theme.sizes.scale(40),
+    marginBottom: theme.sizes.scale(30),
+    paddingHorizontal: theme.sizes.spacing.xl,
   },
   pinWrapper: {
     position: 'relative',
@@ -178,15 +217,16 @@ const themeStyles = (theme) => ({
   },
   pinContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: theme.sizes.scale(10),
     zIndex: 0,
   },
   pinBox: {
-    width: theme.sizes.scale(45),
-    height: theme.sizes.scale(55),
-    borderRadius: theme.sizes.borderRadius.small,
+    width: theme.sizes.scale(42),
+    height: theme.sizes.scale(60),
+    borderRadius: theme.sizes.scale(20),
     borderWidth: 1,
-    borderColor: theme.colors.n300,
+    borderColor: theme.colors.n200,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.white,
@@ -196,18 +236,26 @@ const themeStyles = (theme) => ({
     borderWidth: 2,
   },
   pinText: {
-    ...theme.sizes.typography.h2,
+    ...theme.sizes.typography.h3,
     color: theme.colors.n900,
+  },
+  resendWrapper: {
+    marginTop: theme.sizes.spacing.xl,
   },
   resendText: {
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n500,
     textAlign: 'center',
   },
+  resendActive: {
+    color: theme.colors.p500,
+    textDecorationLine: 'underline',
+  },
   spacer: {
     flex: 1,
   },
   button: {
     marginBottom: theme.sizes.spacing.xl,
+    width: '100%',
   }
 });

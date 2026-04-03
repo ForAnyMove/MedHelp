@@ -12,7 +12,7 @@
     "continue_btn": "Продолжить",
     "login_google_btn": "Войти через Google",
     "verify_title": "Введите код подтверждения, отправленный на ваш смартфон",
-    "resend_code": "Отправить код повторно (30с)",
+    "resend_code": "Отправить код повторно",
     "confirm_btn": "Подтвердить",
     "doctor_upload_title": "Загрузка документов",
     "doctor_upload_subtitle": "Медицинский диплом",

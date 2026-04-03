@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Icon } from '../../../../../components/ui/Icon';
-import LogoSvg from '../../../../../../assets/logo.svg';
 import { useTheme } from '../../../../../theme/ThemeContext';
 import { Screen } from '../../../../../components/ui/Screen';
+import { Images } from '../../../../../assets';
 
 export function CheckerLayout({ children, onBack, title, style, hideLogo }) {
   const { sizes, colors } = useTheme();
@@ -22,7 +22,11 @@ export function CheckerLayout({ children, onBack, title, style, hideLogo }) {
         
         {!hideLogo && (
           <View style={styles(sizes, colors).logoWrapper}>
-            <LogoSvg width={sizes.scale(64)} height={sizes.scale(48)} />
+            <Image 
+              source={Images.logo} 
+              style={styles(sizes, colors).logoImage}
+              resizeMode="contain"
+            />
           </View>
         )}
       </View>
@@ -42,6 +46,10 @@ const styles = (sizes, colors) => StyleSheet.create({
   logoWrapper: {
     alignItems: 'center',
     marginTop: sizes.spacing.m,
+  },
+  logoImage: {
+    width: sizes.scale(100),
+    height: sizes.scale(76),
   },
   backBtn: {
     alignItems: 'flex-start',

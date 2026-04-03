@@ -1,13 +1,13 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '../../src/components/ui/Screen';
 import { Button } from '../../src/components/ui/Button';
-import LogoSvg from '../../assets/logo.svg';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
+import { Images } from '../../src/assets';
 
 export default function Welcome() {
   const router = useRouter();
@@ -17,20 +17,26 @@ export default function Welcome() {
 
   return (
     <Screen style={styles.container}>
+      {/* Full Screen Background */}
+      <Image 
+        source={Images.welcomeBackground} 
+        style={[StyleSheet.absoluteFillObject, styles.backgroundImage]}
+        resizeMode="cover"
+      />
+
       {/* Top Logo Area */}
       <View style={styles.logoContainer}>
-        <LogoSvg width={sizes.scale(100)} height={sizes.scale(75)} />
+        <Image 
+          source={Images.logo} 
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </View>
 
       {/* Center content */}
       <View style={styles.contentContainer}>
         <Text style={styles.title}>{t('auth.welcome_title')}</Text>
         <Text style={styles.subtitle}>{t('auth.welcome_subtitle')}</Text>
-        
-        {/* Abstract Illustration Placeholder */}
-        <View style={styles.illustrationPlaceholder}>
-          <Icon name="Activity" size={sizes.scale(100)} color={styles.illustrationColor.color} />
-        </View>
       </View>
 
       {/* Bottom Actions */}
@@ -56,10 +62,21 @@ const themeStyles = (theme) => ({
   container: {
     paddingHorizontal: theme.sizes.spacing.l,
     justifyContent: 'space-between',
+    backgroundColor: theme.colors.p500+'10',
+  },
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+    opacity: 0.4,
   },
   logoContainer: {
     alignItems: 'center',
     marginTop: theme.sizes.scale(40),
+  },
+  logoImage: {
+    width: theme.sizes.scale(100),
+    height: theme.sizes.scale(76),
   },
   logoColor: {
     color: theme.colors.p500,
@@ -72,7 +89,8 @@ const themeStyles = (theme) => ({
   contentContainer: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: theme.sizes.scale(50),
   },
   title: {
     ...theme.sizes.typography.displayS,
@@ -84,18 +102,6 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.bodyLarge,
     color: theme.colors.n700,
     textAlign: 'center',
-  },
-  illustrationPlaceholder: {
-    marginTop: theme.sizes.scale(60),
-    width: theme.sizes.scale(240),
-    height: theme.sizes.scale(240),
-    borderRadius: theme.sizes.scale(120),
-    backgroundColor: theme.colors.p100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  illustrationColor: {
-    color: theme.colors.p300,
   },
   footer: {
     paddingBottom: theme.sizes.scale(40),

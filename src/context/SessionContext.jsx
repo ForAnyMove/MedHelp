@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Asset } from 'expo-asset';
+import { allImages } from '../assets';
 
 const SESSION_KEY = 'medhelp_session';
 
@@ -26,6 +28,7 @@ async function mockVerifyOtp(contact, code, role) {
         role,
         accessToken: `mock_token_${Date.now()}`,
         email: contact,
+        onboarded: false, // New users are not onboarded by default
       }
     };
   }
@@ -77,18 +80,35 @@ async function clearSessionFromStorage() {
 
 export function SessionProvider({ children }) {
   const [session, setSession] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // True while restoring session
+  const [isSessionLoaded, setIsSessionLoaded] = useState(false);
+  const [isAssetsLoaded, setIsAssetsLoaded] = useState(false);
 
-  // Restore session on app start
+  // Unified loading state
+  const isLoading = !isSessionLoaded || !isAssetsLoaded;
+
+  // Restore session and preload assets on app start
   useEffect(() => {
-    (async () => {
-      const saved = await loadSessionFromStorage();
-      if (saved) {
-        // In the future: validate the token with Supabase here
-        setSession(saved);
+    async function prepare() {
+      try {
+        // 1. Load session
+        const saved = await loadSessionFromStorage();
+        if (saved) {
+          setSession(saved);
+        }
+        setIsSessionLoaded(true);
+
+        // 2. Preload images
+        await Asset.loadAsync(allImages);
+        setIsAssetsLoaded(true);
+      } catch (e) {
+        console.warn('Error during initialization:', e);
+        // Ensure we don't get stuck in loading state even if assets fail
+        setIsSessionLoaded(true);
+        setIsAssetsLoaded(true);
       }
-      setIsLoading(false);
-    })();
+    }
+
+    prepare();
   }, []);
 
   /**
@@ -129,8 +149,17 @@ export function SessionProvider({ children }) {
     return result;
   }, [login]);
 
+  /**
+   * Update current session data (e.g. mark as onboarded).
+   */
+  const updateSession = useCallback(async (newData) => {
+    const updated = { ...session, ...newData };
+    setSession(updated);
+    await saveSessionToStorage(updated);
+  }, [session]);
+
   return (
-    <SessionContext.Provider value={{ session, isLoading, login, logout, sendOtp, verifyOtp }}>
+    <SessionContext.Provider value={{ session, isLoading, login, logout, sendOtp, verifyOtp, updateSession }}>
       {children}
     </SessionContext.Provider>
   );

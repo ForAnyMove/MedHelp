@@ -63,7 +63,7 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.s,
     paddingBottom: theme.sizes.spacing.xl, 
   }

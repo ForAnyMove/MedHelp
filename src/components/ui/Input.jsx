@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text } from 'react-native';
+import { View, TextInput, Text, Platform } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 
-export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style }) {
+export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style, rounded, ...props }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const [isFocused, setIsFocused] = useState(false);
@@ -13,6 +13,7 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={[
         styles.inputContainer,
+        rounded && { borderRadius: sizes.scale(50) },
         isFocused && styles.inputFocused,
         error && styles.inputError,
       ]}>
@@ -25,6 +26,7 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
           secureTextEntry={secureTextEntry}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          {...props}
         />
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -65,6 +67,12 @@ const themeStyles = (theme) => {
       flex: 1,
       color: colors.n900,
       height: '100%',
+      // Remove default web outline
+      ...Platform.select({
+        web: {
+          outlineStyle: 'none',
+        }
+      })
     },
     errorText: {
       ...sizes.typography.caption,
