@@ -11,9 +11,9 @@ export function NextSteps() {
   const styles = useStyles(themeStyles);
 
   const steps = [
-    { id: 1, title: t('dashboard.find_doctor'), desc: t('dashboard.find_doctor_desc'), icon: 'UserPlus' },
-    { id: 2, title: t('dashboard.view_history'), desc: t('dashboard.view_history_desc'), icon: 'Clock' },
-    { id: 3, title: t('dashboard.urgency_level'), desc: t('dashboard.urgency_desc'), icon: 'AlertTriangle' },
+    { id: 1, title: t('dashboard.find_doctor'), desc: t('dashboard.find_doctor_desc'), icon: 'doctor-01', color: colors.sCoral },
+    { id: 2, title: t('dashboard.view_history'), desc: t('dashboard.view_history_desc'), icon: 'stethoscope', color: colors.sYell },
+    { id: 3, title: t('dashboard.urgency_level'), desc: t('dashboard.urgency_desc'), icon: 'microscope', color: colors.sBlue },
   ];
 
   return (
@@ -24,15 +24,13 @@ export function NextSteps() {
           <React.Fragment key={step.id}>
             <TouchableOpacity style={styles.stepRow} activeOpacity={0.7}>
               <View style={styles.leftContent}>
-                <View style={[styles.iconWrapper, { backgroundColor: `${step.color}15` }]}>
-                  <Icon name={step.icon} size={sizes.scale(20)} color={step.color} />
-                </View>
+                <Icon name={step.icon} size={sizes.scale(24)} color={step.color} wrapped wrapperStyle={styles.iconWrapper} />
                 <View style={styles.textContent}>
                   <Text style={styles.title}>{step.title}</Text>
                   <Text style={styles.desc}>{step.desc}</Text>
                 </View>
               </View>
-              <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p400} />
+              <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p500} />
             </TouchableOpacity>
             {index < steps.length - 1 && <View style={styles.divider} />}
           </React.Fragment>
@@ -44,17 +42,18 @@ export function NextSteps() {
 
 const themeStyles = (theme) => ({
   container: {
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.m,
   },
   sectionTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.m,
+    fontWeight: '700',
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: theme.sizes.borderRadius.medium,
-    paddingVertical: theme.sizes.spacing.s,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingVertical: theme.sizes.spacing.m,
     shadowColor: theme.colors.n900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -75,8 +74,8 @@ const themeStyles = (theme) => ({
     paddingRight: theme.sizes.spacing.m,
   },
   iconWrapper: {
-    width: theme.sizes.scale(36),
-    height: theme.sizes.scale(36),
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     borderRadius: theme.sizes.scale(10),
     justifyContent: 'center',
     alignItems: 'center',

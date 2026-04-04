@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { getIsoDateWithOffset } from '../utils/dateUtils';
 
 /**
  * Manager for Consultations and Active Sessions
@@ -21,10 +22,32 @@ export default function consultationManager(setAppLoading) {
     {
       id: 'mock-booking-1',
       doctor: mockDoctor,
+      duration: 60,
       slot: { 
-        date: new Date().toISOString(), 
+        date: getIsoDateWithOffset(0, 9, 0), 
         label: 'common.today', 
-        time: '09:00' 
+      },
+      createdAt: new Date().toISOString(),
+      status: 'upcoming'
+    },
+    {
+      id: 'mock-booking-2',
+      doctor: mockDoctor,
+      duration: 30,
+      slot: { 
+        date: getIsoDateWithOffset(3, 14, 30), 
+        label: 'common.later', 
+      },
+      createdAt: new Date().toISOString(),
+      status: 'upcoming'
+    },
+    {
+      id: 'mock-booking-3',
+      doctor: mockDoctor,
+      duration: 45,
+      slot: { 
+        date: getIsoDateWithOffset(7, 11, 0), 
+        label: 'common.later', 
       },
       createdAt: new Date().toISOString(),
       status: 'upcoming'
@@ -111,12 +134,25 @@ export default function consultationManager(setAppLoading) {
     });
   }, []);
 
-  const upcomingBooking = useMemo(() => {
-    if (bookings.length === 0) return null;
-    // For now, just return the first one as "upcoming"
-    // In a real app, we would sort by date/time
-    return bookings[0];
+  const upcomingBookings = useMemo(() => {
+    if (bookings.length === 0) return [];
+    
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // start of today
+    
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    return bookings
+      .filter(b => {
+        const bookingDate = new Date(b.slot.date);
+        return bookingDate >= now && bookingDate <= thirtyDaysFromNow;
+      })
+      .sort((a, b) => new Date(a.slot.date).getTime() - new Date(b.slot.date).getTime());
   }, [bookings]);
+
+  const upcomingBooking = useMemo(() => {
+    return upcomingBookings.length > 0 ? upcomingBookings[0] : null;
+  }, [upcomingBookings]);
 
   const getPreviousResult = useCallback((doctorId) => {
     return results.find(r => r.doctorId === doctorId);
@@ -126,6 +162,7 @@ export default function consultationManager(setAppLoading) {
     bookings,
     results,
     activeSession,
+    upcomingBookings,
     upcomingBooking,
     addBooking,
     cancelBooking,

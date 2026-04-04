@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComponentContext } from '../../context/GlobalContext';
 import { Icon } from '../ui/Icon';
@@ -10,52 +10,94 @@ import { formatIsoDate } from '../../utils/dateUtils';
 export function Reminders() {
   const { sizes, colors } = useTheme();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
   const { consultationController } = useComponentContext();
   const styles = useStyles(themeStyles);
-  
-  const booking = consultationController.upcomingBooking;
 
-  if (!booking) return null;
+  const bookings = consultationController.upcomingBookings;
 
-  const { slot, doctor } = booking;
-  const day = formatIsoDate(slot.date, 'day', t);
-  const localizedMonth = formatIsoDate(slot.date, 'month', t);
+  if (!bookings || bookings.length === 0) return null;
+
+  const cardWidth = width - sizes.spacing.m * 2;
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>{t('dashboard.reminders')}</Text>
-      <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-        <View style={styles.leftContent}>
-          <View style={styles.dateBox}>
-            <Text style={styles.dateTop}>{day}</Text>
-            <Text style={styles.dateBottom}>{localizedMonth}</Text>
-          </View>
-          <View style={styles.infoCol}>
-            <Text style={styles.title}>{t('dashboard.consultation_title')}</Text>
-            <Text style={styles.desc}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName} • {slot.time}</Text>
-          </View>
-        </View>
-        <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p400} />
-      </TouchableOpacity>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        snapToInterval={cardWidth + sizes.spacing.m}
+        decelerationRate="fast"
+        snapToAlignment="start"
+      >
+        {bookings.map((booking) => {
+          const { slot, duration } = booking;
+          const day = formatIsoDate(slot.date, 'day', t);
+          const localizedMonth = formatIsoDate(slot.date, 'month', t);
+          // Capitalize first letter of weekday
+          const weekdayStr = formatIsoDate(slot.date, 'weekdayFull', t) || '';
+          const weekday = weekdayStr.charAt(0).toUpperCase() + weekdayStr.slice(1);
+
+          // Helper to format time like 09am, 10:30am
+          const formatAmPm = (totalMinutes) => {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            const ampm = h >= 12 && h < 24 ? 'pm' : 'am';
+            const h12 = h % 12 || 12;
+            const hStr = h12 < 10 ? `0${h12}` : `${h12}`;
+            const mStr = m === 0 ? '' : `:${m < 10 ? '0' + m : m}`;
+            return `${hStr}${mStr}${ampm}`;
+          };
+
+          const startDate = new Date(slot.date);
+          const startTotalMin = startDate.getHours() * 60 + startDate.getMinutes();
+          const endTotalMin = startTotalMin + (duration || 60);
+
+          const startFormatted = formatAmPm(startTotalMin);
+          const endFormatted = formatAmPm(endTotalMin);
+
+          return (
+            <TouchableOpacity key={booking.id} style={[styles.card, { width: cardWidth }]} activeOpacity={0.7}>
+              <View style={styles.leftContent}>
+                <View style={styles.dateBox}>
+                  <Text style={styles.dateTop}>{day}</Text>
+                  <Text style={styles.dateBottom}>{localizedMonth}</Text>
+                </View>
+                <View style={styles.infoCol}>
+                  <Text style={styles.title}>{t('dashboard.consultation_title')}</Text>
+                  <Text style={styles.desc}>{weekday} • {startFormatted} - {endFormatted}</Text>
+                </View>
+              </View>
+              <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p400} />
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
 
 const themeStyles = (theme) => ({
   container: {
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.m,
   },
   sectionTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.m,
+    fontWeight: '700',
+    color: theme.colors.n700,
+  },
+  scrollContent: {
+    gap: theme.sizes.spacing.m,
+    paddingRight: theme.sizes.spacing.l, // Space at the very end of scroll
+    paddingVertical: theme.sizes.spacing.s,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: theme.colors.white,
-    borderRadius: theme.sizes.borderRadius.medium,
+    borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     shadowColor: theme.colors.n900,
     shadowOffset: { width: 0, height: 2 },
@@ -70,30 +112,30 @@ const themeStyles = (theme) => ({
   dateBox: {
     width: theme.sizes.scale(48),
     height: theme.sizes.scale(48),
-    borderRadius: theme.sizes.scale(12),
-    backgroundColor: `${theme.colors.sCoral}15`,
+    borderRadius: theme.sizes.scale(14),
+    backgroundColor: `${theme.colors.sCoral}32`,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.sizes.spacing.m,
   },
   dateTop: {
-    ...theme.sizes.typography.bodyLarge,
+    ...theme.sizes.typography.h3,
     fontWeight: '700',
-    color: theme.colors.sCoral,
     lineHeight: theme.sizes.scale(20),
+    color: theme.colors.sCoral,
   },
   dateBottom: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.sCoral,
   },
   title: {
-    ...theme.sizes.typography.bodyLarge,
-    fontWeight: '600',
-    color: theme.colors.n900,
+    ...theme.sizes.typography.h4,
+    lineHeight: theme.sizes.scale(28),
+    color: theme.colors.n700,
     marginBottom: theme.sizes.scale(2),
   },
   desc: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n500,
   }
 });
