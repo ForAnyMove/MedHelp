@@ -8,9 +8,10 @@ import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { transactionManager } from '../../../../managers/transactionManager';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
 import { SkeletonCard } from '../../../../components/common/SkeletonCard';
+import { Button } from '../../../../components/ui/Button';
 
 export function RequestPayout() {
-  const { colors } = useTheme();
+  const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
   const { navigateBack } = useDoctorDashboard();
@@ -50,42 +51,33 @@ export function RequestPayout() {
   return (
     <SubViewScreen title={t('doctor_balance.request_payout') || 'Request payout'} onBack={navigateBack}>
       {loading ? (
-        <View style={{ padding: 24 }}>
+        <View style={{ padding: sizes.scale(12) }}>
           <SkeletonCard lines={3} />
         </View>
       ) : (
         <View style={styles.card}>
-           <View style={[styles.row, styles.rowBorder]}>
-              <View style={styles.rowLeft}>
-                 <View style={styles.iconBox}>
-                    <Icon name="DollarSign" size={18} color={colors.p400} />
-                 </View>
-                 <Text style={styles.rowLabel}>{t('doctor_balance.amount') || 'Amount'}:</Text>
-              </View>
-              <Text style={styles.rowValue}>${balance}</Text>
-           </View>
+          <View style={[styles.row, styles.rowBorder]}>
+            <View style={styles.rowLeft}>
+              <Icon name="price" size={sizes.scale(24)} color={colors.p400} />
+              <Text style={styles.rowLabel}>{t('doctor_balance.amount') || 'Amount'}:</Text>
+            </View>
+            <Text style={styles.rowValue}>${balance}</Text>
+          </View>
 
-           <View style={styles.row}>
-              <View style={styles.rowLeft}>
-                 <View style={styles.iconBox}>
-                    <Icon name="CreditCard" size={18} color={colors.p400} />
-                 </View>
-                 <Text style={styles.rowLabel}>{t('doctor_balance.method') || 'Method'}:</Text>
-              </View>
-              <Text style={styles.rowValue}>Privat Bank</Text>
-           </View>
-
-           <TouchableOpacity 
-              style={styles.confirmBtn} 
-              onPress={handleConfirm} 
-              disabled={submitting || balance === 0}
-           >
-              {submitting ? (
-                 <ActivityIndicator color={colors.white} />
-              ) : (
-                 <Text style={styles.confirmBtnText}>{t('common.confirm') || 'Confirm'}</Text>
-              )}
-           </TouchableOpacity>
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <Icon name="balance" size={sizes.scale(24)} color={colors.p400} />
+              <Text style={styles.rowLabel}>{t('doctor_balance.method') || 'Method'}:</Text>
+            </View>
+            <Text style={styles.rowValue}>Privat Bank</Text>
+          </View>
+          <Button
+            title={t('common.confirm') || 'Confirm'}
+            onPress={handleConfirm}
+            disabled={submitting || balance === 0}
+            loading={submitting}
+            style={styles.confirmBtn}
+          />
         </View>
       )}
     </SubViewScreen>
@@ -95,8 +87,8 @@ export function RequestPayout() {
 const themeStyles = (theme) => ({
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: 24,
-    padding: theme.sizes.spacing.l,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -107,48 +99,29 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.scale(6),
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.n100,
+    borderBottomColor: theme.colors.n200,
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.p400,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.sizes.spacing.m,
-  },
   rowLabel: {
-    ...theme.sizes.typography.body,
-    color: theme.colors.n900,
-    fontWeight: '600',
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
+    marginLeft: theme.sizes.spacing.m,
   },
   rowValue: {
-    ...theme.sizes.typography.body,
-    color: theme.colors.n900,
-    fontWeight: '700',
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
   },
   confirmBtn: {
-    backgroundColor: theme.colors.p400,
-    paddingVertical: 18,
-    borderRadius: 24,
-    alignItems: 'center',
-    marginTop: theme.sizes.spacing.xl,
-    opacity: 1,
+    height: theme.sizes.scale(48),
+    marginTop: theme.sizes.spacing.m,
   },
-  confirmBtnText: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.white,
-    fontFamily: 'Manrope_700Bold',
-  }
 });

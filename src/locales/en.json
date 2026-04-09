@@ -42,6 +42,9 @@
     "profile": "Profile"
   },
   "common": {
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "months": {
@@ -82,7 +85,7 @@
     "consult_desc": "Today • 18:00",
     "reminders": "Reminders",
     "consultation_title": "Consultation",
-    "consultation_time": "Monday • 09am - 10am",
+    "consultation_time": "{{date}} • {{start}} - {{end}}",
     "next_steps": "Next steps",
     "find_doctor": "Find a doctor",
     "find_doctor_desc": "Based on your results and symptoms",
@@ -218,6 +221,7 @@
     "start_in": "Start in",
     "booking_details": "Booking Details",
     "cancel_booking": "Cancel booking",
+    "timer": "Timer",
     "change_datetime": "Change date and time",
     "price_label": "Price",
     "end_btn": "End consultation",
@@ -233,7 +237,7 @@
     "next_steps": "Next steps",
     "view_history": "View history",
     "book_next": "Book next visit",
-    "duration_val": "45 min",
+    "duration_val": "{{duration}} min",
     "finding_ferritin": "Low ferritin (iron stores) — this may indicate iron deficiency.",
     "finding_cholesterol": "Elevated cholesterol level — which increases cardiovascular risk over time.",
     "finding_monitoring": "The condition is not critical, but requires correction and monitoring."
@@ -298,10 +302,11 @@
     "per_hour": "/1h",
     "can_advise": "Can advise you on:",
     "today": "Today",
-    "online": "Online",
+    "online": "online",
     "view_profile": "View profile",
     "book_btn": "Book",
     "book_consultation": "Book consultation",
+    "book_online_consultation": "Book online consultation",
     "booking_summary": "Booking summary",
     "billing_doctor": "Doctor",
     "date": "Date",

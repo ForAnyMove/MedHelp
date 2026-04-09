@@ -56,7 +56,7 @@ export function ProfileTab({ role = 'patient' }) {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <ProfileHeader user={user} />
-        
+
         <ProfileInfoCard user={user} />
 
         {isDoctor && (
@@ -71,31 +71,33 @@ export function ProfileTab({ role = 'patient' }) {
         {isDoctor && (
           <ProfileSection title={t('profile.about_me')}>
             <View style={styles.aboutContainer}>
-               <Text style={styles.aboutDesc}>{t('profile.about_placeholder')}</Text>
-               <Text style={styles.aboutText}>{user.aboutMe}</Text>
-               <Text style={styles.aboutCount}>{user.aboutMe?.length || 0}/100</Text>
+              <View style={styles.aboutContent}>
+                <Text style={styles.aboutDesc}>{t('profile.about_placeholder')}</Text>
+                <Text style={styles.aboutText}>{user.aboutMe}</Text>
+              </View>
+              <Text style={styles.aboutCount}>{user.aboutMe?.length || 0}/100</Text>
             </View>
           </ProfileSection>
         )}
 
         {!isDoctor && (
           <ProfileSection title={t('profile.medical_data')}>
-            <ProfileItem 
-              label={t('profile.chronic_conditions')} 
-              value={user.medicalData?.chronicConditions} 
+            <ProfileItem
+              label={t('profile.chronic_conditions')}
+              value={user.medicalData?.chronicConditions}
             />
-            <ProfileItem 
-              label={t('profile.allergies')} 
-              value={user.medicalData?.allergies} 
+            <ProfileItem
+              label={t('profile.allergies')}
+              value={user.medicalData?.allergies}
             />
-            <ProfileItem 
-              label={t('profile.medications')} 
-              value={user.medicalData?.medications} 
+            <ProfileItem
+              label={t('profile.medications')}
+              value={user.medicalData?.medications}
             />
-            <ProfileItem 
-              label={t('profile.pregnancy')} 
-              type="toggle" 
-              isToggled={user.medicalData?.pregnancy} 
+            <ProfileItem
+              label={t('profile.pregnancy')}
+              type="toggle"
+              isToggled={user.medicalData?.pregnancy}
               onToggle={(val) => !isDoctor && updateProfile({ medicalData: { ...user.medicalData, pregnancy: val } })}
               isLast
             />
@@ -103,25 +105,25 @@ export function ProfileTab({ role = 'patient' }) {
         )}
 
         <ProfileSection title={t('profile.preferences')}>
-          <ProfileItem 
-            label={t('profile.language')} 
-            value={user.preferences?.language} 
+          <ProfileItem
+            label={t('profile.language')}
+            value={user.preferences?.language}
           />
-          <ProfileItem 
-            label={t('profile.consultation_format')} 
-            value={user.preferences?.consultationFormat} 
+          <ProfileItem
+            label={t('profile.consultation_format')}
+            value={user.preferences?.consultationFormat}
             isLast={isDoctor}
           />
           {isDoctor ? (
-            <ProfileItem 
-              label={t('profile.accepting_new_patients')} 
+            <ProfileItem
+              label={t('profile.accepting_new_patients')}
               value={user.preferences?.acceptingNewPatients ? t('common.yes') : t('common.no')}
               isLast
             />
           ) : (
-            <ProfileItem 
-              label={t('profile.preferred_gender')} 
-              value={user.preferences?.preferredGender} 
+            <ProfileItem
+              label={t('profile.preferred_gender')}
+              value={user.preferences?.preferredGender}
               isLast
             />
           )}
@@ -129,16 +131,16 @@ export function ProfileTab({ role = 'patient' }) {
 
         <ProfileSection title={t('profile.security_privacy')}>
           <ProfileItem label={t('profile.change_password')} />
-          <ProfileItem 
-            label={t('profile.face_id')} 
-            type="toggle" 
+          <ProfileItem
+            label={t('profile.face_id')}
+            type="toggle"
             isToggled={user.privacy?.faceId}
             onToggle={(val) => updateProfile({ privacy: { ...user.privacy, faceId: val } })}
           />
-          <ProfileItem 
-            label={t('profile.logout')} 
-            isDanger 
-            isLast 
+          <ProfileItem
+            label={t('profile.logout')}
+            isDanger
+            isLast
             onPress={handleLogout}
           />
         </ProfileSection>
@@ -158,32 +160,41 @@ export function ProfileTab({ role = 'patient' }) {
 const themeStyles = (theme) => ({
   container: {
     flex: 1,
-    backgroundColor: '#F3F9F9',
+    backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingBottom: 100, // Bottom Tab height
+    paddingBottom: theme.sizes.scale(30), // Bottom Tab height
   },
   footerSpacer: {
-    height: 40,
+    height: theme.sizes.scale(40),
   },
   aboutContainer: {
     backgroundColor: theme.colors.white,
-    borderRadius: 20,
-    padding: theme.sizes.spacing.m,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingTop: theme.sizes.spacing.m,
+    paddingBottom: theme.sizes.spacing.s,
+  },
+  aboutContent: {
+    borderWidth: 1,
+    borderColor: theme.colors.n300,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingVertical: theme.sizes.spacing.s,
+    paddingHorizontal: theme.sizes.spacing.m,
   },
   aboutDesc: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.n500,
     marginBottom: theme.sizes.spacing.s,
   },
   aboutText: {
-    ...theme.sizes.typography.body,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n900,
   },
   aboutCount: {
     ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
+    color: theme.colors.n500,
     textAlign: 'right',
     marginTop: theme.sizes.spacing.xs,
+    marginRight: theme.sizes.spacing.m,
   }
 });

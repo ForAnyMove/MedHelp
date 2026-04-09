@@ -18,7 +18,7 @@ export function NextPatientCard({ consultation, onOpenConsultation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>{t('doctor_dashboard.next_patient')}</Text>
-      
+
       <View style={styles.card}>
         <View style={styles.profileRow}>
           <View style={styles.avatarContainer}>
@@ -32,18 +32,18 @@ export function NextPatientCard({ consultation, onOpenConsultation }) {
 
         <View style={styles.badgeRow}>
           <View style={styles.badge}>
-            <Icon name="Clock" size={16} color={colors.p500} />
+            <Icon name="time" size={sizes.scale(24)} color={colors.p500} />
             <Text style={styles.badgeText}>{time}</Text>
           </View>
           <View style={styles.badge}>
-            <Icon name="MessageSquare" size={16} color={colors.p500} />
+            <Icon name="format" size={sizes.scale(24)} color={colors.p500} />
             <Text style={styles.badgeText}>{type}</Text>
           </View>
         </View>
 
-        <Button 
-          title={t('doctor_dashboard.open_consultation')} 
-          variant="primary" 
+        <Button
+          title={t('doctor_dashboard.open_consultation')}
+          variant="primary"
           onPress={onOpenConsultation}
           style={styles.button}
         />
@@ -58,13 +58,13 @@ const themeStyles = (theme) => ({
   },
   sectionTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.m,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   card: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
-    padding: theme.sizes.spacing.l,
+    padding: theme.sizes.spacing.m,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -74,56 +74,59 @@ const themeStyles = (theme) => ({
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.sizes.spacing.l,
+    marginBottom: theme.sizes.spacing.s,
   },
   avatarContainer: {
-    padding: 3,
     borderRadius: theme.sizes.borderRadius.full,
     borderWidth: 2,
-    borderColor: '#FF4D97', // Pink indicator as seen on screenshot
+    borderColor: theme.colors.pinkBorder,
   },
   avatar: {
-    width: theme.sizes.scale(60),
-    height: theme.sizes.scale(60),
+    width: theme.sizes.scale(78),
+    height: theme.sizes.scale(78),
     borderRadius: theme.sizes.borderRadius.full,
   },
   infoCol: {
-    marginLeft: theme.sizes.spacing.m,
+    marginLeft: theme.sizes.spacing.l,
     flex: 1,
   },
   name: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    fontFamily: 'Manrope_700Bold',
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n700,
   },
   subtitle: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
-    marginTop: 2,
+    ...theme.sizes.typography.bodyMedium,
+    fontSize: theme.sizes.scale(15),
+    color: theme.colors.n500,
+    marginTop: theme.sizes.spacing.xs,
   },
   badgeRow: {
     flexDirection: 'row',
     gap: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.l,
+    marginBottom: theme.sizes.spacing.m,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.n200,
+    paddingTop: theme.sizes.spacing.m,
   },
   badge: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E0F9F6',
+    backgroundColor: theme.colors.p100,
     borderRadius: theme.sizes.borderRadius.full,
-    paddingVertical: theme.sizes.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.p200,
+    paddingVertical: theme.sizes.scale(12),
+    borderWidth: 2,
+    borderColor: theme.colors.p500,
   },
   badgeText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.p600,
-    marginLeft: theme.sizes.spacing.xs,
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.p500,
+    marginLeft: theme.sizes.spacing.s,
     fontFamily: 'Manrope_600SemiBold',
   },
   button: {
     height: theme.sizes.scale(48),
+    marginBottom: theme.sizes.spacing.s,
   }
 });

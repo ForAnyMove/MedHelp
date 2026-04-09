@@ -42,6 +42,9 @@
     "profile": "Профиль"
   },
   "common": {
+    "yes": "Да",
+    "no": "Нет",
+    "confirm": "Подтвердить",
     "today": "Сегодня",
     "tomorrow": "Завтра",
     "months": {
@@ -82,7 +85,7 @@
     "consult_desc": "Сегодня • 18:00",
     "reminders": "Напоминания",
     "consultation_title": "Консультация",
-    "consultation_time": "Понедельник • 09:00 - 10:00",
+    "consultation_time": "{{date}} • {{start}} - {{end}}",
     "next_steps": "Следующие шаги",
     "find_doctor": "Найти врача",
     "find_doctor_desc": "На основе ваших результатов и симптомов",
@@ -217,6 +220,7 @@
     "no_scheduled": "Нет запланированных консультаций",
     "start_in": "Начнется через",
     "booking_details": "Детали записи",
+    "timer": "Таймер",
     "cancel_booking": "Отменить запись",
     "change_datetime": "Изменить дату и время",
     "price_label": "Цена",
@@ -233,7 +237,7 @@
     "next_steps": "Следующие шаги",
     "view_history": "Посмотреть историю",
     "book_next": "Записаться на следующий прием",
-    "duration_val": "45 мин",
+    "duration_val": "{{duration}} мин",
     "finding_ferritin": "Низкий уровень ферритина (запасы железа) — это может указывать на дефицит железа.",
     "finding_cholesterol": "Повышенный уровень холестерина — что увеличивает сердечно-сосудистый риск со временем.",
     "finding_monitoring": "Состояние не является критическим, но требует коррекции и наблюдения."
@@ -298,10 +302,11 @@
     "per_hour": "/час",
     "can_advise": "Может проконсультировать по:",
     "today": "Сегодня",
-    "online": "Онлайн",
+    "online": "онлайн",
     "view_profile": "Профиль",
     "book_btn": "Записаться",
     "book_consultation": "Записаться на консультацию",
+    "book_online_consultation": "Записаться на онлайн консультацию",
     "booking_summary": "Детали записи",
     "billing_doctor": "Врач",
     "date": "Дата",

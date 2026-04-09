@@ -5,7 +5,8 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { useStyles } from '../../../theme/useStyles';
 
 import { DoctorHeader } from '../../../components/doctor-dashboard/DoctorHeader';
-import { StatusCards } from '../../../components/doctor-dashboard/StatusCards';
+import { TodayStatusCard } from '../../../components/doctor-dashboard/TodayStatusCard';
+import { ProfitStatusCard } from '../../../components/doctor-dashboard/ProfitStatusCard';
 import { NextPatientCard } from '../../../components/doctor-dashboard/NextPatientCard';
 import { DoctorQuickActions } from '../../../components/doctor-dashboard/DoctorQuickActions';
 import { myDoctorProfileManager } from '../../../managers/myDoctorProfileManager';
@@ -26,22 +27,22 @@ export function DoctorHomeTab() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
-        showsVerticalScrollIndicator={false} 
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <DoctorHeader profile={data.profile} />
-        <StatusCards 
-          consultationCount={data.consultationsTodayCount} 
-          profit={data.profit} 
+        <TodayStatusCard
+          consultationCount={data.consultationsTodayCount}
           onConsultationPress={handleConsultationPress}
         />
-        <NextPatientCard 
-          consultation={data.nextConsultation} 
+        <NextPatientCard
+          consultation={data.nextConsultation}
           onOpenConsultation={handleOpenConsultation}
         />
         <DoctorQuickActions />
+        <ProfitStatusCard profit={data.profit} />
       </ScrollView>
     </View>
   );
@@ -53,8 +54,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingTop: theme.sizes.spacing.s,
-    paddingBottom: theme.sizes.spacing.xl, 
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.xs,
+    paddingBottom: theme.sizes.spacing.xl,
   }
 });

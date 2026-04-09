@@ -1,17 +1,21 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from './Icon';
 
-export function Button({ 
+export function Button({
   variant = 'primary', // 'primary' | 'secondary' | 'outlined'
-  title, 
+  title,
   icon,
-  disabled, 
-  onPress, 
-  style, 
-  textStyle 
+  disabled,
+  onPress,
+  style,
+  textStyle,
+  iconStyle,
+  iconSize,
+  iconSide,
+  loading = false,
 }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
@@ -24,28 +28,42 @@ export function Button({
   ];
 
   const labelStyle = [
-    sizes.typography.bodyLarge,
+    sizes.typography.h3,
     styles[`${variant}Text`],
     disabled && styles.disabledText,
     textStyle,
   ];
 
   return (
-    <TouchableOpacity 
-      style={buttonStyle} 
-      onPress={onPress} 
-      disabled={disabled}
+    <TouchableOpacity
+      style={buttonStyle}
+      onPress={onPress}
+      disabled={disabled || loading}
       activeOpacity={0.7}
     >
-      {icon && (
-        <Icon 
-          name={icon} 
-          color={StyleSheet.flatten(labelStyle).color} 
-          size={sizes.scale(20)} 
-          style={{ marginRight: title ? sizes.spacing.s : 0 }} 
-        />
+      {loading ? (
+        <ActivityIndicator color={StyleSheet.flatten(labelStyle).color} />
+      ) : (
+        <>
+          {iconSide === 'left' && icon && (
+            <Icon
+              name={icon}
+              color={StyleSheet.flatten(labelStyle).color}
+              size={sizes.scale(24)}
+              style={{ marginRight: title ? sizes.spacing.s : 0 }}
+            />
+          )}
+          {title && <Text style={labelStyle}>{title}</Text>}
+          {iconSide === 'right' && icon && (
+            <Icon
+              name={icon}
+              color={StyleSheet.flatten(labelStyle).color}
+              size={sizes.scale(24)}
+              style={{ marginLeft: title ? sizes.spacing.s : 0 }}
+            />
+          )}
+        </>
       )}
-      {title && <Text style={labelStyle}>{title}</Text>}
     </TouchableOpacity>
   );
 }

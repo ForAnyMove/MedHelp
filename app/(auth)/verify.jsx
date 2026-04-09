@@ -18,7 +18,7 @@ export default function Verify() {
   const styles = useStyles(themeStyles);
   const pinRef = useRef(null);
   const { verifyOtp, session, isLoading } = useSession();
-  
+
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,16 +68,16 @@ export default function Verify() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.backButton}>
-              <Icon 
-                name="ArrowLeft" 
-                size={sizes.scale(24)} 
-                color={styles.iconColor.color} 
+              <Icon
+                name="ArrowLeft"
+                size={sizes.scale(24)}
+                color={styles.iconColor.color}
                 onPress={() => router.back()}
               />
             </View>
             <View style={styles.logoContainer}>
-              <Image 
-                source={Images.logo} 
+              <Image
+                source={Images.logo}
                 style={styles.logoImage}
                 resizeMode="contain"
               />
@@ -87,7 +87,7 @@ export default function Verify() {
           {/* Form */}
           <View style={styles.formContainer}>
             <Text style={styles.title}>{t('auth.verify_title')}</Text>
-            
+
             <Pressable onPress={() => pinRef.current?.focus()} style={styles.pinWrapper}>
               <TextInput
                 ref={pinRef}
@@ -130,9 +130,9 @@ export default function Verify() {
 
             <View style={styles.spacer} />
 
-            <Button 
-              title={t('auth.confirm_btn')} 
-              variant="primary" 
+            <Button
+              title={t('auth.confirm_btn')}
+              variant="primary"
               onPress={() => handleConfirm()}
               style={styles.button}
               disabled={code.length < 6 || loading}
@@ -147,7 +147,7 @@ export default function Verify() {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
   },
   keyboardView: {
     flex: 1,
@@ -170,7 +170,7 @@ const themeStyles = (theme) => ({
     padding: theme.sizes.spacing.xs,
   },
   iconColor: {
-    color: theme.colors.n900,
+    color: theme.colors.p500,
   },
   logoContainer: {
     alignItems: 'center',

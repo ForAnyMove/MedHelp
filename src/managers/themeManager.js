@@ -32,6 +32,8 @@ const lightColors = {
   warning: '#FFB547',
   danger: '#FF6B6B',
   info: '#4A9CFF',
+  pinkBorder: '#FFDFED',
+  opacityP400: '#40DDCC33',
 };
 
 export default function themeManager() {

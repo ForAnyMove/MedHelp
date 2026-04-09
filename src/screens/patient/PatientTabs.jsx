@@ -14,6 +14,7 @@ import { DoctorsTab } from './doctors/DoctorsTab';
 import { ConsultationTab } from './consultation/ConsultationTab';
 import { HistoryTab } from './history/HistoryTab';
 import { ProfileTab } from '../universal/profile/ProfileTab';
+import { useTheme } from '../../theme/ThemeContext';
 
 const HomeRouteWrapper = () => <HomeTab />;
 const DoctorsRoute = () => <DoctorsTab />;
@@ -35,15 +36,16 @@ const indexToTab = ['home', 'doctors', 'consultation', 'history', 'profile'];
 function PatientTabsInner({ currentTab }) {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
+  const { sizes } = useTheme();
   const { t } = useTranslation();
-  const { 
+  const {
     currentView,
     isSwipeEnabled: baseSwipeEnabled,
-    navigateToDashboard, 
-    scrollToTop, 
-    tabIndex: index, 
+    navigateToDashboard,
+    scrollToTop,
+    tabIndex: index,
     setTabIndex: setIndex,
-    navigateToConsultationMain 
+    navigateToConsultationMain
   } = usePatientDashboard();
 
   const { doctorController } = useComponentContext();
@@ -77,7 +79,7 @@ function PatientTabsInner({ currentTab }) {
       navigateToDashboard();
     }
     setIndex(i);
-    
+
     // Explicit URL push ONLY on manual user swipe / tab press
     const newTab = indexToTab[i];
     if (newTab !== currentTab) {
@@ -90,11 +92,11 @@ function PatientTabsInner({ currentTab }) {
   };
 
   const routes = useMemo(() => [
-    { key: 'home', title: t('patient_tabs.home'), icon: 'Home' },
-    { key: 'doctors', title: t('patient_tabs.doctors'), icon: 'Briefcase' },
-    { key: 'consultation', title: t('patient_tabs.consultation'), icon: 'Stethoscope' },
-    { key: 'history', title: t('patient_tabs.history'), icon: 'Clock' },
-    { key: 'profile', title: t('patient_tabs.profile'), icon: 'User' },
+    { key: 'home', title: t('patient_tabs.home'), icon: 'home' },
+    { key: 'doctors', title: t('patient_tabs.doctors'), icon: 'doctor-01' },
+    { key: 'consultation', title: t('patient_tabs.consultation'), icon: 'stethoscope' },
+    { key: 'history', title: t('patient_tabs.history'), icon: 'history' },
+    { key: 'profile', title: t('patient_tabs.profile'), icon: 'profile' },
   ], [t]);
 
   const renderTabBar = (props) => {
@@ -109,35 +111,35 @@ function PatientTabsInner({ currentTab }) {
               activeOpacity={0.7}
               onPress={() => {
                 if (index === i) {
-                   if (route.key === 'home') {
-                     if (currentView !== 'dashboard') {
-                       navigateToDashboard();
-                     } else {
-                       scrollToTop();
-                     }
-                   } else if (route.key === 'consultation') {
-                     navigateToConsultationMain();
-                   }
+                  if (route.key === 'home') {
+                    if (currentView !== 'dashboard') {
+                      navigateToDashboard();
+                    } else {
+                      scrollToTop();
+                    }
+                  } else if (route.key === 'consultation') {
+                    navigateToConsultationMain();
+                  }
                 } else {
-                   // When switching tabs, reset sub-views if any
-                   if (currentView !== 'dashboard') {
-                     navigateToDashboard();
-                   }
-                   navigateToConsultationMain();
-                   handleIndexChange(i);
+                  // When switching tabs, reset sub-views if any
+                  if (currentView !== 'dashboard') {
+                    navigateToDashboard();
+                  }
+                  navigateToConsultationMain();
+                  handleIndexChange(i);
                 }
               }}
             >
               <View>
-                <Icon 
-                  name={route.icon} 
-                  color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color} 
-                  size={24}
+                <Icon
+                  name={route.icon}
+                  color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color}
+                  size={sizes.scale(24)}
                 />
                 {route.key === 'history' && <NotificationBadge count={2} />}
                 {route.key === 'consultation' && <NotificationBadge count={1} />}
               </View>
-              <Text style={[styles.tabText, isFocused && styles.tabTextFocused]}>
+              <Text style={[styles.tabText, isFocused && styles.tabTextFocused]} numberOfLines={1}>
                 {route.title}
               </Text>
             </TouchableOpacity>
@@ -177,16 +179,16 @@ const tabStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderTopWidth: 1,
     borderTopColor: theme.colors.n300,
-    paddingBottom: theme.sizes.spacing.xl, 
+    paddingBottom: theme.sizes.spacing.xl,
     paddingTop: theme.sizes.spacing.s,
   },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabText: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n500,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     marginTop: theme.sizes.spacing.xs,
   },
   tabTextFocused: { color: theme.colors.p500 },
   focusedIcon: { color: theme.colors.p500 },
-  unfocusedIcon: { color: theme.colors.n500 }
+  unfocusedIcon: { color: theme.colors.n700 }
 });

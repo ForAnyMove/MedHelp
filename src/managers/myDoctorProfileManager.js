@@ -36,15 +36,15 @@ const mockConsultations = [
       avatarUrl: 'https://i.pravatar.cc/150?u=p1',
       symptoms: 'New symptoms uploaded.',
       analyses: [
-        { id: 'a1', title: 'Ferritin', value: '18 ng/ml', status: 'low', shared: true },
-        { id: 'a2', title: 'Cholesterol', value: '6.1 mmol/l', status: 'high', shared: true }
+        { id: 'a1', title: 'Ferritin', value: '18 ng/ml', status: 'low', shared: true, icon: 'drops', iconColor: 'sCoral' },
+        { id: 'a2', title: 'Cholesterol', value: '6.1 mmol/l', status: 'high', shared: true, icon: 'blood-analys', iconColor: 'sYell' }
       ],
       aiSummary: {
         title: 'Ferritin',
         status: 'Low',
         value: '18 ng/ml',
         normalRange: '30-400 ng/ml',
-        description: 'Ferritin - is an important indicator of iron levels in the body.',
+        description: 'is an important indicator of iron levels in the body.',
         insight: 'Low ferritin levels may indicate iron deficiency.',
         bullets: [
           'Iron is needed for oxygen delivery in the blood, energy, and immunity.',
@@ -150,6 +150,10 @@ class MyDoctorProfileManager {
         data: this.consultations.filter(c => c.date.startsWith(tomorrow))
       }
     ];
+  }
+
+  getConsultationById(id) {
+    return this.consultations.find(c => c.id === id);
   }
 }
 

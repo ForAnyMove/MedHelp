@@ -19,7 +19,7 @@ export function DoctorHeader({ profile }) {
         </Text>
       </View>
       <TouchableOpacity style={styles.notification}>
-        <Icon name="Bell" size={24} color={colors.p500} />
+        <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} />
       </TouchableOpacity>
     </View>
   );
@@ -30,24 +30,24 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.s,
   },
   leftRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: theme.sizes.scale(40),
-    height: theme.sizes.scale(40),
+    width: theme.sizes.scale(29),
+    height: theme.sizes.scale(29),
     borderRadius: theme.sizes.borderRadius.full,
     marginRight: theme.sizes.spacing.s,
   },
   greeting: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n700,
   },
   notification: {
-    padding: theme.sizes.spacing.xs,
+    // padding: theme.sizes.spacing.xs,
   }
 });

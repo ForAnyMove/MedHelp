@@ -14,6 +14,7 @@ import { DoctorConsultationTab } from './consultation/DoctorConsultationTab';
 import { DoctorBalanceTab } from './balance/DoctorBalanceTab';
 import { DoctorHistoryTab } from './history/DoctorHistoryTab';
 import { ProfileTab } from '../universal/profile/ProfileTab';
+import { useTheme } from '../../theme/ThemeContext';
 
 const HomeRoute = () => <DoctorHomeTab />;
 const BalanceRoute = () => <DoctorBalanceTab />;
@@ -35,9 +36,10 @@ const indexToTab = ['home', 'balance', 'consultation', 'history', 'profile'];
 function DoctorTabsInner({ currentTab }) {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
+  const { sizes } = useTheme();
   const { t } = useTranslation();
-  const { 
-    tabIndex, 
+  const {
+    tabIndex,
     setTabIndex,
     isSwipeEnabled,
     handleTabSwitchRequest,
@@ -85,11 +87,11 @@ function DoctorTabsInner({ currentTab }) {
   }, [handleTabSwitchRequest]);
 
   const routes = useMemo(() => [
-    { key: 'home', title: t('doctor_tabs.home'), icon: 'Home' },
-    { key: 'balance', title: t('doctor_tabs.balance'), icon: 'Briefcase' },
-    { key: 'consultation', title: t('doctor_tabs.consultation'), icon: 'Video' },
-    { key: 'history', title: t('doctor_tabs.history'), icon: 'Clock' },
-    { key: 'profile', title: t('doctor_tabs.profile'), icon: 'User' },
+    { key: 'home', title: t('doctor_tabs.home'), icon: 'home' },
+    { key: 'balance', title: t('doctor_tabs.balance'), icon: 'balance' },
+    { key: 'consultation', title: t('doctor_tabs.consultation'), icon: 'stethoscope' },
+    { key: 'history', title: t('doctor_tabs.history'), icon: 'medic-history' },
+    { key: 'profile', title: t('doctor_tabs.profile'), icon: 'profile' },
   ], [t]);
 
   const renderTabBar = (props) => {
@@ -104,15 +106,15 @@ function DoctorTabsInner({ currentTab }) {
               onPress={() => onIndexChangeWithSync(i)}
             >
               <View>
-                <Icon 
-                  name={route.icon} 
-                  color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color} 
-                  size={24}
+                <Icon
+                  name={route.icon}
+                  color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color}
+                  size={sizes.scale(24)}
                 />
                 {route.key === 'history' && <NotificationBadge count={4} />}
                 {route.key === 'consultation' && <NotificationBadge count={2} />}
               </View>
-              <Text style={[styles.tabText, isFocused && styles.tabTextFocused]}>
+              <Text style={[styles.tabText, isFocused && styles.tabTextFocused]} numberOfLines={1}>
                 {route.title}
               </Text>
             </TouchableOpacity>
@@ -135,20 +137,20 @@ function DoctorTabsInner({ currentTab }) {
       />
       {showExitConfirmation && (
         <View style={StyleSheet.absoluteFillObject}>
-           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
-              <View style={styles.exitModalBody}>
-                 <Text style={styles.exitModalTitle}>{t('doctor_consultation.exit_title')}</Text>
-                 <Text style={styles.exitModalText}>{t('doctor_consultation.exit_desc')}</Text>
-                 <View style={styles.exitModalBtns}>
-                    <TouchableOpacity onPress={cancelExitSummary} style={styles.btnCancel}>
-                       <Text style={styles.btnCancelText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={confirmExitSummary} style={styles.btnConfirm}>
-                       <Text style={styles.btnConfirmText}>{t('doctor_consultation.exit_confirm')}</Text>
-                    </TouchableOpacity>
-                 </View>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={styles.exitModalBody}>
+              <Text style={styles.exitModalTitle}>{t('doctor_consultation.exit_title')}</Text>
+              <Text style={styles.exitModalText}>{t('doctor_consultation.exit_desc')}</Text>
+              <View style={styles.exitModalBtns}>
+                <TouchableOpacity onPress={cancelExitSummary} style={styles.btnCancel}>
+                  <Text style={styles.btnCancelText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={confirmExitSummary} style={styles.btnConfirm}>
+                  <Text style={styles.btnConfirmText}>{t('doctor_consultation.exit_confirm')}</Text>
+                </TouchableOpacity>
               </View>
-           </View>
+            </View>
+          </View>
         </View>
       )}
     </View>
@@ -171,18 +173,18 @@ const tabStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderTopWidth: 1,
     borderTopColor: theme.colors.n300,
-    paddingBottom: theme.sizes.spacing.xl, 
+    paddingBottom: theme.sizes.spacing.xl,
     paddingTop: theme.sizes.spacing.s,
   },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabText: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n500,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     marginTop: theme.sizes.spacing.xs,
   },
   tabTextFocused: { color: theme.colors.p500 },
   focusedIcon: { color: theme.colors.p500 },
-  unfocusedIcon: { color: theme.colors.n500 },
+  unfocusedIcon: { color: theme.colors.n700 },
   exitModalBody: {
     backgroundColor: theme.colors.white,
     padding: theme.sizes.spacing.xl,

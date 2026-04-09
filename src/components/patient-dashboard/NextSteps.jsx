@@ -27,10 +27,10 @@ export function NextSteps() {
                 <Icon name={step.icon} size={sizes.scale(24)} color={step.color} wrapped wrapperStyle={styles.iconWrapper} />
                 <View style={styles.textContent}>
                   <Text style={styles.title}>{step.title}</Text>
-                  <Text style={styles.desc}>{step.desc}</Text>
+                  <Text style={styles.desc} numberOfLines={1} ellipsizeMode="tail">{step.desc}</Text>
                 </View>
               </View>
-              <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p500} />
+              <Icon name="arrow-right" size={sizes.scale(24)} color={colors.p500} />
             </TouchableOpacity>
             {index < steps.length - 1 && <View style={styles.divider} />}
           </React.Fragment>
@@ -64,7 +64,7 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.spacing.xs,
     paddingHorizontal: theme.sizes.spacing.m,
   },
   leftContent: {
@@ -85,13 +85,12 @@ const themeStyles = (theme) => ({
     flex: 1,
   },
   title: {
-    ...theme.sizes.typography.bodyMedium,
+    ...theme.sizes.typography.bodyLarge,
     fontWeight: '600',
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.scale(2),
+    color: theme.colors.n700,
   },
   desc: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n500,
   },
   divider: {

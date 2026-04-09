@@ -16,7 +16,7 @@ export default function Login() {
   const { t } = useTranslation();
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
-  
+
   const [contact, setContact] = useState('');
 
   const isDoctor = role === 'doctor';
@@ -28,24 +28,24 @@ export default function Login() {
 
   return (
     <Screen style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardView} 
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {/* Back Button & Logo */}
           <View style={styles.header}>
             <View style={styles.backButton}>
-              <Icon 
-                name="ArrowLeft" 
-                size={sizes.scale(24)} 
-                color={styles.iconColor.color} 
+              <Icon
+                name="ArrowLeft"
+                size={sizes.scale(24)}
+                color={styles.iconColor.color}
                 onPress={() => router.push('/(auth)/welcome')}
               />
             </View>
             <View style={styles.logoContainer}>
-              <Image 
-                source={Images.logo} 
+              <Image
+                source={Images.logo}
                 style={styles.logoImage}
                 resizeMode="contain"
               />
@@ -57,10 +57,10 @@ export default function Login() {
             <Text style={styles.title}>
               {isDoctor ? t('auth.login_doctor_title') : t('auth.welcome_subtitle')}
             </Text>
-            
+
             <View style={styles.inputWrapper}>
-              <Input 
-                placeholder={t('auth.login_placeholder')} 
+              <Input
+                placeholder={t('auth.login_placeholder')}
                 value={contact}
                 onChangeText={setContact}
                 rounded
@@ -73,23 +73,23 @@ export default function Login() {
               />
             </View>
           </View>
-          
+
           {/* Footer Area */}
           <View style={styles.footerContainer}>
             <Text style={styles.termsText}>
               {t('auth.terms_text')} <Text style={styles.link}>{t('auth.privacy_policy')}</Text> & <Text style={styles.link}>{t('auth.terms_of_use')}</Text>
             </Text>
 
-            <Button 
-              title={t('auth.continue_btn')} 
-              variant="primary" 
+            <Button
+              title={t('auth.continue_btn')}
+              variant="primary"
               onPress={handleContinue}
               style={styles.button}
               disabled={contact.length < 5}
             />
-            <Button 
-              title={t('auth.login_google_btn')} 
-              variant="outlined" 
+            <Button
+              title={t('auth.login_google_btn')}
+              variant="outlined"
               onPress={() => console.log('Google login')}
               style={styles.button}
             />
@@ -102,7 +102,7 @@ export default function Login() {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
   },
   keyboardView: {
     flex: 1,

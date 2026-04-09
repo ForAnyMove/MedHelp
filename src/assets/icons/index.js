@@ -44,10 +44,12 @@ export const CustomIcons = {
   'plus': require('../../../assets/icons/plus.svg').default,
   'price': require('../../../assets/icons/price.svg').default,
   'profile': require('../../../assets/icons/profile.svg').default,
+  'star': require('../../../assets/icons/star.svg').default,
   'stethoscope': require('../../../assets/icons/stethoscope.svg').default,
   'temperature': require('../../../assets/icons/temperature.svg').default,
   'time': require('../../../assets/icons/time.svg').default,
   'timer': require('../../../assets/icons/timer.svg').default,
   'upload': require('../../../assets/icons/upload.svg').default,
   'video': require('../../../assets/icons/video.svg').default,
+  'medical-document': require('../../../assets/icons/medical-document.svg').default,
 };

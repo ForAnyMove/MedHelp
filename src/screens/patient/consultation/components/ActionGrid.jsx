@@ -11,19 +11,17 @@ export function ActionGrid() {
   const styles = useStyles(themeStyles);
 
   const ACTIONS = [
-    { id: 'chat', label: t('actions.chat'), icon: 'MessageCircle', color: '#FF7D7D' },
-    { id: 'video', label: t('actions.video'), icon: 'Video', color: '#54DACC' },
-    { id: 'files', label: t('actions.files'), icon: 'FileText', color: '#FFD789' },
-    { id: 'messages', label: t('actions.messages'), icon: 'Mail', color: '#7D96FF' },
+    { id: 'chat', label: t('actions.chat'), icon: 'chat', color: colors.sCoral },
+    { id: 'video', label: t('actions.video'), icon: 'video', color: colors.p500 },
+    { id: 'files', label: t('actions.files'), icon: 'files', color: colors.sYell },
+    { id: 'messages', label: t('actions.messages'), icon: 'message', color: colors.sBlue },
   ];
 
   return (
     <View style={styles.grid}>
       {ACTIONS.map(action => (
         <TouchableOpacity key={action.id} style={styles.card} activeOpacity={0.8}>
-          <View style={[styles.iconBox, { backgroundColor: action.color + '15' }]}>
-            <Icon name={action.icon} size={28} color={action.color} />
-          </View>
+          <Icon name={action.icon} size={sizes.scale(24)} color={action.color} wrapperStyle={styles.iconBox} wrapped />
           <Text style={styles.label}>{action.label}</Text>
         </TouchableOpacity>
       ))}
@@ -36,15 +34,17 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.l,
+    marginBottom: theme.sizes.spacing.m,
   },
   card: {
     width: '47%', // roughly half - gap
     backgroundColor: theme.colors.white,
-    borderRadius: 24,
-    padding: theme.sizes.spacing.m,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingVertical: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.s,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -52,16 +52,15 @@ const themeStyles = (theme) => ({
     elevation: 2,
   },
   iconBox: {
-    width: theme.sizes.scale(48),
-    height: theme.sizes.scale(48),
-    borderRadius: 16,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: theme.sizes.spacing.m,
+    marginRight: theme.sizes.spacing.s,
   },
   label: {
-    ...theme.sizes.typography.body,
-    fontWeight: '600',
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyLarge,
+    fontFamily: 'Manrope_600SemiBold',
+    color: theme.colors.n700,
   }
 });

@@ -6,13 +6,14 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
+import { Button } from '../../../../components/ui/Button';
 
 export function DoctorConsultationSummary({ consultation }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
   const { saveSummary, closeSummary, isSummarySaved, setTabIndex, handleTabSwitchRequest } = useDoctorDashboard();
-  
+
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -34,12 +35,7 @@ export function DoctorConsultationSummary({ consultation }) {
   };
 
   const getIconColor = (idx) => {
-    const colorsArr = [colors.danger, colors.p400, colors.danger, '#FFC87E'];
-    return colorsArr[idx % colorsArr.length];
-  };
-
-  const getIconBg = (idx) => {
-    const colorsArr = ['#FFF0F0', '#E0F9F6', '#FFF0F0', '#FFF9F0'];
+    const colorsArr = [colors.sPink, colors.p500, colors.sCoral, colors.sYell];
     return colorsArr[idx % colorsArr.length];
   };
 
@@ -69,87 +65,87 @@ export function DoctorConsultationSummary({ consultation }) {
       {/* Subtitle row */}
       <View style={styles.subHeader}>
         <Text style={styles.subtitle}>
-          {t('doctor_consultation.completed_time') || 'Completed'}: <Text style={{fontWeight: '700', color: styles.subtitleBold?.color}}>45 min</Text>
+          {t('doctor_consultation.completed_time') || 'Completed'}: <Text style={{ fontFamily: 'Manrope_600SemiBold', color: styles.subtitleBold?.color }}>45 min</Text>
         </Text>
         <TouchableOpacity>
-          <Icon name="Edit2" size={20} color={styles.editIcon?.color} />
+          <Icon name="edit" size={sizes.scale(24)} color={styles.editIcon?.color} />
         </TouchableOpacity>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-         <View style={styles.mainNoteCard}>
-            <Text style={styles.mainNoteText}>During the consultation we discussed your test results.</Text>
-            <Text style={styles.mainNoteText}>You have:</Text>
-            {mockPoints.map((p, idx) => (
-              <View key={idx} style={styles.bulletRow}>
-                 <View style={[styles.bullet, { backgroundColor: colors.p400 }]} />
-                 <Text style={styles.bulletText}>{p}</Text>
-              </View>
-            ))}
-         </View>
+        <View style={styles.mainNoteCard}>
+          <Text style={styles.mainNoteText}>During the consultation we discussed your test results.</Text>
+          <Text style={styles.mainNoteText}>You have:</Text>
+          {mockPoints.map((p, idx) => (
+            <View key={idx} style={[styles.bulletRow, { marginBottom: idx !== mockPoints.length - 1 ? sizes.spacing.s : 0 }]}>
+              <View style={[styles.bullet, { backgroundColor: colors.p500 }]} />
+              <Text style={styles.bulletText}>{p}</Text>
+            </View>
+          ))}
+        </View>
 
-         <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
-         <View style={styles.listCard}>
-            {mockRecs.map((rec, idx) => (
-               <View key={idx} style={styles.listItem} borderBottomWidth={idx !== mockRecs.length - 1 ? 1 : 0}>
-                  <View style={[styles.iconBox, { backgroundColor: getIconBg(idx) }]}>
-                     <Icon name="Droplet" size={16} color={getIconColor(idx)} />
-                  </View>
-                  <Text style={styles.listText}>{rec}</Text>
-               </View>
-            ))}
-         </View>
+        <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
+        <View style={styles.listCard}>
+          {mockRecs.map((rec, idx) => (
+            <View key={idx} style={styles.listItem} borderBottomWidth={idx !== mockRecs.length - 1 ? 1 : 0}>
+              <Icon name="anemia" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
+              <Text style={styles.listText}>{rec}</Text>
+            </View>
+          ))}
+        </View>
 
-         <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
-         <View style={styles.listCard}>
-            {mockRecs.map((rec, idx) => (
-               <View key={idx} style={styles.listItem} borderBottomWidth={idx !== mockRecs.length - 1 ? 1 : 0}>
-                  <View style={[styles.iconBox, { backgroundColor: getIconBg(idx) }]}>
-                     <Icon name="Droplet" size={16} color={getIconColor(idx)} />
-                  </View>
-                  <Text style={styles.listText}>{rec}</Text>
-               </View>
-            ))}
-         </View>
+        <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
+        <View style={styles.listCard}>
+          {mockRecs.map((rec, idx) => (
+            <View key={idx} style={styles.listItem} borderBottomWidth={idx !== mockRecs.length - 1 ? 1 : 0}>
+              <Icon name="anemia" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
+              <Text style={styles.listText}>{rec}</Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
 
       {!isSummarySaved && (
         <View style={styles.footer}>
-           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
-              {isSaving ? (
-                 <ActivityIndicator color={colors.white} />
-              ) : (
-                 <Text style={styles.saveBtnText}>{t('doctor_consultation.save_send') || 'Save & send'}</Text>
-              )}
-           </TouchableOpacity>
+          <Button
+            title={t('doctor_consultation.save_send') || 'Save & send'}
+            onPress={handleSave}
+            variant="primary"
+            size="medium"
+            style={styles.saveBtn}
+            loading={isSaving}
+          />
         </View>
       )}
 
       {isSaving && (
         <View style={styles.loadingOverlay}>
-           <ActivityIndicator size="large" color={colors.p500} />
+          <ActivityIndicator size="large" color={colors.p500} />
         </View>
       )}
 
       <Modal visible={showSuccessModal} transparent animationType="fade" onRequestClose={handleClosePopup}>
-         <View style={styles.modalOverlay}>
-            <View style={styles.modalBody}>
-               <TouchableOpacity style={styles.modalClose} onPress={handleClosePopup}>
-                  <Icon name="X" size={24} color={colors.n900} />
-               </TouchableOpacity>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBody}>
+            <TouchableOpacity style={styles.modalClose} onPress={handleClosePopup}>
+              <Icon name="close" size={sizes.scale(24)} color={colors.n900} />
+            </TouchableOpacity>
 
-               <View style={styles.modalIconBox}>
-                  <Icon name="CheckCircle" size={40} color={colors.p500} />
-               </View>
-               <Text style={styles.modalTitle}>{t('doctor_consultation.saved_to_history') || 'Saved to patient history'}</Text>
-               <Text style={styles.modalDesc}>
-                 {consultation?.patient?.firstName || 'Patient'} can now access this summary in her app
-               </Text>
-               
-               <TouchableOpacity style={styles.modalBtn} onPress={handleBackToHome}>
-                  <Text style={styles.modalBtnText}>{t('doctor_consultation.back_to_home') || 'Back to home'}</Text>
-               </TouchableOpacity>
+            <View style={styles.modalIconBox}>
+              <Icon name="check" size={sizes.scale(35)} color={colors.p500} />
             </View>
-         </View>
+            <Text style={styles.modalTitle}>{t('doctor_consultation.saved_to_history') || 'Saved to patient history'}</Text>
+            <Text style={styles.modalDesc}>
+              {consultation?.patient?.firstName || 'Patient'} can now access this summary in her app
+            </Text>
+            <Button
+              title={t('doctor_consultation.back_to_home') || 'Back to home'}
+              onPress={handleBackToHome}
+              variant="primary"
+              size="medium"
+              style={styles.modalBtn}
+            />
+          </View>
+        </View>
       </Modal>
     </SubViewScreen>
   );
@@ -160,29 +156,27 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.l,
-    marginBottom: theme.sizes.spacing.s,
+    marginTop: -theme.sizes.spacing.s,
+    marginBottom: theme.sizes.spacing.xs,
   },
   editIcon: {
-    color: theme.colors.n400,
+    color: theme.colors.n500,
   },
   subtitleBold: {
-    color: theme.colors.n900,
+    color: theme.colors.n700,
   },
   subtitle: {
-    ...theme.sizes.typography.bodySmall,
+    ...theme.sizes.typography.bodyLarge,
     color: theme.colors.n500,
   },
   scroll: {
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingBottom: 100, // space for fixed footer
+    paddingBottom: theme.sizes.scale(100), // space for fixed footer
   },
   mainNoteCard: {
     backgroundColor: theme.colors.white,
-    borderRadius: 20,
-    padding: theme.sizes.spacing.l,
-    marginBottom: theme.sizes.spacing.xl,
-    marginTop: theme.sizes.spacing.m,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.m,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -190,64 +184,58 @@ const themeStyles = (theme) => ({
     elevation: 3,
   },
   mainNoteText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
-    marginBottom: 8,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   bulletRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 6,
-    paddingRight: 10,
+    alignItems: 'center',
+    marginBottom: theme.sizes.spacing.s,
   },
   bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: theme.sizes.scale(6),
+    height: theme.sizes.scale(6),
+    borderRadius: theme.sizes.borderRadius.full,
     backgroundColor: theme.colors.p500,
-    marginTop: 6,
-    marginRight: 8,
-    marginLeft: 12,
+    marginRight: theme.sizes.spacing.m,
   },
   bulletText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     flex: 1,
   },
   sectionTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.m,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.xs,
     fontFamily: 'Manrope_700Bold',
   },
   listCard: {
     backgroundColor: theme.colors.white,
-    borderRadius: 20,
+    borderRadius: theme.sizes.borderRadius.large,
     paddingVertical: theme.sizes.spacing.m,
-    paddingHorizontal: theme.sizes.spacing.l,
-    marginBottom: theme.sizes.spacing.xl,
+    paddingHorizontal: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.m,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
+    gap: theme.sizes.spacing.s,
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: theme.sizes.spacing.m,
   },
   iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.sizes.spacing.m,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
+    marginRight: theme.sizes.spacing.s,
   },
   listText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     flex: 1,
   },
   footer: {
@@ -257,18 +245,14 @@ const themeStyles = (theme) => ({
     right: 0,
     paddingHorizontal: theme.sizes.spacing.l,
     paddingVertical: theme.sizes.spacing.l,
-    backgroundColor: theme.colors.bg, 
+    backgroundColor: theme.colors.bg,
   },
   saveBtn: {
-    backgroundColor: theme.colors.p400,
-    borderRadius: 24,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: theme.sizes.scale(58),
   },
   saveBtnText: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
+    color: theme.colors.n700,
     fontFamily: 'Manrope_700Bold',
   },
   loadingOverlay: {
@@ -285,45 +269,38 @@ const themeStyles = (theme) => ({
   },
   modalBody: {
     backgroundColor: theme.colors.white,
-    borderRadius: 32,
-    padding: theme.sizes.spacing.xl,
-    width: '85%',
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
+    paddingBottom: theme.sizes.spacing.l,
+    width: '90%',
     alignItems: 'center',
     position: 'relative',
   },
   modalClose: {
     position: 'absolute',
-    top: 20,
-    right: 20,
+    top: theme.sizes.spacing.m,
+    right: theme.sizes.spacing.m,
     zIndex: 10,
   },
   modalIconBox: {
     marginBottom: theme.sizes.spacing.l,
-    marginTop: theme.sizes.spacing.m,
+    marginTop: theme.sizes.spacing.xs,
   },
   modalTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
+    color: theme.colors.n700,
     fontFamily: 'Manrope_700Bold',
-    marginBottom: theme.sizes.spacing.s,
+    marginBottom: theme.sizes.spacing.m,
     textAlign: 'center',
   },
   modalDesc: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     textAlign: 'center',
     marginBottom: theme.sizes.spacing.xl,
+    maxWidth: '70%',
   },
   modalBtn: {
-    backgroundColor: theme.colors.p400,
-    paddingVertical: 18,
-    borderRadius: 24,
     width: '100%',
-    alignItems: 'center',
   },
-  modalBtnText: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    fontFamily: 'Manrope_700Bold',
-  }
 });

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScrollView, View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { ScrollView, View, Text, FlatList, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComponentContext } from '../../../context/GlobalContext';
 import { useStyles } from '../../../theme/useStyles';
@@ -13,16 +13,19 @@ import { BookingSummary } from './extra-screens/BookingSummary';
 export function DoctorsTab() {
   const { t } = useTranslation();
   const { doctorController, themeController: { colors, sizes } } = useComponentContext();
-  const { 
-    doctors, 
-    recommendedDoctors, 
-    regularDoctors, 
-    currentDoctorView, 
-    fetchDoctors, 
-    selectDoctor 
+  const {
+    doctors,
+    recommendedDoctors,
+    regularDoctors,
+    currentDoctorView,
+    fetchDoctors,
+    selectDoctor
   } = doctorController;
-  
+
+  const { width } = useWindowDimensions();
   const styles = useStyles(themeStyles);
+
+  const cardWidth = width - sizes.spacing.m * 2;
 
   useEffect(() => {
     if (doctors.length === 0) {
@@ -40,14 +43,11 @@ export function DoctorsTab() {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton}>
-             <Icon name="ArrowLeft" size={24} color={colors.p500} />
-          </TouchableOpacity>
           <Text style={styles.title}>{t('doctors.recommended_title')}</Text>
         </View>
 
@@ -56,21 +56,24 @@ export function DoctorsTab() {
           showsHorizontalScrollIndicator={false}
           data={recommendedDoctors}
           renderItem={({ item }) => (
-            <VIPDoctorCard 
-              doctor={item} 
-              onPress={() => selectDoctor(item)} 
+            <VIPDoctorCard
+              doctor={item}
+              onPress={() => selectDoctor(item)}
             />
           )}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.vipList}
+          contentContainerStyle={[styles.vipList, { paddingRight: sizes.spacing.l }]}
+          snapToInterval={cardWidth + sizes.spacing.m}
+          decelerationRate="fast"
+          snapToAlignment="start"
         />
 
         <View style={styles.sectionHeader}>
-           <Text style={styles.subtitle}>{t('doctors.all_doctors')}</Text>
+          <Text style={styles.subtitle}>{t('doctors.all_doctors')}</Text>
         </View>
 
         {regularDoctors.map((doctor) => (
-          <RegularDoctorCard 
+          <RegularDoctorCard
             key={doctor.id}
             doctor={doctor}
             onProfilePress={() => selectDoctor(doctor)}
@@ -88,7 +91,7 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl,
   },
@@ -101,17 +104,17 @@ const themeStyles = (theme) => ({
     marginRight: theme.sizes.spacing.m,
   },
   title: {
-    ...theme.sizes.typography.h2,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
   },
   vipList: {
-    paddingBottom: theme.sizes.spacing.l,
+    paddingBottom: theme.sizes.spacing.m,
   },
   sectionHeader: {
-    marginVertical: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.s,
   },
   subtitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
+    color: theme.colors.n700,
   }
 });

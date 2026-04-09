@@ -15,17 +15,17 @@ import { useDoctorDashboard } from '../../../context/DoctorDashboardContext';
 export function DoctorConsultationTab() {
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
-  const { 
-    currentView, 
-    consultationStatus, 
-    selectedConsultation, 
+  const {
+    currentView,
+    consultationStatus,
+    selectedConsultation,
     navigateToPatientCard,
     navigateToPatientDetails,
     navigateBack,
     startConsultation,
     endConsultation
   } = useDoctorDashboard();
-  
+
   const groupedConsultations = myDoctorProfileManager.getGroupedConsultations();
 
   if (consultationStatus === 'summary') {
@@ -38,9 +38,9 @@ export function DoctorConsultationTab() {
 
   if (currentView === 'patient-card') {
     return (
-      <PatientCard 
-        consultation={selectedConsultation} 
-        onBack={navigateBack} 
+      <PatientCard
+        consultation={selectedConsultation}
+        onBack={navigateBack}
         onViewDetails={navigateToPatientDetails}
         onStartConsultation={startConsultation}
       />
@@ -55,24 +55,24 @@ export function DoctorConsultationTab() {
     <View style={styles.screen}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>{t('consultation.title')}</Text>
-        
+
         {groupedConsultations.map((group, idx) => (
           <View key={idx} style={styles.group}>
-             <Text style={styles.groupTitle}>{t(group.title)}</Text>
-             <ScrollView 
-               horizontal 
-               showsHorizontalScrollIndicator={false}
-               contentContainerStyle={styles.horizontalScroll}
-               nestedScrollEnabled
-             >
-               {group.data.map(consultation => (
-                 <ConsultationCard 
-                   key={consultation.id} 
-                   consultation={consultation} 
-                   onPress={navigateToPatientCard}
-                 />
-               ))}
-             </ScrollView>
+            <Text style={styles.groupTitle}>{t(group.title)}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+              nestedScrollEnabled
+            >
+              {group.data.map(consultation => (
+                <ConsultationCard
+                  key={consultation.id}
+                  consultation={consultation}
+                  onPress={navigateToPatientCard}
+                />
+              ))}
+            </ScrollView>
           </View>
         ))}
       </ScrollView>
@@ -86,25 +86,25 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   headerTitle: {
-    ...theme.sizes.typography.h2,
-    color: theme.colors.n900,
-    paddingHorizontal: theme.sizes.spacing.l,
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingVertical: theme.sizes.spacing.m,
   },
   scrollContent: {
     paddingBottom: theme.sizes.spacing.xl,
   },
   group: {
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.m,
   },
   groupTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    paddingHorizontal: theme.sizes.spacing.l,
-    marginBottom: theme.sizes.spacing.m,
+    color: theme.colors.n700,
+    paddingHorizontal: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.xs,
   },
   horizontalScroll: {
-    paddingLeft: theme.sizes.spacing.l,
+    paddingLeft: theme.sizes.spacing.m,
     paddingRight: theme.sizes.spacing.s,
   }
 });

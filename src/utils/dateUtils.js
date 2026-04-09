@@ -49,3 +49,42 @@ export const getIsoDateWithOffset = (daysOffset = 0, hour = 0, minute = 0) => {
   d.setHours(hour, minute, 0, 0);
   return d.toISOString();
 };
+
+/**
+ * Helper to compute consultation time string from a booking object
+ */
+export const computeConsultationTime = (booking, t) => {
+  const bookingDateStr = booking.slot?.date || booking.date;
+  const bookingTimeStr = booking.time || booking.slot?.time;
+
+  if (!bookingDateStr && !bookingTimeStr) return '';
+
+  const localizedDay = formatIsoDate(bookingDateStr, 'weekday', t);
+
+  let h, m;
+  let startTimeStr = '';
+
+  if (bookingTimeStr) {
+    [h, m] = bookingTimeStr.split(':').map(Number);
+    startTimeStr = bookingTimeStr;
+  } else if (bookingDateStr) {
+    const d = new Date(bookingDateStr);
+    h = d.getHours();
+    m = d.getMinutes();
+    startTimeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  if (h !== undefined) {
+    let dur = 45;
+    if (typeof booking.duration === 'number') dur = booking.duration;
+    else if (typeof booking.duration === 'string') dur = parseInt(booking.duration) || 45;
+
+    const endH = h + Math.floor((m + dur) / 60);
+    const endM = (m + dur) % 60;
+    const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+    
+    return t('dashboard.consultation_time', { date: localizedDay, start: startTimeStr, end: endTimeStr });
+  }
+
+  return '';
+};

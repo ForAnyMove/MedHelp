@@ -25,9 +25,9 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    
+
     const pad = (n) => n.toString().padStart(2, '0');
-    
+
     return [
       pad(hours)[0], pad(hours)[1],
       pad(minutes)[0], pad(minutes)[1],
@@ -39,63 +39,50 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
 
   return (
     <SubViewScreen title={t('consultation.title')}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.unifiedBadge}>
-          <View style={styles.unifiedSection}>
-            <View style={styles.iconCircle}>
-              <Icon name="User" size={16} color={colors.p500} />
+      <View style={styles.container}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ flex: 1 }}>
+          <View style={styles.unifiedBadge}>
+            <View style={styles.unifiedSection}>
+              <Icon name="profile" size={sizes.scale(24)} color={colors.sBlue} wrapperStyle={styles.iconCircle} wrapped />
+              <Text style={styles.patientName}>{consultation.patient.firstName} {consultation.patient.lastName}</Text>
             </View>
-            <Text style={styles.patientName}>{consultation.patient.firstName} {consultation.patient.lastName}</Text>
+            <View style={styles.unifiedDivider} />
+            <View style={styles.unifiedSection}>
+              <Icon name="time" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={[styles.iconCircle]} wrapped />
+              <Text style={styles.patientName}>{consultation.time}</Text>
+            </View>
           </View>
-          <View style={styles.unifiedDivider} />
-          <View style={styles.unifiedSection}>
-             <View style={[styles.iconCircle, { backgroundColor: '#FFF0F0' }]}>
-               <Icon name="Clock" size={16} color={colors.danger} />
-             </View>
-            <Text style={styles.patientName}>{consultation.time}</Text>
-          </View>
-        </View>
 
-        <View style={styles.actionGrid}>
-          <View style={styles.row}>
-            <TouchableOpacity style={styles.actionCard}>
-              <View style={[styles.actionIcon, { backgroundColor: '#FFF0F0' }]}>
-                 <Icon name="MessageSquare" size={24} color={colors.danger} />
-              </View>
-              <Text style={styles.actionText}>{t('actions.chat')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionCard}>
-              <View style={[styles.actionIcon, { backgroundColor: '#F0F9FF' }]}>
-                 <Icon name="Video" size={24} color="#7EBFFF" />
-              </View>
-              <Text style={styles.actionText}>{t('actions.video')}</Text>
-            </TouchableOpacity>
+          <View style={styles.actionGrid}>
+            <View style={styles.row}>
+              <TouchableOpacity style={styles.actionCard}>
+                <Icon name="chat" size={sizes.scale(24)} color={colors.sCoral} wrapperStyle={[styles.actionIcon]} wrapped />
+                <Text style={styles.actionText}>{t('actions.chat')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionCard}>
+                <Icon name="video" size={sizes.scale(24)} color={colors.p500} wrapperStyle={[styles.actionIcon]} wrapped />
+                <Text style={styles.actionText}>{t('actions.video')}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.row}>
+              <TouchableOpacity style={styles.actionCard}>
+                <Icon name="medical-document" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={[styles.actionIcon]} wrapped />
+                <Text style={styles.actionText}>{t('actions.files')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionCard}>
+                <Icon name="message" size={sizes.scale(24)} color={colors.sBlue} wrapperStyle={[styles.actionIcon]} wrapped />
+                <Text style={styles.actionText}>{t('actions.messages')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.row}>
-            <TouchableOpacity style={styles.actionCard}>
-              <View style={[styles.actionIcon, { backgroundColor: '#FFF9F0' }]}>
-                 <Icon name="FileText" size={24} color="#FFC87E" />
-              </View>
-              <Text style={styles.actionText}>{t('actions.files')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionCard}>
-              <View style={[styles.actionIcon, { backgroundColor: '#F0EEFF' }]}>
-                 <Icon name="Mail" size={24} color="#8E7EFF" />
-              </View>
-              <Text style={styles.actionText}>{t('actions.messages')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        <View style={styles.timerBlock}>
-           <View style={styles.timerHeader}>
-             <View style={styles.timerIconBox}>
-               <Icon name="Clock" size={16} color={colors.danger} />
-             </View>
-             <Text style={styles.timerTitle}>{t('common.timer')}</Text>
-           </View>
-           <View style={styles.timerDivider} />
-           <View style={styles.timerGrid}>
+          <View style={styles.timerBlock}>
+            <View style={styles.timerHeader}>
+              <Icon name="timer" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={styles.timerIconBox} wrapped />
+              <Text style={styles.timerTitle}>{t('consultation.timer')}</Text>
+            </View>
+            <View style={styles.timerDivider} />
+            <View style={styles.timerGrid}>
               <View style={styles.digitBox}><Text style={styles.digit}>{digits[0]}</Text></View>
               <View style={styles.digitBox}><Text style={styles.digit}>{digits[1]}</Text></View>
               <Text style={styles.colon}>:</Text>
@@ -104,81 +91,98 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
               <Text style={styles.colon}>:</Text>
               <View style={styles.digitBox}><Text style={styles.digit}>{digits[4]}</Text></View>
               <View style={styles.digitBox}><Text style={styles.digit}>{digits[5]}</Text></View>
-           </View>
-        </View>
+            </View>
+          </View>
 
-        <View style={styles.notesBlock}>
-           <Text style={styles.blockTitle}>{t('doctor_consultation.private_notes')}</Text>
-           <View style={styles.notesInputContainer}>
-              <Text style={styles.notesLabel}>{t('doctor_consultation.important_notes')}</Text>
-              <TextInput
-                style={styles.notesInput}
-                multiline
-                placeholder={t('doctor_consultation.notes_placeholder')}
-                value={notes}
-                onChangeText={setNotes}
-                maxLength={800}
-              />
+          <View style={styles.notesBlock}>
+            <Text style={styles.blockTitle}>{t('doctor_consultation.private_notes')}</Text>
+            <View style={styles.notesInputContainer}>
+              <View style={styles.notesInputHeader}>
+                <Text style={styles.notesLabel}>{t('doctor_consultation.important_notes')}</Text>
+                <TextInput
+                  style={styles.notesInput}
+                  multiline
+                  placeholder={t('doctor_consultation.notes_placeholder')}
+                  value={notes}
+                  onChangeText={setNotes}
+                  maxLength={800}
+                />
+              </View>
               <Text style={styles.charCount}>{notes.length}/800</Text>
-           </View>
-        </View>
+            </View>
+          </View>
 
-        <TouchableOpacity style={styles.endButton} onPress={onEndConsultation}>
-           <Text style={styles.endButtonText}>{t('consultation.end_btn')}</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <View style={styles.recordingTextContainer}>
+            <Text style={styles.recordingText}>{t('consultation.recording')}</Text>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            onPress={onEndConsultation}
+            hitSlop={{ top: 20, bottom: 20, left: 50, right: 50 }}
+            style={styles.endButton}
+            activeOpacity={0.7}
+          >
+            <View style={styles.endTextContainer}>
+              <Text style={styles.endText}>{t('consultation.end_btn')}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SubViewScreen>
   );
 }
 
 const themeStyles = (theme) => ({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingBottom: theme.sizes.spacing.xl,
+    paddingBottom: theme.sizes.spacing.l,
   },
   unifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.white,
-    borderRadius: 24,
-    paddingVertical: theme.sizes.spacing.m,
-    paddingHorizontal: theme.sizes.spacing.l,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingHorizontal: theme.sizes.spacing.m,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    marginBottom: theme.sizes.spacing.xl,
+    shadowRadius: 15,
+    elevation: 3,
+    marginBottom: theme.sizes.spacing.m,
   },
   unifiedSection: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: theme.sizes.spacing.l,
   },
   unifiedDivider: {
     width: 1,
-    height: 32,
-    backgroundColor: theme.colors.n100,
+    height: '80%',
+    backgroundColor: theme.colors.n200,
     marginHorizontal: theme.sizes.spacing.m,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#E0F9F6',
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.sizes.spacing.s,
   },
   patientName: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
-    fontWeight: '700',
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
   },
   actionGrid: {
     gap: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.l,
   },
   row: {
     flexDirection: 'row',
@@ -188,8 +192,11 @@ const themeStyles = (theme) => ({
     flex: 1,
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
-    padding: theme.sizes.spacing.l,
+    paddingVertical: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.s,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -197,24 +204,22 @@ const themeStyles = (theme) => ({
     elevation: 3,
   },
   actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.sizes.spacing.s,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
+    marginRight: theme.sizes.spacing.s,
   },
   actionText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
-    fontWeight: '700',
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
   },
   timerBlock: {
     backgroundColor: theme.colors.white,
-    borderRadius: 20,
-    padding: theme.sizes.spacing.l,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.spacing.s,
     alignItems: 'stretch',
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.l,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -228,92 +233,114 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.spacing.m,
   },
   timerIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#FFF0F0',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
   },
   timerTitle: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n900,
-    fontWeight: '700',
-    marginLeft: 8,
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
+    marginLeft: theme.sizes.spacing.s,
   },
   timerDivider: {
     height: 1,
-    backgroundColor: theme.colors.n100,
-    marginBottom: theme.sizes.spacing.l,
+    backgroundColor: theme.colors.n200,
+    marginBottom: theme.sizes.spacing.m,
   },
   timerGrid: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    marginBottom: theme.sizes.spacing.s,
   },
   digitBox: {
-    width: 32,
-    height: 42,
-    backgroundColor: '#FAFAFA',
-    borderRadius: 8,
+    width: theme.sizes.scale(24),
+    height: theme.sizes.scale(32),
+    backgroundColor: theme.colors.bg,
+    borderRadius: theme.sizes.borderRadius.small,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E8EBED',
+    borderWidth: 2,
+    borderColor: theme.colors.n300,
+    marginHorizontal: theme.sizes.scale(2),
   },
   digit: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    fontFamily: 'Manrope_700Bold',
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n700,
   },
   colon: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    fontWeight: '700',
-    marginHorizontal: 2,
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n700,
   },
   notesBlock: {
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.xs,
   },
   blockTitle: {
-    ...theme.sizes.typography.h2,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.l,
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   notesInputContainer: {
     backgroundColor: theme.colors.white,
-    borderRadius: 20,
+    padding: theme.sizes.spacing.m,
+    paddingBottom: theme.sizes.spacing.s,
+    borderRadius: theme.sizes.borderRadius.large,
+  },
+  notesInputHeader: {
+    borderRadius: theme.sizes.borderRadius.large,
     borderWidth: 1,
-    borderColor: '#D3D9DE', 
-    padding: theme.sizes.spacing.l,
+    borderColor: theme.colors.n300,
+    paddingVertical: theme.sizes.spacing.s,
+    paddingHorizontal: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.xs,
   },
   notesLabel: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n300,
-    marginBottom: 8,
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.n500,
+    marginBottom: theme.sizes.spacing.xs,
   },
   notesInput: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
-    minHeight: 80,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
+    minHeight: theme.sizes.scale(80),
     textAlignVertical: 'top',
   },
   charCount: {
-    ...theme.sizes.typography.caption,
-    fontSize: 10,
-    color: theme.colors.n300,
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.n500,
     alignSelf: 'flex-end',
-    marginTop: 8,
+    marginTop: theme.sizes.spacing.xs,
+    paddingRight: theme.sizes.spacing.m,
+  },
+  recordingTextContainer: {
+    alignSelf: 'center',
+    marginTop: theme.sizes.spacing.s,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.n500,
+  },
+  recordingText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n500,
+    textAlign: 'center',
+    lineHeight: theme.sizes.scale(12),
+  },
+  footer: {
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingBottom: theme.sizes.spacing.s,
+    paddingTop: theme.sizes.spacing.m,
+    alignItems: 'center',
+    backgroundColor: theme.colors.bg,
   },
   endButton: {
-    alignItems: 'center',
-    paddingVertical: theme.sizes.spacing.m,
+    padding: theme.sizes.spacing.m,
   },
-  endButtonText: {
+  endTextContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.p500,
+  },
+  endText: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.p400,
-    fontFamily: 'Manrope_700Bold',
-    textDecorationLine: 'underline',
+    lineHeight: theme.sizes.scale(16),
+    color: theme.colors.p500,
   }
 });

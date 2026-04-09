@@ -12,18 +12,18 @@ const SimpleCalendar = ({ onSelectDate, colors, sizes }) => {
   const { t } = useTranslation();
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const month = `${t('common.months.march')} 2026`;
-  
+
   return (
     <View style={{ padding: 16 }}>
       <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' }}>{month}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 8 }}>
         {days.map(day => (
-          <TouchableOpacity 
-            key={day} 
-            style={{ 
-              width: '12%', 
-              aspectRatio: 1, 
-              justifyContent: 'center', 
+          <TouchableOpacity
+            key={day}
+            style={{
+              width: '12%',
+              aspectRatio: 1,
+              justifyContent: 'center',
               alignItems: 'center',
               backgroundColor: day === 26 ? colors.p500 : colors.p100,
               borderRadius: 8
@@ -48,7 +48,7 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
   // Filter out past times for "Today"
   const filteredTimes = React.useMemo(() => {
     if (selectedSlot.date !== availableSlots.dates[0]?.date) return availableSlots.times;
-    
+
     const now = new Date();
     // Use the time from metadata if provided, or current Date
     // Current time is 23:21, so for today most/all should be gone
@@ -86,7 +86,7 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
         <Text style={styles.sectionTitle}>{t('doctors.available_dates')}</Text>
         <TouchableOpacity style={styles.seeAll} onPress={() => setIsFullCalendarVisible(true)}>
           <Text style={styles.seeAllText}>{t('doctors.see_all')}</Text>
-          <Icon name="ChevronRight" size={14} color={colors.p500} />
+          <Icon name="arrow-right" size={sizes.scale(18)} color={colors.p500} />
         </TouchableOpacity>
       </View>
 
@@ -101,8 +101,8 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
 
       <Text style={styles.sectionTitle}>{t('doctors.available_times')}</Text>
       <View style={styles.timesScrollContainer}>
-        <ScrollView 
-          nestedScrollEnabled 
+        <ScrollView
+          nestedScrollEnabled
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.timesGrid}
         >
@@ -129,32 +129,32 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
 
       {(selectedSlot.date && selectedSlot.time) && (
         <View style={styles.selectionInfo}>
-           <View style={styles.selectionIconContainer}>
-             <Icon name="CheckCircle" size={16} color={colors.p500} />
-           </View>
-           <Text style={styles.selectionText}>
-              {t('doctors.selected_label')}{formatIsoDate(selectedSlot.date, 'full', t)} вЂў {selectedSlot.time} | ${doctorController.selectedDoctor?.price || 0}
-           </Text>
+          <View style={styles.selectionIconContainer}>
+            <Icon name="check" size={sizes.scale(24)} color={colors.p500} />
+          </View>
+          <Text style={styles.selectionText}>
+            {t('doctors.selected_label')}{formatIsoDate(selectedSlot.date, 'full', t)} • {selectedSlot.time} | ${doctorController.selectedDoctor?.price || 0}
+          </Text>
         </View>
       )}
 
       <Modal visible={isFullCalendarVisible} animationType="slide">
         <View style={styles.modalContainer}>
-           <View style={styles.modalHeader}>
-             <TouchableOpacity onPress={() => setIsFullCalendarVisible(false)}>
-               <Icon name="X" size={24} color={colors.n900} />
-             </TouchableOpacity>
-             <Text style={styles.modalTitle}>{t('doctors.select_date_modal')}</Text>
-             <View style={{ width: 24 }} />
-           </View>
-           <SimpleCalendar 
-             onSelectDate={(date) => {
-               onSelectSlot(date, selectedSlot.time);
-               setIsFullCalendarVisible(false);
-             }}
-             colors={colors}
-             sizes={sizes}
-           />
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setIsFullCalendarVisible(false)}>
+              <Icon name="X" size={24} color={colors.n900} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{t('doctors.select_date_modal')}</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <SimpleCalendar
+            onSelectDate={(date) => {
+              onSelectSlot(date, selectedSlot.time);
+              setIsFullCalendarVisible(false);
+            }}
+            colors={colors}
+            sizes={sizes}
+          />
         </View>
       </Modal>
     </View>
@@ -163,7 +163,7 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
 
 const themeStyles = (theme) => ({
   container: {
-    marginTop: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.xs,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -172,87 +172,96 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.spacing.s,
   },
   sectionTitle: {
-    ...theme.sizes.typography.h4,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.s,
+    ...theme.sizes.typography.bodyLarge,
+    fontSize: theme.sizes.scale(15),
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.xs,
   },
   seeAll: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   seeAllText: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.p500,
     marginRight: theme.sizes.spacing.xs,
   },
   datesList: {
     paddingBottom: theme.sizes.spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.n200,
+    marginBottom: theme.sizes.spacing.m,
   },
   dateItem: {
-    width: theme.sizes.scale(70),
-    paddingVertical: theme.sizes.spacing.s,
+    width: theme.sizes.scale(67),
+    paddingVertical: theme.sizes.spacing.xs,
     borderRadius: theme.sizes.borderRadius.medium,
     backgroundColor: theme.colors.p100,
     alignItems: 'center',
     marginRight: theme.sizes.spacing.s,
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   dateItemSelected: {
     backgroundColor: theme.colors.p500,
   },
   dateLabel: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodySmall,
     color: theme.colors.p500,
   },
   dateLabelSelected: {
     color: theme.colors.white,
   },
   dateValue: {
-    ...theme.sizes.typography.bodySmall,
+    ...theme.sizes.typography.bodyMedium,
     fontFamily: 'Manrope_600SemiBold',
+    fontSize: theme.sizes.scale(16),
+    lineHeight: theme.sizes.scale(20),
     color: theme.colors.p500,
+    marginTop: theme.sizes.scale(2),
   },
   dateValueSelected: {
     color: theme.colors.white,
   },
   timesScrollContainer: {
-    maxHeight: theme.sizes.scale(160), 
-    marginBottom: theme.sizes.spacing.l,
-    borderRadius: theme.sizes.borderRadius.medium,
-    backgroundColor: theme.colors.white,
-    padding: 2,
+    maxHeight: theme.sizes.scale(144),
+    marginBottom: theme.sizes.spacing.m,
+    paddingVertical: 2,
   },
   timesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: theme.sizes.spacing.xs,
+    gap: theme.sizes.spacing.s,
     paddingBottom: theme.sizes.spacing.s,
   },
   timeItem: {
-    width: '19%', // 5 columns
+    width: '18%', // Slightly smaller to fit gap comfortably
     paddingVertical: theme.sizes.spacing.s,
-    borderRadius: theme.sizes.borderRadius.small,
-    backgroundColor: theme.colors.n100,
+    borderRadius: theme.sizes.borderRadius.medium,
+    backgroundColor: theme.colors.p100,
     alignItems: 'center',
-    marginBottom: theme.sizes.spacing.xs,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    // marginBottom: theme.sizes.spacing.s,
   },
   timeItemSelected: {
     backgroundColor: theme.colors.p500,
   },
+  timeItemDisabled: {
+    backgroundColor: theme.colors.n200,
+  },
   timeText: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodySmall,
+    fontSize: theme.sizes.scale(16),
+    lineHeight: theme.sizes.scale(20),
     color: theme.colors.p500,
     fontFamily: 'Manrope_600SemiBold',
   },
   timeTextSelected: {
     color: theme.colors.white,
   },
+  timeTextDisabled: {
+    color: theme.colors.n500,
+  },
   noTimesText: {
-    ...theme.sizes.typography.bodySmall,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n500,
     textAlign: 'center',
     marginTop: theme.sizes.spacing.m,
@@ -262,15 +271,16 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.p100,
-    padding: theme.sizes.spacing.s,
+    padding: theme.sizes.spacing.xs,
+    paddingHorizontal: theme.sizes.spacing.m,
     borderRadius: theme.sizes.borderRadius.full,
-    marginBottom: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.xs,
   },
   selectionIconContainer: {
     marginRight: theme.sizes.spacing.s,
   },
   selectionText: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodySmall,
     color: theme.colors.p500,
   },
   modalContainer: {

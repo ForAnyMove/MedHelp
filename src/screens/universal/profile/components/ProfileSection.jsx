@@ -17,20 +17,18 @@ export function ProfileSection({ title, children }) {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.l,
-    marginTop: theme.sizes.spacing.xl,
+    paddingHorizontal: theme.sizes.spacing.m,
+    marginTop: theme.sizes.spacing.l,
   },
   title: {
     ...theme.sizes.typography.h3,
-    color: '#2D4A4A',
-    fontWeight: '800',
+    color: theme.colors.n700,
     marginBottom: theme.sizes.spacing.m,
   },
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: 24,
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingVertical: theme.sizes.spacing.s,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingHorizontal: theme.sizes.spacing.m,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.03,

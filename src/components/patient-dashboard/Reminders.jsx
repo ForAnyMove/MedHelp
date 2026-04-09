@@ -64,12 +64,12 @@ export function Reminders() {
                   <Text style={styles.dateTop}>{day}</Text>
                   <Text style={styles.dateBottom}>{localizedMonth}</Text>
                 </View>
-                <View style={styles.infoCol}>
+                <View style={[styles.infoCol, { maxWidth: cardWidth * 0.6 }]}>
                   <Text style={styles.title}>{t('dashboard.consultation_title')}</Text>
-                  <Text style={styles.desc}>{weekday} • {startFormatted} - {endFormatted}</Text>
+                  <Text style={styles.desc} numberOfLines={1} ellipsizeMode="tail">{weekday} • {startFormatted} - {endFormatted}</Text>
                 </View>
               </View>
-              <Icon name="ChevronRight" size={sizes.scale(20)} color={colors.p400} />
+              <Icon name="arrow-right" size={sizes.scale(24)} color={colors.p400} />
             </TouchableOpacity>
           );
         })}
@@ -127,6 +127,9 @@ const themeStyles = (theme) => ({
   dateBottom: {
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.sCoral,
+  },
+  infoCol: {
+    maxWidth: '80%',
   },
   title: {
     ...theme.sizes.typography.h4,

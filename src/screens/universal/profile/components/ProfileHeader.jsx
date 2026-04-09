@@ -3,9 +3,11 @@ import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
+import { useTheme } from '../../../../theme/ThemeContext';
 
 export function ProfileHeader({ user }) {
   const { t } = useTranslation();
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
 
   return (
@@ -17,21 +19,21 @@ export function ProfileHeader({ user }) {
       <View style={styles.topBar}>
         <Text style={styles.title}>{t('profile.title')}</Text>
         <TouchableOpacity style={styles.notificationBtn}>
-          <Icon name="Bell" size={24} color="#FFFFFF" />
+          <Icon name="notifications" size={sizes.scale(24)} color={colors.white} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.profileSection}>
         <View style={styles.avatarContainer}>
-          <Image 
-            source={{ uri: user.avatarUrl }} 
-            style={styles.avatar} 
+          <Image
+            source={{ uri: user.avatarUrl }}
+            style={styles.avatar}
           />
         </View>
         <View style={styles.nameRow}>
           <Text style={styles.name}>{`${user.firstName} ${user.lastName}`}</Text>
           <TouchableOpacity style={styles.editBtn}>
-            <Icon name="Edit2" size={18} color="#FFFFFF" />
+            <Icon name="edit" size={sizes.scale(24)} color={colors.white} />
           </TouchableOpacity>
         </View>
         <Text style={styles.email}>{user.email}</Text>
@@ -42,44 +44,43 @@ export function ProfileHeader({ user }) {
 
 const themeStyles = (theme) => ({
   container: {
-    height: 300,
-    backgroundColor: '#54DACC', // Main teal
-    paddingTop: 50,
-    paddingHorizontal: theme.sizes.spacing.l,
+    height: theme.sizes.scale(300),
+    backgroundColor: theme.colors.p400, // Main teal
+    paddingTop: theme.sizes.scale(72),
+    paddingHorizontal: theme.sizes.spacing.m,
     overflow: 'hidden',
   },
   shape1: {
     position: 'absolute',
-    top: -50,
-    left: -50,
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    top: theme.sizes.scale(-50),
+    left: theme.sizes.scale(-50),
+    width: theme.sizes.scale(250),
+    height: theme.sizes.scale(250),
+    borderRadius: theme.sizes.scale(125),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   shape2: {
     position: 'absolute',
-    bottom: -80,
-    right: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    bottom: theme.sizes.scale(-80),
+    right: theme.sizes.scale(-60),
+    width: theme.sizes.scale(200),
+    height: theme.sizes.scale(200),
+    borderRadius: theme.sizes.scale(100),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: theme.sizes.spacing.s,
   },
   title: {
     ...theme.sizes.typography.h3,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: theme.colors.white,
   },
   notificationBtn: {
-    width: 40,
-    height: 40,
+    width: theme.sizes.scale(24),
+    height: theme.sizes.scale(24),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -87,36 +88,33 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
   },
   avatarContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    padding: 2,
-    marginBottom: 12,
+    width: theme.sizes.scale(90),
+    height: theme.sizes.scale(90),
+    borderRadius: theme.sizes.scale(45),
+    borderWidth: 2,
+    borderColor: theme.colors.p200,
+    marginBottom: theme.sizes.spacing.xs,
   },
   avatar: {
     width: '100%',
     height: '100%',
-    borderRadius: 43,
+    borderRadius: theme.sizes.borderRadius.full,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
   },
   name: {
     ...theme.sizes.typography.h3,
-    color: '#FFFFFF',
-    fontWeight: '800',
-    marginRight: 8,
+    color: theme.colors.white,
+    marginRight: theme.sizes.spacing.s,
   },
-  editBtn: {
-    padding: 4,
-  },
+  editBtn: {},
   email: {
-    ...theme.sizes.typography.body,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
+    ...theme.sizes.typography.caption,
+    color: theme.colors.white,
+    fontSize: theme.sizes.scale(16),
+    lineHeight: theme.sizes.scale(20),
+    opacity: 0.8,
   },
 });

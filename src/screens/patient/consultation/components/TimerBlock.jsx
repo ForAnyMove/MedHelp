@@ -3,8 +3,10 @@ import { View, Text } from 'react-native';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
+import { useTranslation } from 'react-i18next';
 
 export function TimerBlock({ seconds = 0 }) {
+  const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
 
@@ -12,7 +14,7 @@ export function TimerBlock({ seconds = 0 }) {
     const hours = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-    
+
     return [
       String(hours).padStart(2, '0'),
       String(mins).padStart(2, '0'),
@@ -26,12 +28,10 @@ export function TimerBlock({ seconds = 0 }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.iconCircle}>
-          <Icon name="Clock" size={20} color={colors.sCoral} />
-        </View>
-        <Text style={styles.title}>Timer</Text>
+        <Icon name="timer" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={styles.iconWrapper} wrapped />
+        <Text style={styles.title}>{t('consultation.timer')}</Text>
       </View>
-      
+
       <View style={styles.divider} />
 
       <View style={styles.timerRow}>
@@ -52,8 +52,8 @@ export function TimerBlock({ seconds = 0 }) {
 const themeStyles = (theme) => ({
   container: {
     backgroundColor: theme.colors.white,
-    borderRadius: 24,
-    padding: theme.sizes.spacing.m,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.s,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -66,48 +66,46 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
     marginBottom: theme.sizes.spacing.s,
   },
-  iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFE8E8',
+  iconWrapper: {
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.sizes.spacing.s,
   },
   title: {
-    ...theme.sizes.typography.body,
-    fontWeight: '600',
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyLarge,
+    fontFamily: 'Manrope_600SemiBold',
+    color: theme.colors.n700,
   },
   divider: {
     width: '100%',
     height: 1,
-    backgroundColor: theme.colors.n100,
-    marginBottom: theme.sizes.spacing.m,
+    backgroundColor: theme.colors.n200,
+    marginBottom: theme.sizes.scale(12),
   },
   timerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: theme.sizes.scale(4),
+    marginBottom: theme.sizes.spacing.s,
   },
   digitBox: {
-    backgroundColor: '#F0F7F6',
-    borderRadius: 8,
-    width: 32,
-    height: 44,
+    backgroundColor: theme.colors.bg,
+    borderRadius: theme.sizes.borderRadius.small,
+    width: theme.sizes.scale(24),
+    height: theme.sizes.scale(32),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2EAE9',
+    borderColor: theme.colors.n300,
   },
   digitText: {
-    ...theme.sizes.typography.h3,
+    ...theme.sizes.typography.h4,
     color: theme.colors.n700,
   },
   separator: {
-    ...theme.sizes.typography.h3,
+    ...theme.sizes.typography.h4,
     color: theme.colors.n700,
-    marginHorizontal: 2,
   }
 });

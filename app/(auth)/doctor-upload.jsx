@@ -41,8 +41,8 @@ export default function DoctorUpload() {
 
       {/* Centered Logo */}
       <View style={styles.logoArea}>
-        <Image 
-          source={Images.logo} 
+        <Image
+          source={Images.logo}
           style={styles.logoImage}
           resizeMode="contain"
         />
@@ -51,24 +51,24 @@ export default function DoctorUpload() {
       {/* Content */}
       <View style={styles.content}>
         <Text style={styles.title}>{t('auth.doctor_upload_title')}</Text>
-        
+
         <View style={styles.cardsRow}>
           <TouchableOpacity style={styles.uploadCard} activeOpacity={0.7}>
-            <Icon name="plus" size={sizes.scale(20)} color={colors.p500} wrapped wrapperStyle={{ marginBottom: sizes.spacing.s }} />
+            <Icon name="plus" size={sizes.scale(24)} color={colors.p500} wrapped wrapperStyle={{ marginBottom: sizes.spacing.s }} />
             <Text style={styles.cardText}>{t('auth.doctor_upload_subtitle')}</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.uploadCard} activeOpacity={0.7}>
-            <Icon name="plus" size={sizes.scale(20)} color={colors.p500} wrapped wrapperStyle={{ marginBottom: sizes.spacing.s }} />
+            <Icon name="plus" size={sizes.scale(24)} color={colors.p500} wrapped wrapperStyle={{ marginBottom: sizes.spacing.s }} />
             <Text style={styles.cardText}>{t('auth.doctor_upload_license')}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Button 
-          title={t('auth.upload_files_btn')} 
-          variant="primary" 
+        <Button
+          title={t('auth.upload_files_btn')}
+          variant="primary"
           onPress={handleUpload}
         />
       </View>
@@ -78,7 +78,7 @@ export default function DoctorUpload() {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.s,
   },
   header: {
@@ -94,12 +94,12 @@ const themeStyles = (theme) => ({
     justifyContent: 'center',
   },
   skipText: {
-    ...theme.sizes.typography.bodyMedium,
+    ...theme.sizes.typography.h4,
     color: theme.colors.n900,
   },
   logoArea: {
     alignItems: 'center',
-    marginTop: theme.sizes.spacing.s,
+    marginTop: -theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
   },
   logoImage: {
@@ -113,7 +113,7 @@ const themeStyles = (theme) => ({
   title: {
     ...theme.sizes.typography.h3,
     color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.l,
     textAlign: 'center',
   },
   cardsRow: {
@@ -137,7 +137,7 @@ const themeStyles = (theme) => ({
     elevation: 3,
   },
   cardText: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n700,
     textAlign: 'center',
   },

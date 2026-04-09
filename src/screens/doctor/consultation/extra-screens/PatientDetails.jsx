@@ -4,10 +4,68 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
+import { transactionManager } from '../../../../managers/transactionManager';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
 
+const AiBadge = ({ value, status }) => {
+  const { colors, sizes } = useTheme();
+  // status is 'Low' or 'High'
+  const isLow = status?.toLowerCase() === 'low';
+  const color = isLow ? colors.danger : colors.warning;
+  const iconName = isLow ? 'arrow-down-small' : 'arrow-up-small';
+
+  const match = value?.match(/^([\d.]+)\s*(.*)$/);
+  const num = match ? match[1] : value;
+  const unit = match ? match[2] : '';
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: sizes.spacing.m }}>
+      <Icon name={iconName} size={sizes.scale(16)} color={color} />
+      <Text style={{ color, fontSize: sizes.scale(16), fontFamily: 'Manrope_600SemiBold', marginLeft: sizes.scale(2) }}>
+        {num}
+      </Text>
+      {!!unit && (
+        <Text style={{ color, opacity: 0.8, fontSize: sizes.scale(13), marginLeft: sizes.scale(2) }}>
+          {unit}
+        </Text>
+      )}
+    </View>
+  );
+};
+
+const AiStatusBadge = ({ status }) => {
+  const { colors, sizes } = useTheme();
+  const isLow = status?.toLowerCase() === 'low';
+  const bgColor = isLow ? colors.sCoral + '33' : colors.sYell + '33';
+  const iconColor = isLow ? colors.sCoral : colors.sYell;
+  const iconName = isLow ? 'arrow-down-small' : 'arrow-up-small';
+
+  return (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: sizes.scale(8),
+      paddingVertical: sizes.scale(4),
+      borderRadius: sizes.borderRadius.full,
+      backgroundColor: bgColor,
+      marginLeft: sizes.spacing.m,
+    }}>
+      <Icon name={iconName} size={sizes.scale(14)} color={iconColor} />
+      <Text style={{
+        ...sizes.typography.bodyMedium,
+        color: colors.n700,
+        fontFamily: 'Manrope_600SemiBold',
+        marginLeft: sizes.scale(2),
+        textTransform: 'capitalize',
+      }}>
+        {status?.toLowerCase()}
+      </Text>
+    </View>
+  );
+};
+
 export function PatientDetails({ patient, onBack }) {
-  const { colors } = useTheme();
+  const { colors, sizes } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
@@ -18,65 +76,61 @@ export function PatientDetails({ patient, onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>{t('doctor_consultation.analyses')}</Text>
         <View style={styles.row}>
-           {patient.analyses?.map(analysis => (
-             <View key={analysis.id} style={styles.analysisCard}>
-               <View style={styles.iconBox}>
-                 <Icon name="Droplets" size={20} color={colors.danger} />
-               </View>
-               <Text style={styles.analysisTitle}>{analysis.title}</Text>
-               <Text style={styles.analysisValue}>{analysis.value}</Text>
-               <Icon name={analysis.status === 'low' ? 'ArrowDown' : 'ArrowUp'} size={14} color={analysis.status === 'low' ? colors.danger : '#FFC87E'} />
-             </View>
-           ))}
+          {patient.analyses?.map(analysis => (
+            <View key={analysis.id} style={styles.analysisCard}>
+              <Icon name={analysis.icon} size={sizes.scale(24)} color={colors[analysis.iconColor]} wrapperStyle={styles.iconBox} wrapped />
+              <Text style={styles.analysisTitle} numberOfLines={1} ellipsizeMode="tail">{analysis.title}</Text>
+              <Text style={styles.analysisValue}>{analysis.value}</Text>
+              <Icon name={analysis.status === 'low' ? 'arrow-down-small' : 'arrow-up-small'} size={sizes.scale(18)} color={analysis.status === 'low' ? colors.danger : colors.warning} />
+            </View>
+          ))}
         </View>
 
         {patient.aiSummary && (
           <>
             <Text style={styles.title}>{t('doctor_consultation.ai_summary')}</Text>
             <View style={styles.aiCard}>
-               <View style={styles.aiHeader}>
-                  <View style={styles.aiIconBox}>
-                    <Icon name="Droplets" size={18} color="#FFC87E" />
+              <View style={styles.aiHeader}>
+                <Icon name="drops" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={styles.aiIconBox} wrapped />
+                <View style={styles.aiHeaderContent}>
+                  <View style={styles.aiHeaderTitleRow}>
+                    <Text style={styles.aiSummaryTitle}>{patient.aiSummary.title}</Text>
+                    <AiBadge value={patient.aiSummary.value} status={patient.aiSummary.status} />
+                    <AiStatusBadge status={patient.aiSummary.status} />
                   </View>
-                  <Text style={styles.aiSummaryTitle}>{patient.aiSummary.title}</Text>
-                  <View style={styles.aiBadge}>
-                     <Icon name="ArrowDown" size={12} color={colors.danger} />
-                     <Text style={styles.aiBadgeText}>{patient.aiSummary.value}</Text>
-                  </View>
-                  <View style={[styles.aiStatusBadge, { backgroundColor: '#FFF0F0' }]}>
-                     <Text style={[styles.aiStatusText, { color: colors.danger }]}>{patient.aiSummary.status}</Text>
-                  </View>
-               </View>
-               
-               <Text style={styles.aiNormalRange}>(Normal {patient.aiSummary.normalRange})</Text>
-               
-               <Text style={styles.aiMainText}>
-                 <Text style={{ fontWeight: '700' }}>{patient.aiSummary.title}</Text> - {patient.aiSummary.description}
-               </Text>
+                  <Text style={styles.aiNormalRange}>(Normal {patient.aiSummary.normalRange})</Text>
+                </View>
+              </View>
 
-               <View style={styles.insightBox}>
-                  <Icon name="CheckCircle" size={20} color={colors.p500} />
+              <View style={styles.aiDivider} />
+
+              <Text style={styles.aiMainText}>
+                <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{patient.aiSummary.title} -</Text> {patient.aiSummary.description}
+              </Text>
+
+              <View style={styles.insightContainer}>
+                <View style={styles.insightBox}>
+                  <Icon name="check" size={sizes.scale(24)} color={colors.p500} style={styles.circleCheck} />
                   <Text style={styles.insightText}>{patient.aiSummary.insight}</Text>
-               </View>
+                </View>
 
-               {patient.aiSummary.bullets?.map((bullet, idx) => (
-                 <View key={idx} style={styles.bulletRow}>
-                    <View style={styles.bullet} />
+                {patient.aiSummary.bullets?.map((bullet, idx) => (
+                  <View key={idx} style={styles.bulletRow}>
+                    <View style={styles.aiBullet} />
                     <Text style={styles.bulletText}>{bullet}</Text>
-                 </View>
-               ))}
+                  </View>
+                ))}
+              </View>
             </View>
 
             <Text style={styles.title}>{t('symptoms.res_cause')}</Text>
             <View style={styles.reasonsList}>
-               {patient.aiSummary.reasons?.map((reason, idx) => (
-                 <View key={idx} style={styles.reasonItem}>
-                    <View style={[styles.reasonIcon, { backgroundColor: idx === 0 ? '#FFF0F0' : idx === 1 ? '#FFF9F0' : '#F0F9FF' }]}>
-                       <Icon name="Droplet" size={16} color={idx === 0 ? '#FF7E7E' : idx === 1 ? '#FFC87E' : '#7EBFFF'} />
-                    </View>
-                    <Text style={styles.reasonText}>{reason.text}</Text>
-                 </View>
-               ))}
+              {patient.aiSummary.reasons?.map((reason, idx) => (
+                <View key={idx} style={styles.reasonItem}>
+                  <Icon name="anemia" size={sizes.scale(24)} color={idx === 0 ? colors.sCoral : idx === 1 ? colors.sYell : colors.sBlue} wrapperStyle={styles.reasonIcon} wrapped />
+                  <Text style={styles.reasonText}>{reason.text}</Text>
+                </View>
+              ))}
             </View>
           </>
         )}
@@ -87,26 +141,23 @@ export function PatientDetails({ patient, onBack }) {
 
 const themeStyles = (theme) => ({
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingBottom: theme.sizes.spacing.xl,
+    paddingBottom: theme.sizes.spacing.l,
   },
   title: {
-    ...theme.sizes.typography.h2,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.l,
-    marginTop: theme.sizes.spacing.m,
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   row: {
     flexDirection: 'row',
     gap: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.m,
   },
   analysisCard: {
-    flex: 1,
+    width: theme.sizes.scale(108),
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -114,140 +165,128 @@ const themeStyles = (theme) => ({
     elevation: 2,
   },
   iconBox: {
-    width: theme.sizes.scale(40),
-    height: theme.sizes.scale(40),
-    borderRadius: theme.sizes.borderRadius.medium,
-    backgroundColor: '#FFF0F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.sizes.spacing.s,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
+    marginBottom: theme.sizes.spacing.xs,
   },
   analysisTitle: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: 2,
+    ...theme.sizes.typography.bodyLarge,
+    fontFamily: 'Manrope_600SemiBold',
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.xs,
   },
   analysisValue: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
-    marginBottom: 4,
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.n500,
+    marginBottom: theme.sizes.spacing.xs,
   },
   aiCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
-    padding: theme.sizes.spacing.l,
+    padding: theme.sizes.spacing.m,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.m,
   },
   aiHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.sizes.spacing.s,
   },
   aiIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FFF9F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.sizes.spacing.s,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
   },
-  aiSummaryTitle: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
+  aiHeaderContent: {
     flex: 1,
+    marginLeft: theme.sizes.spacing.s,
   },
-  aiBadge: {
+  aiHeaderTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: theme.sizes.spacing.s,
   },
-  aiBadgeText: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.danger,
-    marginLeft: 2,
-    fontWeight: '700',
-  },
-  aiStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  aiStatusText: {
-    ...theme.sizes.typography.caption,
-    fontSize: 10,
-    fontWeight: '700',
+  aiSummaryTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n700,
   },
   aiNormalRange: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
-    marginBottom: theme.sizes.spacing.m,
-    marginLeft: 40,
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.n500,
+  },
+  aiDivider: {
+    height: 1,
+    backgroundColor: theme.colors.n200,
+    marginVertical: theme.sizes.spacing.s,
   },
   aiMainText: {
     ...theme.sizes.typography.bodyMedium,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.l,
-    lineHeight: 22,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
+    lineHeight: theme.sizes.scale(22),
   },
-  insightBox: {
-    flexDirection: 'row',
-    backgroundColor: '#E0F9F6',
-    borderRadius: 12,
+  insightContainer: {
+    backgroundColor: theme.colors.opacityP400,
+    borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
   },
-  insightText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
-    flex: 1,
-    marginLeft: theme.sizes.spacing.s,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  bulletRow: {
+  insightBox: {
     flexDirection: 'row',
     marginBottom: theme.sizes.spacing.s,
   },
-  bullet: {
-    width: 6,
-    height: 6,
-    borderRadius:3,
-    backgroundColor: theme.colors.p400,
-    marginTop: 6,
+  insightText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
+    flex: 1,
+  },
+  circleCheck: {
     marginRight: theme.sizes.spacing.s,
+    marginTop: theme.sizes.scale(2),
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: theme.sizes.spacing.s,
+  },
+  aiBullet: {
+    width: theme.sizes.scale(4),
+    height: theme.sizes.scale(4),
+    borderRadius: theme.sizes.borderRadius.full,
+    backgroundColor: theme.colors.n700,
+    marginTop: theme.sizes.spacing.s,
+    marginRight: theme.sizes.spacing.s,
+    marginLeft: theme.sizes.spacing.s,
   },
   bulletText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n600,
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
     flex: 1,
   },
   reasonsList: {
-    gap: theme.sizes.spacing.m,
+    gap: theme.sizes.spacing.s,
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 3,
+    marginBottom: theme.sizes.spacing.m,
   },
   reasonItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    padding: theme.sizes.spacing.m,
-    borderRadius: 12,
   },
   reasonIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.sizes.spacing.m,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
+    marginRight: theme.sizes.spacing.s,
   },
   reasonText: {
-    ...theme.sizes.typography.bodySmall,
-    color: theme.colors.n900,
-    fontWeight: '700',
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
   }
 });

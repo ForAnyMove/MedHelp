@@ -11,9 +11,9 @@ export function DoctorQuickActions() {
   const styles = useStyles(themeStyles);
 
   const actions = [
-    { id: 'review', title: t('doctor_dashboard.review_docs'), icon: 'FileText', color: '#FF7E7E' },
-    { id: 'notes', title: t('doctor_dashboard.add_notes'), icon: 'Edit3', color: '#FFC87E' },
-    { id: 'history', title: t('doctor_dashboard.history'), icon: 'Clipboard', color: '#7EBFFF' },
+    { id: 'review', title: t('doctor_dashboard.review_docs'), icon: 'medical-document', color: colors.sCoral },
+    { id: 'notes', title: t('doctor_dashboard.add_notes'), icon: 'note', color: colors.sYell },
+    { id: 'history', title: t('doctor_dashboard.history'), icon: 'medic-history', color: colors.sBlue },
   ];
 
   return (
@@ -22,10 +22,8 @@ export function DoctorQuickActions() {
       <View style={styles.grid}>
         {actions.map(action => (
           <TouchableOpacity key={action.id} style={styles.card} activeOpacity={0.7}>
-             <View style={[styles.iconBox, { backgroundColor: action.color + '15' }]}>
-               <Icon name={action.icon} size={24} color={action.color} />
-             </View>
-             <Text style={styles.title}>{action.title}</Text>
+            <Icon name={action.icon} size={sizes.scale(24)} color={action.color} wrapperStyle={styles.iconBox} wrapped />
+            <Text style={styles.title}>{action.title}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -39,8 +37,8 @@ const themeStyles = (theme) => ({
   },
   sectionTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.m,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   grid: {
     flexDirection: 'row',
@@ -51,7 +49,7 @@ const themeStyles = (theme) => ({
     flex: 1,
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
-    padding: theme.sizes.spacing.m,
+    padding: theme.sizes.scale(12),
     alignItems: 'flex-start',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -60,17 +58,16 @@ const themeStyles = (theme) => ({
     elevation: 2,
   },
   iconBox: {
-    width: theme.sizes.scale(40),
-    height: theme.sizes.scale(40),
-    borderRadius: theme.sizes.borderRadius.medium,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.sizes.spacing.s,
   },
   title: {
-    ...theme.sizes.typography.caption,
-    fontSize: theme.sizes.scale(12),
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
     fontFamily: 'Manrope_600SemiBold',
+    marginBottom: theme.sizes.spacing.m,
   }
 });

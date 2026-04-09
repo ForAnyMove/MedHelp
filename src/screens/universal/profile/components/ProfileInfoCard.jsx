@@ -24,7 +24,7 @@ const InfoRow = ({ label, value, isFirst }) => {
     <View style={styles.rowWrapper}>
       {!isFirst && <View style={styles.divider} />}
       <View style={styles.row}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.label}>{label}:</Text>
         <Text style={styles.value}>{value}</Text>
       </View>
     </View>
@@ -34,10 +34,10 @@ const InfoRow = ({ label, value, isFirst }) => {
 const themeStyles = (theme) => ({
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: 32,
-    padding: theme.sizes.spacing.l,
-    marginHorizontal: theme.sizes.spacing.l,
-    marginTop: -40, // Overlap with header as per mockup
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
+    marginHorizontal: theme.sizes.spacing.m,
+    marginTop: -theme.sizes.scale(40), // Overlap with header as per mockup
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -50,8 +50,8 @@ const themeStyles = (theme) => ({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F9F9',
-    marginVertical: 10,
+    backgroundColor: theme.colors.n200,
+    marginVertical: theme.sizes.scale(10),
   },
   row: {
     flexDirection: 'row',
@@ -59,13 +59,13 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
   },
   label: {
-    ...theme.sizes.typography.body,
-    color: '#B0BCBC',
-    fontWeight: '500',
+    ...theme.sizes.typography.bodyLarge,
+    fontSize: theme.sizes.scale(15),
+    color: theme.colors.n500,
   },
   value: {
-    ...theme.sizes.typography.body,
-    color: '#2D4A4A',
-    fontWeight: '700',
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
   },
 });

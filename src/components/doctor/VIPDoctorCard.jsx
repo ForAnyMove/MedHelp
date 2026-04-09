@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
@@ -9,23 +9,26 @@ import { DoctorAvatar } from './DoctorAvatar';
 export function VIPDoctorCard({ doctor, onPress }) {
   const { t } = useTranslation();
   const { colors, sizes } = useTheme();
+  const { width } = useWindowDimensions();
   const styles = useStyles(themeStyles);
 
+  const cardWidth = width - sizes.spacing.m * 2;
+
   return (
-    <TouchableOpacity 
-      activeOpacity={0.9} 
+    <TouchableOpacity
+      activeOpacity={0.9}
       onPress={onPress}
-      style={styles.container}
+      style={[styles.container, { width: cardWidth }]}
     >
       <View style={styles.bgCircle1} />
       <View style={styles.bgCircle2} />
       <View style={styles.bgCircle3} />
       <View style={styles.cardContent}>
         <View style={styles.leftSection}>
-          <DoctorAvatar 
-            url={doctor.avatarUrl} 
-            firstName={doctor.firstName} 
-            lastName={doctor.lastName} 
+          <DoctorAvatar
+            url={doctor.avatarUrl}
+            firstName={doctor.firstName}
+            lastName={doctor.lastName}
             size={sizes.scale(120)}
           />
         </View>
@@ -36,14 +39,14 @@ export function VIPDoctorCard({ doctor, onPress }) {
             {doctor.description}
           </Text>
           <View style={styles.buttonContainer}>
-            <Button 
-               title={t('doctors.book_btn')} 
-               variant="primary" 
-               onPress={onPress}
-               style={styles.bookButton}
-               textStyle={styles.bookButtonText}
-               icon="ArrowRight"
-               iconSide="right"
+            <Button
+              title={t('doctors.book_btn')}
+              variant="primary"
+              onPress={onPress}
+              style={styles.bookButton}
+              textStyle={styles.bookButtonText}
+              icon="arrow-forward"
+              iconSide="right"
             />
           </View>
         </View>
@@ -58,7 +61,7 @@ const themeStyles = (theme) => ({
     height: theme.sizes.scale(185),
     marginRight: theme.sizes.spacing.m,
     borderRadius: 24,
-    backgroundColor: '#73DCD0', // Brighter turquoise for main card
+    backgroundColor: theme.colors.p400, // Brighter turquoise for main card
     overflow: 'hidden',
     position: 'relative',
   },
@@ -92,7 +95,7 @@ const themeStyles = (theme) => ({
   cardContent: {
     flex: 1,
     flexDirection: 'row',
-    padding: theme.sizes.spacing.m,
+    padding: theme.sizes.spacing.s,
   },
   leftSection: {
     justifyContent: 'center',
@@ -103,22 +106,20 @@ const themeStyles = (theme) => ({
     justifyContent: 'center',
   },
   name: {
-    ...theme.sizes.typography.h3,
+    ...theme.sizes.typography.h4,
     color: theme.colors.white,
-    marginBottom: theme.sizes.scale(2),
   },
   specialization: {
-    ...theme.sizes.typography.caption,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.white,
     opacity: 0.9,
-    marginBottom: theme.sizes.spacing.s,
+    letterSpacing: 0.2,
+    marginBottom: theme.sizes.spacing.xs,
   },
   description: {
-    ...theme.sizes.typography.caption,
-    fontSize: theme.sizes.scale(10),
-    lineHeight: theme.sizes.scale(14),
+    ...theme.sizes.typography.bodySmall,
     color: theme.colors.white,
-    opacity: 0.8,
+    opacity: 0.9,
     marginBottom: theme.sizes.spacing.m,
   },
   buttonContainer: {
@@ -127,15 +128,16 @@ const themeStyles = (theme) => ({
   bookButton: {
     backgroundColor: theme.colors.white,
     paddingHorizontal: theme.sizes.spacing.xl,
-    height: theme.sizes.scale(42),
+    height: theme.sizes.scale(48),
     borderRadius: theme.sizes.borderRadius.full,
     borderWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
   },
   bookButtonText: {
+    ...theme.sizes.typography.h3,
     color: theme.colors.p500,
-    fontSize: theme.sizes.scale(14),
+    fontWeight: '700',
   }
 });
 

@@ -34,12 +34,12 @@ export function HealthNotes() {
 
 const themeStyles = (theme) => ({
   container: {
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.m,
   },
   sectionTitle: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    marginBottom: theme.sizes.spacing.m,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   list: {
     gap: theme.sizes.spacing.m,
@@ -58,7 +58,7 @@ const themeStyles = (theme) => ({
   imagePlaceholder: {
     width: theme.sizes.scale(80),
     height: theme.sizes.scale(80),
-    borderRadius: theme.sizes.borderRadius.small,
+    borderRadius: theme.sizes.borderRadius.medium,
     backgroundColor: theme.colors.n200,
     marginRight: theme.sizes.spacing.m,
   },
@@ -69,7 +69,7 @@ const themeStyles = (theme) => ({
   title: {
     ...theme.sizes.typography.bodyMedium,
     fontWeight: '600',
-    color: theme.colors.n900,
+    color: theme.colors.n700,
     marginBottom: theme.sizes.spacing.xs,
   },
   desc: {

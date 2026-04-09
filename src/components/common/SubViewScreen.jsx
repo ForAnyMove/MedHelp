@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from '../ui/Icon';
+import { useTheme } from '../../theme/ThemeContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -42,6 +43,7 @@ export function SubViewScreen({
   children,
 }) {
   const styles = useStyles(themeStyles);
+  const { sizes } = useTheme();
   const [showConfirm, setShowConfirm] = React.useState(false);
 
   // Animate in on mount
@@ -67,11 +69,11 @@ export function SubViewScreen({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Icon name="ArrowLeft" size={24} color={styles.backIcon.color} />
+          <Icon name="arrow-back" size={sizes.scale(24)} color={styles.backIcon.color} />
         </TouchableOpacity>
-        {title ? <Text style={styles.title}>{title}</Text> : null}
       </View>
 
+      {title ? <Text style={styles.title}>{title}</Text> : null}
       {/* Content */}
       {children}
 
@@ -105,12 +107,13 @@ const themeStyles = (theme) => ({
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,
+    paddingHorizontal: theme.sizes.spacing.m,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingVertical: theme.sizes.spacing.m,
+    marginTop: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.s,
   },
   backBtn: {
     marginRight: theme.sizes.spacing.m,
@@ -120,8 +123,8 @@ const themeStyles = (theme) => ({
   },
   title: {
     ...theme.sizes.typography.h3,
-    color: theme.colors.n900,
-    flex: 1,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.s,
   },
   // Modal
   overlay: {
@@ -129,7 +132,7 @@ const themeStyles = (theme) => ({
     backgroundColor: 'rgba(23, 43, 46, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
   },
   modal: {
     backgroundColor: theme.colors.white,

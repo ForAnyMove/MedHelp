@@ -6,7 +6,7 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { DoctorAvatar } from '../../../../components/doctor/DoctorAvatar';
 
-export function StatusCard({ doctor, statusText, onPress, icon = 'Clock', iconColor }) {
+export function StatusCard({ doctor, statusText, onPress, icon = 'time', iconColor }) {
   const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
@@ -14,23 +14,21 @@ export function StatusCard({ doctor, statusText, onPress, icon = 'Clock', iconCo
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.left} onPress={onPress} activeOpacity={0.7}>
-        <DoctorAvatar 
-          url={doctor.avatarUrl} 
-          firstName={doctor.firstName} 
-          lastName={doctor.lastName} 
+        <DoctorAvatar
+          url={doctor.avatarUrl}
+          firstName={doctor.firstName}
+          lastName={doctor.lastName}
           size={sizes.scale(48)}
         />
         <View style={styles.info}>
           <Text style={styles.name}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName}</Text>
         </View>
       </TouchableOpacity>
-      
+
       <View style={styles.divider} />
-      
+
       <View style={styles.right}>
-        <View style={[styles.iconBox, { backgroundColor: (iconColor || colors.sCoral) + '15' }]}>
-          <Icon name={icon} size={24} color={iconColor || colors.sCoral} />
-        </View>
+        <Icon name={icon} size={sizes.scale(24)} color={iconColor || colors.sCoral} wrapperStyle={[styles.iconBox]} wrapped />
         <View style={styles.statusInfo}>
           <Text style={styles.statusLabel}>{t('consultation.start_in')}</Text>
           <Text style={styles.statusValue}>{statusText}</Text>
@@ -43,8 +41,8 @@ export function StatusCard({ doctor, statusText, onPress, icon = 'Clock', iconCo
 const themeStyles = (theme) => ({
   container: {
     backgroundColor: theme.colors.white,
-    borderRadius: 24,
-    padding: theme.sizes.spacing.m,
+    borderRadius: theme.sizes.borderRadius.large,
+    paddingHorizontal: theme.sizes.spacing.m,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
@@ -52,7 +50,7 @@ const themeStyles = (theme) => ({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
-    marginBottom: theme.sizes.spacing.l,
+    marginBottom: theme.sizes.spacing.m,
   },
   left: {
     flex: 1,
@@ -62,16 +60,16 @@ const themeStyles = (theme) => ({
   info: {
     marginLeft: theme.sizes.spacing.s,
     flex: 1,
+    paddingVertical: theme.sizes.spacing.m,
   },
   name: {
-    ...theme.sizes.typography.h4,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
     fontSize: theme.sizes.scale(16),
-    textDecorationLine: 'underline',
   },
   divider: {
     width: 1,
-    height: '100%',
+    height: '80%',
     backgroundColor: theme.colors.n200,
     marginHorizontal: theme.sizes.spacing.m,
   },
@@ -79,11 +77,11 @@ const themeStyles = (theme) => ({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: theme.sizes.spacing.m,
   },
   iconBox: {
-    width: theme.sizes.scale(44),
-    height: theme.sizes.scale(44),
-    borderRadius: 12,
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.sizes.spacing.s,
@@ -93,11 +91,12 @@ const themeStyles = (theme) => ({
   },
   statusLabel: {
     ...theme.sizes.typography.caption,
-    color: theme.colors.n500,
+    fontSize: theme.sizes.scale(11),
+    color: theme.colors.n700,
   },
   statusValue: {
-    ...theme.sizes.typography.body,
-    fontWeight: '700',
-    color: theme.colors.n900,
+    ...theme.sizes.typography.bodyMedium,
+    fontWeight: '500',
+    color: theme.colors.n700,
   }
 });

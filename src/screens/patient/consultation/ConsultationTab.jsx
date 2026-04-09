@@ -18,39 +18,39 @@ import { BookingDetails } from './extra-screens/BookingDetails';
 export function ConsultationTab() {
   const { t } = useTranslation();
   const { consultationController, themeController: { colors, sizes } } = useComponentContext();
-  const { 
+  const {
     bookings,
     results,
-    activeSession, 
-    upcomingBooking, 
-    startConsultation, 
+    activeSession,
+    upcomingBooking,
+    startConsultation,
     endConsultation,
     resetSession,
     cancelBooking,
     getPreviousResult,
     setActiveSession
   } = consultationController;
-  
+
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  
+
   // Sync details visibility with context for swipe disable
   React.useEffect(() => {
     setIsConsultationDetailsVisible(isDetailsVisible);
   }, [isDetailsVisible]);
-  
+
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
-  
-  const { 
-    navigateToDoctors, 
-    consultationView, 
+
+  const {
+    navigateToDoctors,
+    consultationView,
     selectedSummaryBooking,
     navigateToConsultationSummary,
     navigateToConsultationMain,
     setIsConsultationDetailsVisible
   } = usePatientDashboard();
-  
+
   const styles = useStyles(themeStyles);
 
   const handleStart = () => {
@@ -64,7 +64,7 @@ export function ConsultationTab() {
   };
 
   const handleConfirmEnd = () => {
-    const currentBooking = bookings.find(b => b.id === activeSession.bookingId) 
+    const currentBooking = bookings.find(b => b.id === activeSession.bookingId)
       || results.find(r => r.id === activeSession.bookingId);
     endConsultation();
     setIsConfirmVisible(false);
@@ -88,10 +88,10 @@ export function ConsultationTab() {
           <Text style={styles.title}>{t('consultation.title')}</Text>
         </View>
         <View style={styles.emptyContainer}>
-          <Icon name="Calendar" size={64} color={colors.n300} />
+          <Icon name="calendar" size={sizes.scale(64)} color={colors.n300} />
           <Text style={styles.emptyText}>{t('consultation.empty_text')}</Text>
-          <Button 
-            title={t('consultation.go_to_doctors')} 
+          <Button
+            title={t('consultation.go_to_doctors')}
             onPress={navigateToDoctors}
             style={styles.emptyButton}
           />
@@ -101,8 +101,8 @@ export function ConsultationTab() {
   }
 
   const isOngoing = activeSession.status === 'ongoing';
-  const currentBooking = isOngoing 
-    ? bookings.find(b => b.id === activeSession.bookingId) 
+  const currentBooking = isOngoing
+    ? bookings.find(b => b.id === activeSession.bookingId)
     : upcomingBooking;
 
   if (consultationView === 'summary') {
@@ -115,19 +115,19 @@ export function ConsultationTab() {
         <View style={styles.header}>
           <Text style={styles.title}>{t('consultation.title')}</Text>
           <TouchableOpacity style={styles.calendarIcon} onPress={() => setIsCalendarVisible(true)}>
-            <Icon name="Calendar" size={24} color={colors.p500} />
+            <Icon name="calendar" size={sizes.scale(24)} color={colors.p500} />
           </TouchableOpacity>
         </View>
 
         {isOngoing ? (
-          <RegularDoctorCard 
-            doctor={currentBooking.doctor} 
+          <RegularDoctorCard
+            doctor={currentBooking.doctor}
             variant="compact"
             onProfilePress={() => handleDoctorPress(currentBooking.doctor.id)}
           />
         ) : (
-          <StatusCard 
-            doctor={currentBooking.doctor} 
+          <StatusCard
+            doctor={currentBooking.doctor}
             statusText="10m:20sec"
             onPress={() => handleDoctorPress(currentBooking.doctor.id)}
           />
@@ -138,31 +138,37 @@ export function ConsultationTab() {
         <TimerBlock seconds={activeSession.elapsedSeconds} />
 
         {isOngoing && (
-          <Text style={styles.recordingText}>{t('consultation.recording')}</Text>
+          <View style={styles.recordingTextContainer}>
+            <Text style={styles.recordingText}>{t('consultation.recording')}</Text>
+          </View>
         )}
       </ScrollView>
 
       <View style={styles.footer}>
         {isOngoing ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleEndPress}
             hitSlop={{ top: 20, bottom: 20, left: 50, right: 50 }}
             style={styles.endButton}
+            activeOpacity={0.7}
           >
-            <Text style={styles.endText}>{t('consultation.end_btn')}</Text>
+            <View style={styles.endTextContainer}>
+              <Text style={styles.endText}>{t('consultation.end_btn')}</Text>
+            </View>
           </TouchableOpacity>
         ) : (
-          <Button 
-            title={t('consultation.start_btn')} 
-            onPress={handleStart} 
+          <Button
+            title={t('consultation.start_btn')}
+            onPress={handleStart}
             style={styles.startButton}
+            textStyle={styles.startText}
           />
         )}
       </View>
 
-      <ConsultationCalendar 
-        visible={isCalendarVisible} 
-        bookings={bookings} 
+      <ConsultationCalendar
+        visible={isCalendarVisible}
+        bookings={bookings}
         onClose={() => setIsCalendarVisible(false)}
         onSelectBooking={(b) => {
           setSelectedBooking(b);
@@ -171,7 +177,7 @@ export function ConsultationTab() {
         }}
       />
 
-      <BookingDetails 
+      <BookingDetails
         visible={isDetailsVisible}
         booking={selectedBooking}
         onClose={() => setIsDetailsVisible(false)}
@@ -187,16 +193,16 @@ export function ConsultationTab() {
             <Text style={styles.confirmTitle}>{t('consultation.confirm_end_title')}</Text>
             <Text style={styles.confirmText}>{t('consultation.confirm_end_text')}</Text>
             <View style={styles.confirmButtons}>
-              <Button 
-                title={t('consultation.cancel')} 
-                variant="outlined" 
-                onPress={() => setIsConfirmVisible(false)} 
+              <Button
+                title={t('consultation.cancel')}
+                variant="outlined"
+                onPress={() => setIsConfirmVisible(false)}
                 style={styles.confirmBtn}
               />
-              <Button 
-                title={t('consultation.confirm')} 
-                variant="primary" 
-                onPress={handleConfirmEnd} 
+              <Button
+                title={t('consultation.confirm')}
+                variant="primary"
+                onPress={handleConfirmEnd}
                 style={styles.confirmBtn}
               />
             </View>
@@ -206,9 +212,9 @@ export function ConsultationTab() {
 
       {consultationView === 'summary' && selectedSummaryBooking && (
         <View style={StyleSheet.absoluteFill}>
-          <ConsultationSummary 
-            booking={selectedSummaryBooking} 
-            onClose={navigateToConsultationMain} 
+          <ConsultationSummary
+            booking={selectedSummaryBooking}
+            onClose={navigateToConsultationMain}
           />
         </View>
       )}
@@ -233,8 +239,8 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.spacing.l,
   },
   title: {
-    ...theme.sizes.typography.h2,
-    color: theme.colors.n900,
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
   },
   calendarIcon: {
     padding: theme.sizes.spacing.xs,
@@ -256,16 +262,24 @@ const themeStyles = (theme) => ({
   emptyButton: {
     width: '100%',
   },
-  recordingText: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
-    textAlign: 'center',
+  actionGrid: {
+    width: '100%',
+  },
+  recordingTextContainer: {
+    alignSelf: 'center',
     marginTop: theme.sizes.spacing.l,
-    textDecorationLine: 'underline',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.n500,
+  },
+  recordingText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n500,
+    textAlign: 'center',
+    lineHeight: theme.sizes.scale(12),
   },
   footer: {
     paddingHorizontal: theme.sizes.spacing.l,
-    paddingBottom: theme.sizes.spacing.xl,
+    paddingBottom: theme.sizes.spacing.s,
     paddingTop: theme.sizes.spacing.m,
     alignItems: 'center',
     backgroundColor: theme.colors.bg,
@@ -276,8 +290,13 @@ const themeStyles = (theme) => ({
   endButton: {
     padding: theme.sizes.spacing.m,
   },
+  endTextContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.p500,
+  },
   endText: {
-    ...theme.sizes.typography.h4,
+    ...theme.sizes.typography.h3,
+    lineHeight: theme.sizes.scale(16),
     color: theme.colors.p500,
   },
   modalOverlay: {
@@ -312,5 +331,9 @@ const themeStyles = (theme) => ({
   },
   confirmBtn: {
     flex: 1,
+  },
+  startText: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.white,
   }
 });

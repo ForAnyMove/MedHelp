@@ -2,14 +2,16 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { Switch } from '../../../../components/ui/Switch';
+import { useTheme } from '../../../../theme/ThemeContext';
 
 export function ProfileItem({ label, value, type = 'chevron', isLast = false, onPress, onToggle, isToggled, isDanger = false }) {
   const styles = useStyles(themeStyles);
+  const { colors, sizes } = useTheme();
 
   return (
     <View style={styles.wrapper}>
-      <TouchableOpacity 
-        style={styles.item} 
+      <TouchableOpacity
+        style={styles.item}
         disabled={type === 'toggle'}
         onPress={onPress}
         activeOpacity={0.7}
@@ -17,20 +19,20 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
         <Text style={[styles.label, isDanger && styles.dangerText]}>{label}</Text>
         <View style={styles.right}>
           {value && <Text style={styles.value}>{value}</Text>}
-          
+
           {type === 'toggle' ? (
-            <Switch 
+            <Switch
               value={isToggled}
               onValueChange={onToggle}
-              trackColor={{ false: '#EBF4F4', true: '#54DACC' }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#EBF4F4"
+              trackColor={{ false: colors.n200, true: colors.p500 }}
+              thumbColor={colors.white}
+              ios_backgroundColor={colors.n200}
             />
           ) : (
-            <Icon 
-              name="ChevronRight" 
-              size={18} 
-              color={isDanger ? '#F05252' : '#54DACC'} 
+            <Icon
+              name="ChevronRight"
+              size={sizes.scale(24)}
+              color={isDanger ? colors.danger : colors.p500}
             />
           )}
         </View>
@@ -48,12 +50,12 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: theme.sizes.scale(10),
   },
   label: {
-    ...theme.sizes.typography.body,
-    color: '#B0BCBC',
-    fontWeight: '500',
+    ...theme.sizes.typography.bodyLarge,
+    fontSize: theme.sizes.scale(15),
+    color: theme.colors.n500,
     flex: 1,
   },
   right: {
@@ -61,16 +63,16 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
   },
   value: {
-    ...theme.sizes.typography.body,
-    color: '#2D4A4A',
-    fontWeight: '700',
-    marginRight: 8,
+    ...theme.sizes.typography.bodyLarge,
+    color: theme.colors.n700,
+    fontFamily: 'Manrope_600SemiBold',
+    marginRight: theme.sizes.spacing.s,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F3F9F9',
+    backgroundColor: theme.colors.n200,
   },
   dangerText: {
-    color: '#F05252',
+    color: theme.colors.danger,
   },
 });

@@ -18,16 +18,16 @@ export default function Welcome() {
   return (
     <Screen style={styles.container}>
       {/* Full Screen Background */}
-      <Image 
-        source={Images.welcomeBackground} 
+      <Image
+        source={Images.welcomeBackground}
         style={[StyleSheet.absoluteFillObject, styles.backgroundImage]}
         resizeMode="cover"
       />
 
       {/* Top Logo Area */}
       <View style={styles.logoContainer}>
-        <Image 
-          source={Images.logo} 
+        <Image
+          source={Images.logo}
           style={styles.logoImage}
           resizeMode="contain"
         />
@@ -41,15 +41,15 @@ export default function Welcome() {
 
       {/* Bottom Actions */}
       <View style={styles.footer}>
-        <Button 
-          title={t('auth.login_btn')} 
-          variant="primary" 
+        <Button
+          title={t('auth.login_btn')}
+          variant="primary"
           onPress={() => router.push('/(auth)/login')}
           style={styles.button}
         />
-        <Button 
-          title={t('auth.continue_doctor_btn')} 
-          variant="outlined" 
+        <Button
+          title={t('auth.continue_doctor_btn')}
+          variant="outlined"
           onPress={() => router.push('/(auth)/login?role=doctor')}
           style={styles.button}
         />
@@ -60,9 +60,9 @@ export default function Welcome() {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.p500+'10',
+    backgroundColor: theme.colors.p500 + '10',
   },
   backgroundImage: {
     width: '100%',
