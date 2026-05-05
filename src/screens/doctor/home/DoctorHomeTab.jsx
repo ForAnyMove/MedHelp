@@ -9,13 +9,15 @@ import { TodayStatusCard } from '../../../components/doctor-dashboard/TodayStatu
 import { ProfitStatusCard } from '../../../components/doctor-dashboard/ProfitStatusCard';
 import { NextPatientCard } from '../../../components/doctor-dashboard/NextPatientCard';
 import { DoctorQuickActions } from '../../../components/doctor-dashboard/DoctorQuickActions';
-import { myDoctorProfileManager } from '../../../managers/myDoctorProfileManager';
 import { useDoctorDashboard } from '../../../context/DoctorDashboardContext';
+import { useComponentContext } from '../../../context/GlobalContext';
 
 export function DoctorHomeTab() {
   const styles = useStyles(themeStyles);
   const { navigateToPatientCard, setTabIndex, scrollViewRef } = useDoctorDashboard();
-  const data = myDoctorProfileManager.getDashboardData();
+  const { doctorProfileController } = useComponentContext();
+  
+  const data = doctorProfileController.getDashboardData();
 
   const handleConsultationPress = () => {
     setTabIndex(2); // Index of Consultation tab

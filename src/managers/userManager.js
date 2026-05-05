@@ -1,24 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 /**
  * Manager for User Profile Data.
  * Auth (session, login, logout) is owned exclusively by SessionContext.
  * Placeholder for future Supabase API calls.
  */
-export default function userManager() {
+export default function userManager(session) {
   const [user, setUser] = useState({
-    id: 'u1',
-    firstName: 'Olga',
-    lastName: 'Golovko',
-    email: 'oksana@gmail.com',
-    avatarUrl: 'https://i.pravatar.cc/300?u=olga',
-    role: 'patient',
-    phone: '+380987654321',
-    dob: '07.10.1995',
-    gender: 'Female',
-    height: '165 cm',
-    weight: '60 kg',
-    bloodType: 'A+',
+    id: session?.userId || 'u1',
+    firstName: session?.firstName || '',
+    lastName: session?.lastName || '',
+    email: session?.email || '',
+    avatarUrl: session?.avatarUrl || null,
+    role: session?.role || 'patient',
     medicalData: {
       chronicConditions: 'Not detected',
       allergies: 'Ambrosia',
@@ -35,27 +29,37 @@ export default function userManager() {
     }
   });
 
-  const initials = useMemo(() => {
-    if (!user?.firstName && !user?.lastName) return '?';
-    return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
-  }, [user]);
+  // Sync state when session is loaded or changed
+  useEffect(() => {
+    if (session) {
+      setUser(prev => ({
+        ...prev,
+        id: session.userId || prev.id,
+        firstName: session.firstName || prev.firstName,
+        lastName: session.lastName || prev.lastName,
+        email: session.email || prev.email,
+        avatarUrl: session.avatarUrl || prev.avatarUrl,
+        role: session.role || prev.role,
+      }));
+    }
+  }, [session]);
 
+  const initials = useMemo(() => {
+    if (!user?.firstName && !user?.lastName) {
+        if (!session?.firstName && !session?.lastName) return '?';
+        return `${session.firstName?.charAt(0) || ''}${session.lastName?.charAt(0) || ''}`.toUpperCase();
+    }
+    return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
+  }, [user, session]);
+// ... keep updateProfile and rest
   const updateProfile = (newData) => {
     setUser(prev => ({ ...prev, ...newData }));
-  };
-
-  const addBooking = (booking) => {
-    setUser(prev => ({
-      ...prev,
-      bookings: [...(prev.bookings || []), booking]
-    }));
   };
 
   return {
     user,
     initials,
     updateProfile,
-    addBooking,
     isLoader: false,
   };
 }

@@ -5,7 +5,7 @@ import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 
-export function ActionGrid() {
+export function ActionGrid({ onActionPress }) {
   const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
@@ -20,7 +20,12 @@ export function ActionGrid() {
   return (
     <View style={styles.grid}>
       {ACTIONS.map(action => (
-        <TouchableOpacity key={action.id} style={styles.card} activeOpacity={0.8}>
+        <TouchableOpacity 
+          key={action.id} 
+          style={styles.card} 
+          activeOpacity={0.8}
+          onPress={() => onActionPress?.(action.id)}
+        >
           <Icon name={action.icon} size={sizes.scale(24)} color={action.color} wrapperStyle={styles.iconBox} wrapped />
           <Text style={styles.label}>{action.label}</Text>
         </TouchableOpacity>

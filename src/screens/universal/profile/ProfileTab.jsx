@@ -11,35 +11,14 @@ import { ProfileItem } from './components/ProfileItem';
 import { useSession } from '../../../context/SessionContext';
 import { useRouter } from 'expo-router';
 
-/**
- * Lazily loads the doctor profile only when role === 'doctor'.
- * This ensures myDoctorProfileManager is never bundled/executed for patients.
- */
-function useDoctorProfile(isDoctor) {
-  const [doctorProfile, setDoctorProfile] = useState(null);
-
-  useEffect(() => {
-    if (!isDoctor) return;
-    let cancelled = false;
-    import('../../../managers/myDoctorProfileManager').then(({ myDoctorProfileManager }) => {
-      if (!cancelled) {
-        setDoctorProfile(myDoctorProfileManager.getDashboardData().profile);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [isDoctor]);
-
-  return doctorProfile;
-}
-
 export function ProfileTab({ role = 'patient' }) {
   const { t } = useTranslation();
   const context = useComponentContext();
   const styles = useStyles(themeStyles);
+  const { doctorProfileController } = context;
 
   const isDoctor = role === 'doctor';
-  const doctorProfile = useDoctorProfile(isDoctor);
-  const user = isDoctor ? doctorProfile : context.user;
+  const user = isDoctor ? doctorProfileController?.profile : context.user;
   const updateProfile = context.updateProfile;
   const { logout } = useSession();
   const router = useRouter();

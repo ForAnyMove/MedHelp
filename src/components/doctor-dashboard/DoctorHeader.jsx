@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
+import { Avatar } from '../common/Avatar';
 import { Icon } from '../ui/Icon';
 
 export function DoctorHeader({ profile }) {
@@ -10,12 +11,20 @@ export function DoctorHeader({ profile }) {
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
+  if (!profile) return <View style={styles.container} />;
+
   return (
     <View style={styles.container}>
       <View style={styles.leftRow}>
-        <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+        <Avatar 
+          source={profile.avatarUrl ? { uri: profile.avatarUrl } : null}
+          firstName={profile.firstName}
+          lastName={profile.lastName}
+          size={sizes.scale(29)}
+          style={styles.avatar}
+        />
         <Text style={styles.greeting}>
-          {t('doctor_dashboard.hi_dr', { name: profile.firstName })}
+          {t('doctor_dashboard.hi_dr', { name: profile.firstName || '' })}
         </Text>
       </View>
       <TouchableOpacity style={styles.notification}>

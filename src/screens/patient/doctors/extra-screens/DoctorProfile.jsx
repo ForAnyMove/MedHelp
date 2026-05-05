@@ -90,7 +90,7 @@ export function DoctorProfile() {
             <Button
               title={t('doctors.book_consultation')}
               variant="primary"
-              disabled={!selectedSlot.date || !selectedSlot.time}
+              disabled={!selectedSlot?.date || !selectedSlot?.time}
               onPress={navigateToSummary}
               style={styles.bookButton}
             />

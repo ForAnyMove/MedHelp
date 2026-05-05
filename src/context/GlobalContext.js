@@ -5,13 +5,19 @@ import userManager from '../managers/userManager';
 import doctorManager from '../managers/doctorManager';
 import consultationManager from '../managers/consultationManager';
 import historyManager from '../managers/historyManager';
+import myDoctorProfileManager from '../managers/myDoctorProfileManager';
+import { useSession } from './SessionContext';
+import { useServerTimeSync } from '../hooks/useServerTime';
 
 const ComponentContext = createContext();
 
 export const ComponentProvider = ({ children }) => {
+  const { session } = useSession();
+  useServerTimeSync(session);
+
   const themeController = themeManager();
-  const userController = userManager();
-  
+  const userController  = userManager(session);
+
   const [loadingCounter, setLoadingCounter] = useState(0);
 
   const setAppLoading = (isLoading) => {
@@ -21,9 +27,11 @@ export const ComponentProvider = ({ children }) => {
     });
   };
 
-  const consultationController = consultationManager(setAppLoading);
-  const doctorController = doctorManager(consultationController, setAppLoading);
-  const historyController = historyManager(setAppLoading);
+  // Pass session to every manager that makes API calls
+  const consultationController  = consultationManager(setAppLoading, session);
+  const doctorController        = doctorManager(consultationController, setAppLoading, session);
+  const historyController       = historyManager(setAppLoading, session);
+  const doctorProfileController = myDoctorProfileManager(setAppLoading, session);
 
   const value = {
     themeController,
@@ -31,6 +39,7 @@ export const ComponentProvider = ({ children }) => {
     doctorController,
     consultationController,
     historyController,
+    doctorProfileController,
     setAppLoading,
   };
 
@@ -57,10 +66,7 @@ export const useComponentContext = () => {
 const styles = StyleSheet.create({
   loaderContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',

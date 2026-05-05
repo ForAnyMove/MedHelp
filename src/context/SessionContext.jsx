@@ -1,39 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Asset } from 'expo-asset';
+import Constants from 'expo-constants';
 import { allImages } from '../assets';
 
 const SESSION_KEY = 'medhelp_session';
 
 const SessionContext = createContext(null);
 
-// ---- Mock auth helpers ----
-// Replace these with real Supabase calls in the future
+// ---- API auth helpers ----
+const getApiUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  if (Platform.OS === 'web') return 'http://localhost:3000/api';
 
-async function mockSignInWithOtp(contact) {
-  // Simulate sending OTP
-  await new Promise(resolve => setTimeout(resolve, 800));
-  return { success: true };
-}
-
-async function mockVerifyOtp(contact, code, role) {
-  // Simulate verifying OTP — Accept any 6-digit code for now
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  if (code.length === 6) {
-    return {
-      success: true,
-      session: {
-        userId: role === 'doctor' ? 'd1' : 'p1',
-        role,
-        accessToken: `mock_token_${Date.now()}`,
-        email: contact,
-        onboarded: false, // New users are not onboarded by default
-      }
-    };
+  // Try to use the local IPv4 address exposed by Expo for physical dev devices
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    return `http://${hostUri.split(':')[0]}:3000/api`;
   }
-  return { success: false, error: 'Invalid code' };
-}
+  return 'http://10.0.2.2:3000/api'; // Android emulator fallback
+};
+
+const API_URL = getApiUrl();
 
 // ---- Storage helpers ----
 
@@ -43,7 +32,7 @@ async function loadSessionFromStorage() {
     if (Platform.OS === 'web') {
       raw = localStorage.getItem(SESSION_KEY);
     } else {
-      raw = await AsyncStorage.getItem(SESSION_KEY);
+      raw = await SecureStore.getItemAsync(SESSION_KEY);
     }
     return raw ? JSON.parse(raw) : null;
   } catch {
@@ -57,7 +46,7 @@ async function saveSessionToStorage(session) {
     if (Platform.OS === 'web') {
       localStorage.setItem(SESSION_KEY, serialized);
     } else {
-      await AsyncStorage.setItem(SESSION_KEY, serialized);
+      await SecureStore.setItemAsync(SESSION_KEY, serialized);
     }
   } catch (e) {
     console.error('Failed to save session', e);
@@ -69,7 +58,7 @@ async function clearSessionFromStorage() {
     if (Platform.OS === 'web') {
       localStorage.removeItem(SESSION_KEY);
     } else {
-      await AsyncStorage.removeItem(SESSION_KEY);
+      await SecureStore.deleteItemAsync(SESSION_KEY);
     }
   } catch (e) {
     console.error('Failed to clear session', e);
@@ -130,36 +119,112 @@ export function SessionProvider({ children }) {
   }, []);
 
   /**
-   * Simulate sending OTP to the provided contact (email/phone).
-   * Replace with supabase.auth.signInWithOtp() in production.
+   * Запрос на отправку OTP через наш Express API сервер.
    */
   const sendOtp = useCallback(async (contact) => {
-    return await mockSignInWithOtp(contact);
+    try {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact })
+      });
+      const data = await response.json();
+      return { success: data.success, error: data.error };
+    } catch (e) {
+      console.error('Send OTP error:', e);
+      return { success: false, error: 'Failed to connect to the server' };
+    }
   }, []);
 
   /**
-   * Simulate verifying OTP code.
-   * Replace with supabase.auth.verifyOtp() in production.
+   * Верификация OTP через наш Express API сервер.
    */
   const verifyOtp = useCallback(async (contact, code, role) => {
-    const result = await mockVerifyOtp(contact, code, role);
-    if (result.success) {
-      await login(result.session);
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact, code, role })
+      });
+      const json = await response.json();
+      if (json.success && json.data?.session) {
+        await login(json.data.session);
+        return { success: true, session: json.data.session };
+      }
+      return { success: false, error: json.error || 'Invalid code' };
+    } catch (e) {
+      console.error('Verify OTP error:', e);
+      return { success: false, error: 'Failed to verify code' };
     }
-    return result;
   }, [login]);
 
   /**
    * Update current session data (e.g. mark as onboarded).
    */
   const updateSession = useCallback(async (newData) => {
-    const updated = { ...session, ...newData };
-    setSession(updated);
-    await saveSessionToStorage(updated);
-  }, [session]);
+    setSession(prev => {
+      const updated = { ...prev, ...newData };
+      saveSessionToStorage(updated).catch(e => console.error('Storage save error:', e));
+      return updated;
+    });
+  }, []);
+
+  const registerProfile = useCallback(async (firstName, lastName, professionCode) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.accessToken}`
+        },
+        body: JSON.stringify({ 
+          first_name: firstName, 
+          last_name: lastName,
+          profession_code: professionCode 
+        })
+      });
+      const json = await response.json();
+      if (json.success && json.data) {
+        await updateSession({ 
+          isRegistered: json.data.isRegistered, 
+          firstName: json.data.firstName,
+          lastName: json.data.lastName,
+          avatarUrl: json.data.avatarUrl,
+          role: json.data.role,
+          professionCode: json.data.professionCode
+        });
+        return { success: true };
+      }
+      return { success: false, error: json.error || 'Failed to update profile' };
+    } catch (e) {
+      console.error('Update profile error:', e);
+      return { success: false, error: 'Network error' };
+    }
+  }, [session?.accessToken, updateSession]);
+
+  const getProfessions = useCallback(async (lang = 'ru') => {
+    try {
+      const response = await fetch(`${API_URL}/professions?lang=${lang}`);
+      const json = await response.json();
+      return json.data || [];
+    } catch (e) {
+      console.error('Fetch professions error:', e);
+      return [];
+    }
+  }, []);
 
   return (
-    <SessionContext.Provider value={{ session, isLoading, login, logout, sendOtp, verifyOtp, updateSession }}>
+    <SessionContext.Provider value={{ 
+      session, 
+      isLoading, 
+      login, 
+      logout, 
+      sendOtp, 
+      verifyOtp, 
+      updateSession, 
+      registerProfile,
+      getProfessions
+    }}>
       {children}
     </SessionContext.Provider>
   );

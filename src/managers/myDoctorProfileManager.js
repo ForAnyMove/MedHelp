@@ -1,160 +1,167 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createApiClient } from '../api/apiClient';
+import { createConsultationsApi } from '../api/consultationsApi';
+import { createDoctorsApi } from '../api/doctorsApi';
+import { createSlotsApi } from '../api/slotsApi';
+import { mapConsultationForDoctor, mapConsultationToDoctorHistory } from '../utils/consultationMapper';
 import { getIsoDateWithOffset } from '../utils/dateUtils';
 
-const doctorProfile = {
-  id: 'd1',
-  firstName: 'Dr. Olena',
-  lastName: 'Shevchenko',
-  email: 'shevchenko@gmail.com',
-  phone: '+380987654321',
-  dateOfBirth: '11.08.1975',
-  gender: 'Female',
-  specialization: 'common.specs.general', // Or simply 'General Practitioner' but we'll use translations
-  experience: '15 years',
-  education: 'Kyiv Medical University',
-  license: 'Valid',
-  workplace: 'HealthyLive Clinic',
-  aboutMe: "A specialist in interpreting test results and correcting deficiencies. I'll help you understand what's going on and what to do next.",
-  preferences: {
-    language: 'English',
-    consultationFormat: 'Online (video)',
-    acceptingNewPatients: true
-  },
-  privacy: { faceId: true },
-  avatarUrl: 'https://i.pravatar.cc/150?u=d1',
-  profitThisMonth: 360,
-  consultationsToday: 3
-};
+/**
+ * Manager for a doctor's own profile and consultation list.
+ * Converted from class-based singleton to a hook, matching other manager patterns.
+ * Receives `session` for authenticated API calls.
+ */
+export default function myDoctorProfileManager(setAppLoading, session) {
+  const [profile, setProfile]               = useState(null);
+  const [consultations, setConsultations]   = useState([]);
+  const [pastConsultations, setPast]        = useState([]);
+  const [isLoaded, setIsLoaded]             = useState(false);
 
-const mockConsultations = [
-  {
-    id: 'c1',
-    patient: {
-      id: 'p1',
-      firstName: 'Olga',
-      lastName: 'Golovko',
-      age: 34,
-      avatarUrl: 'https://i.pravatar.cc/150?u=p1',
-      symptoms: 'New symptoms uploaded.',
-      analyses: [
-        { id: 'a1', title: 'Ferritin', value: '18 ng/ml', status: 'low', shared: true, icon: 'drops', iconColor: 'sCoral' },
-        { id: 'a2', title: 'Cholesterol', value: '6.1 mmol/l', status: 'high', shared: true, icon: 'blood-analys', iconColor: 'sYell' }
-      ],
-      aiSummary: {
-        title: 'Ferritin',
-        status: 'Low',
-        value: '18 ng/ml',
-        normalRange: '30-400 ng/ml',
-        description: 'is an important indicator of iron levels in the body.',
-        insight: 'Low ferritin levels may indicate iron deficiency.',
-        bullets: [
-          'Iron is needed for oxygen delivery in the blood, energy, and immunity.',
-          '18 ng/ml is below normal (30-400 ng/ml is normal).'
-        ],
-        reasons: [
-          { id: 'r1', text: 'Iron deficiency (low meat, legumes, greens)', icon: 'Droplet' },
-          { id: 'r2', text: 'Blood loss (menstruation, frequent blood donations)', icon: 'Droplet' },
-          { id: 'r3', text: 'Pregnancy or chronic illnesses', icon: 'Droplet' }
-        ]
-      },
-      keyPoints: ['Thyroid markers', 'Table of values']
-    },
-    date: getIsoDateWithOffset(0),
-    time: '15:00',
-    type: 'Online',
-    status: 'scheduled'
-  },
-  {
-    id: 'c2',
-    patient: {
-      id: 'p2',
-      firstName: 'Anna',
-      lastName: 'Chernova',
-      age: 28,
-      avatarUrl: 'https://i.pravatar.cc/150?u=p2',
-    },
-    date: getIsoDateWithOffset(0),
-    time: '18:30',
-    type: 'Online',
-    status: 'scheduled'
-  },
-  {
-    id: 'c3',
-    patient: {
-      id: 'p3',
-      firstName: 'Petr',
-      lastName: 'Dashko',
-      age: 45,
-      avatarUrl: 'https://i.pravatar.cc/150?u=p3',
-    },
-    date: getIsoDateWithOffset(0),
-    time: '20:00',
-    type: 'Online',
-    status: 'scheduled'
-  },
-  {
-    id: 'c4',
-    patient: {
-      id: 'p4',
-      firstName: 'Mark',
-      lastName: 'Stenko',
-      age: 31,
-      avatarUrl: 'https://i.pravatar.cc/150?u=p4',
-    },
-    date: getIsoDateWithOffset(1),
-    time: '10:00',
-    type: 'Online',
-    status: 'scheduled'
-  },
-  {
-    id: 'c5',
-    patient: {
-      id: 'p5',
-      firstName: 'ALex',
-      lastName: 'Repnov',
-      age: 39,
-      avatarUrl: 'https://i.pravatar.cc/150?u=p5',
-    },
-    date: getIsoDateWithOffset(1),
-    time: '12:00',
-    type: 'Online',
-    status: 'scheduled'
-  }
-];
-
-class MyDoctorProfileManager {
-  constructor() {
-    this.profile = doctorProfile;
-    this.consultations = mockConsultations;
-  }
-
-  getDashboardData() {
-    return {
-      profile: this.profile,
-      nextConsultation: this.consultations[0],
-      consultationsTodayCount: this.profile.consultationsToday,
-      profit: this.profile.profitThisMonth
-    };
-  }
-
-  getGroupedConsultations() {
-    const today = getIsoDateWithOffset(0).split('T')[0];
-    const tomorrow = getIsoDateWithOffset(1).split('T')[0];
+  const load = useCallback(async () => {
+    if (!session?.userId) return;
     
-    return [
-      {
-        title: 'common.today',
-        data: this.consultations.filter(c => c.date.startsWith(today))
-      },
-      {
-        title: 'common.tomorrow',
-        data: this.consultations.filter(c => c.date.startsWith(tomorrow))
+    // Initial identity from session
+    setProfile({
+      id: session.userId,
+      firstName: session.firstName || '',
+      lastName: session.lastName || '',
+      fullName: `${session.firstName || ''} ${session.lastName || ''}`.trim(),
+      email: session.email || '',
+      avatarUrl: session.avatarUrl || null,
+    });
+
+    setAppLoading(true);
+    try {
+      const api        = createApiClient(session);
+
+      // Explicitly fetch latest profile data from auth to ensure name/lastName are fresh
+      const freshProfile = await api.get('/auth/profile').catch(() => null);
+      if (freshProfile) {
+        setProfile(prev => ({
+          ...prev,
+          firstName: freshProfile.firstName || prev.firstName,
+          lastName: freshProfile.lastName || prev.lastName,
+          avatarUrl: freshProfile.avatarUrl || prev.avatarUrl,
+        }));
       }
-    ];
-  }
 
-  getConsultationById(id) {
-    return this.consultations.find(c => c.id === id);
-  }
+      const consultApi = createConsultationsApi(api);
+      const doctorsApi = createDoctorsApi(api);
+
+      // Try fetching doctor specific details
+      const response = await doctorsApi.listAll().catch(() => ({ data: [] }));
+      const rawAllDoctors = response.data || [];
+      const doctorData = rawAllDoctors.find(d => d.profileId === session.userId) || null;
+      console.log('[DEBUG] myDoctorProfileManager found doctorData:', doctorData);
+      
+      if (doctorData) {
+        setProfile(prev => {
+          const fName = doctorData.firstName || prev.firstName;
+          const lName = doctorData.lastName || prev.lastName;
+          return {
+            ...prev,
+            ...doctorData,
+            id: doctorData.id,
+            firstName: fName,
+            lastName: lName,
+            specialization: doctorData.specialization,
+            fullName: doctorData.fullName || `${fName} ${lName}`.trim(),
+          };
+        });
+      }
+
+      const consultResp = await consultApi.list().catch(() => []);
+      const rawAll = Array.isArray(consultResp) ? consultResp : (consultResp?.data || []);
+      
+      const upcoming = rawAll.filter(
+        c => c.status !== 'completed' && c.status !== 'canceled'
+      );
+      setConsultations(upcoming.map(mapConsultationForDoctor).sort((a, b) => new Date(a.date) - new Date(b.date)));
+
+      const completedResp = await consultApi.list({ status: 'completed' }).catch(() => []);
+      const rawCompleted = Array.isArray(completedResp) ? completedResp : (completedResp?.data || []);
+      setPast(rawCompleted.map(mapConsultationToDoctorHistory));
+
+    } catch (err) {
+      console.error('[myDoctorProfileManager] load error:', err.message);
+    } finally {
+      setAppLoading(false);
+      setIsLoaded(true);
+    }
+  }, [session?.userId, session?.firstName, session?.lastName]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // ── Derived helpers ───────────────────────────────────────────────────────
+
+  const getDashboardData = useCallback(() => {
+    const todayStr = getIsoDateWithOffset(0).split('T')[0];
+    const consultationsToday = consultations.filter(c =>
+      (c.date ?? '').startsWith(todayStr)
+    );
+    return {
+      profile,
+      nextConsultation:        consultations[0] ?? null,
+      consultationsTodayCount: consultationsToday.length,
+    };
+  }, [profile, consultations]);
+
+  const getGroupedConsultations = useCallback(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const groupsMap = {};
+    
+    // Always ensure Today and Tomorrow exist
+    groupsMap[todayStr] = [];
+    groupsMap[tomorrowStr] = [];
+
+    consultations.forEach(c => {
+      const datePart = (c.date ?? '').split('T')[0];
+      if (!groupsMap[datePart]) groupsMap[datePart] = [];
+      groupsMap[datePart].push(c);
+    });
+
+    const sortedDates = Object.keys(groupsMap).sort();
+
+    return sortedDates.map(dateKey => {
+      let title = '';
+      if (dateKey === todayStr) title = 'common.today';
+      else if (dateKey === tomorrowStr) title = 'common.tomorrow';
+      else {
+        const d = new Date(dateKey);
+        title = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+      }
+
+      return {
+        title,
+        data: groupsMap[dateKey]
+      };
+    });
+  }, [consultations]);
+
+  const getConsultationById = useCallback(
+    (id) => consultations.find(c => c.id === id) ?? null,
+    [consultations]
+  );
+
+  const slotsApi = useMemo(() => {
+    if (!session) return null;
+    return createSlotsApi(createApiClient(session));
+  }, [session]);
+
+  return {
+    profile,
+    consultations,
+    pastConsultations,
+    isLoaded,
+    loadData: load,
+    getDashboardData,
+    getGroupedConsultations,
+    getConsultationById,
+    slotsApi
+  };
 }
-
-export const myDoctorProfileManager = new MyDoctorProfileManager();

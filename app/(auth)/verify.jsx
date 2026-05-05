@@ -17,7 +17,7 @@ export default function Verify() {
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const pinRef = useRef(null);
-  const { verifyOtp, session, isLoading } = useSession();
+  const { sendOtp, verifyOtp, session, isLoading } = useSession();
 
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,12 +34,14 @@ export default function Verify() {
     }
   }, [timer]);
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (timer === 0) {
       setTimer(30);
       setCode('');
-      // In a real app: call API to resend code here
-      console.log('OTP Resent');
+      const result = await sendOtp(contact || 'user@example.com');
+      if (!result.success) {
+        setError(result.error || 'Failed to resend code');
+      }
     }
   };
 

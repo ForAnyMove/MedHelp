@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Button } from '../../../../components/ui/Button';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
+import { Avatar } from '../../../../components/common/Avatar';
 
 export function PatientCard({ consultation, onBack, onViewDetails, onStartConsultation }) {
+  const { sizes } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
@@ -18,9 +20,15 @@ export function PatientCard({ consultation, onBack, onViewDetails, onStartConsul
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
           <View style={styles.profileRow}>
-            <Image source={{ uri: patient.avatarUrl }} style={styles.avatar} />
+            <Avatar 
+              source={patient?.avatarUrl ? { uri: patient.avatarUrl } : null}
+              firstName={patient?.firstName}
+              lastName={patient?.lastName}
+              size={sizes.scale(78)}
+              style={styles.avatar}
+            />
             <View style={styles.infoCol}>
-              <Text style={styles.name}>{patient.firstName} {patient.lastName}, {patient.age} y.o.</Text>
+              <Text style={styles.name}>{patient?.firstName || ''} {patient?.lastName || ''}, {patient?.age || '??'} y.o.</Text>
               <Text style={styles.subtitle}>{t('doctor_dashboard.new_symptoms')}</Text>
             </View>
           </View>

@@ -22,7 +22,10 @@
     "doc_estimated_time": "Estimated time: 24-48h",
     "doc_notify": "You will be notified once approved",
     "ok_btn": "Ok",
-    "skip": "Skip"
+    "skip": "Skip",
+    "required_field": "This field is required",
+    "complete_registration_title": "Complete Registration",
+    "complete_registration_desc": "Please enter your name to continue using MedHelp"
   },
   "onboarding": {
     "slide1_title": "Understand your health",
@@ -45,6 +48,8 @@
     "yes": "Yes",
     "no": "No",
     "confirm": "Confirm",
+    "continue": "Continue",
+    "cancel": "Cancel",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "months": {
@@ -249,6 +254,10 @@
     "messages": "Messages"
   },
   "profile": {
+    "first_name": "First Name",
+    "first_name_placeholder": "Enter your first name",
+    "last_name": "Last Name",
+    "last_name_placeholder": "Enter your last name",
     "title": "Profile",
     "medical_data": "Medical data",
     "chronic_conditions": "Chronic conditions:",
@@ -323,5 +332,40 @@
     "no_slots_today": "No available slots for today",
     "selected_label": "Selected: ",
     "select_date_modal": "Select Date"
+  },
+  "chat": {
+    "messages": "Messages",
+    "loading": "Loading chats...",
+    "no_chats": "No active chats",
+    "send_message": "Send a message",
+    "connecting": "Connecting...",
+    "select_chat": "Select a chat to start messaging",
+    "info": "Information",
+    "online": "Online",
+    "notifications_on": "Notifications enabled",
+    "media_and_files": "Media and files",
+    "block_user": "Block user",
+    "no_messages": "No messages",
+    "last_active_recently": "Last seen recently",
+    "last_active_minutes_ago": "Last seen {{count}} min ago",
+    "last_active_today": "Last seen today at {{time}}",
+    "last_active_date": "Last seen {{date}} at {{time}}"
+  },
+  "notifications": {
+    "success": "Success",
+    "booking_created_self": "Booking successfully created",
+    "new_booking": "New booking",
+    "booking_created_patient": "{{name}} booked a consultation",
+    "booking_created_doctor": "{{name}} booked a consultation for you",
+    "new_message": "New message",
+    "consultation_started": "Consultation started",
+    "doctor_waiting": "The doctor is waiting for you",
+    "canceled": "Canceled",
+    "booking_canceled_self": "You successfully canceled the consultation",
+    "booking_canceled": "Booking canceled",
+    "booking_canceled_patient": "Patient canceled the consultation",
+    "booking_canceled_doctor": "Doctor canceled the consultation",
+    "patient": "Patient",
+    "doctor": "Doctor"
   }
 }

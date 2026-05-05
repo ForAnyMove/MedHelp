@@ -14,9 +14,13 @@ import { TimerBlock } from './components/TimerBlock';
 import { ConsultationSummary } from './extra-screens/ConsultationSummary';
 import { ConsultationCalendar } from './extra-screens/ConsultationCalendar';
 import { BookingDetails } from './extra-screens/BookingDetails';
+import { useRouter } from 'expo-router';
+import { useSession } from '../../../context/SessionContext';
+import { getEstimatedServerDate } from '../../../hooks/useServerTime';
 
 export function ConsultationTab() {
   const { t } = useTranslation();
+  const { session } = useSession();
   const { consultationController, themeController: { colors, sizes } } = useComponentContext();
   const {
     bookings,
@@ -35,6 +39,48 @@ export function ConsultationTab() {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
+  const [statusInfo, setStatusInfo] = useState({ text: '...', label: t('consultation.start_in') });
+
+  // Update dynamic countdown
+  React.useEffect(() => {
+    if (!upcomingBooking) return;
+    
+    const update = () => {
+      const serverNow = getEstimatedServerDate();
+      const startAt = new Date(upcomingBooking.slot.date);
+      const diffMs = startAt - serverNow;
+      const diffMin = Math.floor(diffMs / 60000);
+
+      if (diffMin < 60 && diffMin > 0) {
+        setStatusInfo({
+          label: t('consultation.start_in'),
+          text: t('dashboard.starts_in_minutes', { count: diffMin })
+        });
+      } else if (diffMin <= 0) {
+        setStatusInfo({
+          label: t('consultation.start_in'),
+          text: t('dashboard.consultation_started')
+        });
+      } else {
+        const isToday = serverNow.toDateString() === startAt.toDateString();
+        const timeStr = startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        let finalStr = timeStr;
+        if (!isToday) {
+           const dateStr = `${startAt.getDate().toString().padStart(2, '0')}.${(startAt.getMonth() + 1).toString().padStart(2, '0')}`;
+           finalStr = `${timeStr}, ${dateStr}`;
+        }
+        setStatusInfo({
+          label: t('consultation.starts_at'),
+          text: finalStr
+        });
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 30000);
+    return () => clearInterval(interval);
+  }, [upcomingBooking, t]);
+
   // Sync details visibility with context for swipe disable
   React.useEffect(() => {
     setIsConsultationDetailsVisible(isDetailsVisible);
@@ -52,6 +98,7 @@ export function ConsultationTab() {
   } = usePatientDashboard();
 
   const styles = useStyles(themeStyles);
+  const router = useRouter();
 
   const handleStart = () => {
     if (upcomingBooking) {
@@ -77,6 +124,23 @@ export function ConsultationTab() {
     const prevResult = getPreviousResult(doctorId);
     if (prevResult) {
       navigateToConsultationSummary({ ...prevResult, doctor: prevResult.doctor });
+    }
+  };
+
+  const handleActionPress = async (actionId) => {
+    if (actionId === 'video' && activeSession.status === 'ongoing') {
+      try {
+        const { createApiClient } = require('../../../api/apiClient');
+        const { createConsultationsApi } = require('../../../api/consultationsApi');
+        const api = createApiClient(session);
+        const consultApi = createConsultationsApi(api);
+        
+        const { callId } = await consultApi.getOrCreateCall(activeSession.bookingId);
+        router.push(`/call/${callId}`);
+      } catch (err) {
+        console.error('Failed to start call:', err);
+        Alert.alert(t('common.error'), t('consultation.call_error_msg') || 'Failed to connect to the Call Server.');
+      }
     }
   };
 
@@ -109,6 +173,48 @@ export function ConsultationTab() {
     return <ConsultationSummary booking={selectedSummaryBooking} onClose={navigateToConsultationMain} />;
   }
 
+  // If we have bookings but none are active or upcoming in the next 30 days
+  if (!currentBooking) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('consultation.title')}</Text>
+          <TouchableOpacity style={styles.calendarIcon} onPress={() => setIsCalendarVisible(true)}>
+            <Icon name="calendar" size={sizes.scale(24)} color={colors.p500} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Icon name="calendar" size={sizes.scale(64)} color={colors.n300} />
+          <Text style={styles.emptyText}>{t('consultation.empty_text')}</Text>
+          <Button
+            title={t('consultation.go_to_doctors')}
+            onPress={navigateToDoctors}
+            style={styles.emptyButton}
+          />
+        </View>
+        <ConsultationCalendar
+          visible={isCalendarVisible}
+          bookings={bookings}
+          onClose={() => setIsCalendarVisible(false)}
+          onSelectBooking={(b) => {
+            setSelectedBooking(b);
+            setIsCalendarVisible(false);
+            setIsDetailsVisible(true);
+          }}
+        />
+        <BookingDetails
+          visible={isDetailsVisible}
+          booking={selectedBooking}
+          onClose={() => setIsDetailsVisible(false)}
+          onCancel={(id) => {
+            cancelBooking(id);
+            setIsDetailsVisible(false);
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ flex: 1 }}>
@@ -121,19 +227,20 @@ export function ConsultationTab() {
 
         {isOngoing ? (
           <RegularDoctorCard
-            doctor={currentBooking.doctor}
+            doctor={currentBooking.doctor || {}}
             variant="compact"
-            onProfilePress={() => handleDoctorPress(currentBooking.doctor.id)}
+            onProfilePress={() => currentBooking.doctor && handleDoctorPress(currentBooking.doctor.id)}
           />
         ) : (
           <StatusCard
-            doctor={currentBooking.doctor}
-            statusText="10m:20sec"
-            onPress={() => handleDoctorPress(currentBooking.doctor.id)}
+            doctor={currentBooking.doctor || {}}
+            statusText={statusInfo.text}
+            label={statusInfo.label}
+            onPress={() => currentBooking.doctor && handleDoctorPress(currentBooking.doctor.id)}
           />
         )}
 
-        <ActionGrid />
+        <ActionGrid onActionPress={handleActionPress} />
 
         <TimerBlock seconds={activeSession.elapsedSeconds} />
 

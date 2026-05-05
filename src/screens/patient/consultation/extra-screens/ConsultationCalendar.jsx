@@ -78,8 +78,8 @@ export function ConsultationCalendar({ visible, bookings, onClose, onSelectBooki
                        <Text style={styles.bookingTime}>{b.slot?.time || b.duration || '--:--'}</Text>
                     </View>
                     <View style={styles.bookingInfo}>
-                      <Text style={styles.bookingDoctor}>{t('doctors.dr_prefix')}{b.doctor.firstName} {b.doctor.lastName}</Text>
-                      <Text style={styles.bookingSpec}>{b.doctor.specialization}</Text>
+                      <Text style={styles.bookingDoctor}>{t('doctors.dr_prefix')}{b.doctor?.firstName || ''} {b.doctor?.lastName || ''}</Text>
+                      <Text style={styles.bookingSpec}>{b.doctor?.specialization || ''}</Text>
                     </View>
                     <Icon name="ChevronRight" size={20} color={colors.n400} />
                   </TouchableOpacity>

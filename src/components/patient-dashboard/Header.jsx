@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import i18n from '../../locales/i18n';
+import i18n, { setAppLanguage } from '../../locales/i18n';
 import { useTheme } from '../../theme/ThemeContext';
 import { useComponentContext } from '../../context/GlobalContext';
 import { useStyles } from '../../theme/useStyles';
@@ -28,7 +28,7 @@ export function Header() {
         <TouchableOpacity 
           style={styles.langBtn} 
           activeOpacity={0.7}
-          onPress={() => i18n.changeLanguage(i18n.language === 'en' ? 'ru' : 'en')}
+          onPress={() => setAppLanguage(i18n.language === 'en' ? 'ru' : 'en')}
         >
           <Text style={styles.langText}>{i18n.language.toUpperCase()}</Text>
         </TouchableOpacity>

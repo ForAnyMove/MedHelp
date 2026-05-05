@@ -22,7 +22,10 @@
     "doc_estimated_time": "Примерное время: 24-48ч",
     "doc_notify": "Мы уведомим вас после одобрения",
     "ok_btn": "Ок",
-    "skip": "Пропустить"
+    "skip": "Пропустить",
+    "required_field": "Это обязательное поле",
+    "complete_registration_title": "Завершение регистрации",
+    "complete_registration_desc": "Пожалуйста, введите ваше имя, чтобы продолжить использование MedHelp"
   },
   "onboarding": {
     "slide1_title": "Поймите своё здоровье",
@@ -45,6 +48,8 @@
     "yes": "Да",
     "no": "Нет",
     "confirm": "Подтвердить",
+    "continue": "Продолжить",
+    "cancel": "Отменить",
     "today": "Сегодня",
     "tomorrow": "Завтра",
     "months": {
@@ -86,6 +91,8 @@
     "reminders": "Напоминания",
     "consultation_title": "Консультация",
     "consultation_time": "{{date}} • {{start}} - {{end}}",
+    "starts_in_minutes": "Начнется через {{count}} мин.",
+    "consultation_started": "Консультация началась",
     "next_steps": "Следующие шаги",
     "find_doctor": "Найти врача",
     "find_doctor_desc": "На основе ваших результатов и симптомов",
@@ -131,7 +138,16 @@
     "review_docs": "Обзор\nдок-ов",
     "add_notes": "Добавить\nзаметки",
     "history": "История",
-    "profit_month": "Доход за этот месяц"
+    "profit_month": "Доход за этот месяц",
+    "manage_availability": "Управление графиком",
+    "select_dates": "Выберите даты",
+    "select_dates_first": "Пожалуйста, сначала выберите даты",
+    "working_hours": "Рабочее время",
+    "session_duration": "Длительность сеанса",
+    "apply_schedule": "Применить расписание",
+    "your_slots": "Ваши слоты",
+    "no_slots_yet": "У вас пока нет созданных слотов",
+    "slots_created": "Слоты успешно созданы"
   },
   "doctor_consultation": {
     "patient_card": "Карточка пациента",
@@ -212,13 +228,15 @@
   },
   "consultation": {
     "title": "Консультация",
+    "start_in": "Начинается через",
+    "starts_at": "Начинается в",
+    "no_consultations_day": "На этот день консультаций не запланировано",
     "empty_text": "У вас пока нет запланированных консультаций",
     "go_to_doctors": "Перейти к врачам",
     "recording": "Запись консультации",
     "calendar_title": "Календарь консультаций",
     "select_day_hint": "Выберите день, чтобы увидеть записи",
     "no_scheduled": "Нет запланированных консультаций",
-    "start_in": "Начнется через",
     "booking_details": "Детали записи",
     "timer": "Таймер",
     "cancel_booking": "Отменить запись",
@@ -249,7 +267,12 @@
     "messages": "Сообщения"
   },
   "profile": {
+    "first_name": "Имя",
+    "first_name_placeholder": "Введите ваше имя",
+    "last_name": "Фамилия",
+    "last_name_placeholder": "Введите вашу фамилию",
     "title": "Профиль",
+    "no_name": "Имя не указано",
     "medical_data": "Медицинские данные",
     "chronic_conditions": "Хронические заболевания:",
     "allergies": "Аллергии:",
@@ -323,5 +346,40 @@
     "no_slots_today": "Нет доступных слотов на сегодня",
     "selected_label": "Выбрано: ",
     "select_date_modal": "Выберите дату"
+  },
+  "chat": {
+    "messages": "Сообщения",
+    "loading": "Загрузка чатов...",
+    "no_chats": "Нет активных чатов",
+    "send_message": "Написать сообщение",
+    "connecting": "Подключение...",
+    "select_chat": "Выберите чат, чтобы начать общение",
+    "info": "Информация",
+    "online": "В сети",
+    "notifications_on": "Уведомления включены",
+    "media_and_files": "Медиа и файлы",
+    "block_user": "Заблокировать пользователя",
+    "no_messages": "Нет сообщений",
+    "last_active_recently": "Был(а) в сети недавно",
+    "last_active_minutes_ago": "{{count}} мин назад",
+    "last_active_today": "Был(а) в сети в {{time}}",
+    "last_active_date": "Был(а) в сети {{date}} в {{time}}"
+  },
+  "notifications": {
+    "success": "Успешно",
+    "booking_created_self": "Запись успешно создана",
+    "new_booking": "Новое бронирование",
+    "booking_created_patient": "{{name}} записался на консультацию",
+    "booking_created_doctor": "{{name}} записал вас на консультацию",
+    "new_message": "Новое сообщение",
+    "consultation_started": "Консультация началась",
+    "doctor_waiting": "Врач ожидает вас",
+    "canceled": "Отменена",
+    "booking_canceled_self": "Вы успешно отменили консультацию",
+    "booking_canceled": "Бронь отменена",
+    "booking_canceled_patient": "Пациент отменил консультацию",
+    "booking_canceled_doctor": "Врач отменил консультацию",
+    "patient": "Пациент",
+    "doctor": "Врач"
   }
 }

@@ -10,13 +10,15 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
 
   return (
     <View style={[styles.container, style]}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <View style={[
-        styles.inputContainer,
-        rounded && { borderRadius: sizes.scale(50) },
-        isFocused && styles.inputFocused,
-        error && styles.inputError,
-      ]}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <View 
+        style={[
+          styles.inputContainer,
+          rounded ? { borderRadius: sizes.scale(50) } : null,
+          isFocused ? styles.inputFocused : null,
+          error ? styles.inputError : null,
+        ].filter(Boolean)}
+      >
         <TextInput
           style={[styles.input, sizes.typography.bodyMedium]}
           placeholder={placeholder}
@@ -29,7 +31,7 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
           {...props}
         />
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 }
@@ -67,7 +69,6 @@ const themeStyles = (theme) => {
       flex: 1,
       color: colors.n900,
       height: '100%',
-      // Remove default web outline
       ...Platform.select({
         web: {
           outlineStyle: 'none',

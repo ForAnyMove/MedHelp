@@ -1,16 +1,18 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
+import { useRouter } from 'expo-router';
 
 export function OngoingConsultation({ consultation, onEndConsultation }) {
   const { colors, sizes } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
+  const router = useRouter();
   const [notes, setNotes] = React.useState('');
   const [timer, setTimer] = React.useState(70); // 00:01:10
 
@@ -37,6 +39,28 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
 
   const digits = formatTimer(timer);
 
+  const { session } = require('../../../../context/SessionContext').useSession();
+  const [isStartingCall, setIsStartingCall] = React.useState(false);
+
+  const handleActionPress = async (actionId) => {
+    if (actionId === 'video') {
+      try {
+        setIsStartingCall(true);
+        const { createApiClient } = require('../../../../api/apiClient');
+        const { createConsultationsApi } = require('../../../../api/consultationsApi');
+        const api = createApiClient(session);
+        const consultApi = createConsultationsApi(api);
+        
+        const { callId } = await consultApi.getOrCreateCall(consultation.id);
+        router.push(`/call/${callId}`);
+      } catch (err) {
+        console.error('Failed to start call for doctor:', err);
+      } finally {
+        setIsStartingCall(false);
+      }
+    }
+  };
+
   return (
     <SubViewScreen title={t('consultation.title')}>
       <View style={styles.container}>
@@ -55,13 +79,23 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
 
           <View style={styles.actionGrid}>
             <View style={styles.row}>
-              <TouchableOpacity style={styles.actionCard}>
+              <TouchableOpacity style={styles.actionCard} onPress={() => handleActionPress('chat')}>
                 <Icon name="chat" size={sizes.scale(24)} color={colors.sCoral} wrapperStyle={[styles.actionIcon]} wrapped />
                 <Text style={styles.actionText}>{t('actions.chat')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.actionCard}>
-                <Icon name="video" size={sizes.scale(24)} color={colors.p500} wrapperStyle={[styles.actionIcon]} wrapped />
-                <Text style={styles.actionText}>{t('actions.video')}</Text>
+              <TouchableOpacity 
+                style={styles.actionCard} 
+                onPress={() => handleActionPress('video')}
+                disabled={isStartingCall}
+              >
+                {isStartingCall ? (
+                  <View style={styles.actionIcon}>
+                    <ActivityIndicator size="small" color={colors.p500} />
+                  </View>
+                ) : (
+                  <Icon name="video" size={sizes.scale(24)} color={colors.p500} wrapperStyle={[styles.actionIcon]} wrapped />
+                )}
+                <Text style={styles.actionText}>{isStartingCall ? t('common.loading') : t('actions.video')}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.row}>

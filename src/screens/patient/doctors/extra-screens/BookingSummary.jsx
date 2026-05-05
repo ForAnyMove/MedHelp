@@ -20,11 +20,25 @@ export function BookingSummary() {
 
   const { navigateToConsultation } = usePatientDashboard();
 
+  const [isProcessing, setIsProcessing] = React.useState(false);
   const styles = useStyles(themeStyles);
 
   const handleConfirm = async () => {
-    await confirmBooking();
-    navigateToConsultation();
+    setIsProcessing(true);
+    try {
+      // payment logic placeholder (e.g. Stripe checkout)
+      // For now, simulate a network delay for confirmation
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const res = await confirmBooking();
+      if (res && navigateToConsultation) {
+        navigateToConsultation();
+      }
+    } catch (err) {
+      console.error("Booking error:", err.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!selectedDoctor || !selectedSlot.date) return null;
@@ -100,6 +114,7 @@ export function BookingSummary() {
             title={t('doctors.pay_now') || 'Pay now'}
             variant="primary"
             onPress={handleConfirm}
+            loading={isProcessing}
             style={styles.payButton}
             textStyle={styles.payButtonText}
           />

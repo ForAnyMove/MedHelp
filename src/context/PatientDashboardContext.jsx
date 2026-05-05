@@ -39,6 +39,7 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
   const navigateToDashboard = () => nav.resetToMain();
   const navigateToSymptomChecker = () => nav.navigateTo('symptom-checker');
   const navigateToDoctors = () => nav.setTabIndex(1);
+  const navigateToConsultation = () => nav.setTabIndex(2);
 
   const navigateToConsultationSummary = (booking) => {
     setSelectedSummaryBooking(booking);
@@ -71,6 +72,7 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
         navigateToDashboard,
         navigateToSymptomChecker,
         navigateToDoctors,
+        navigateToConsultation,
         navigateToConsultationSummary,
         navigateToConsultationMain,
       }}

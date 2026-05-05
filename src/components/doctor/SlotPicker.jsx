@@ -47,35 +47,54 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
 
   // Filter out past times for "Today"
   const filteredTimes = React.useMemo(() => {
-    if (selectedSlot.date !== availableSlots.dates[0]?.date) return availableSlots.times;
+    if (!selectedSlot?.date) return [];
+    const dateObj = availableSlots.dates.find(d => d.date === selectedSlot.date);
+    if (!dateObj) return [];
+    
+    const times = dateObj.slots || [];
+    const isToday = selectedSlot.date.split('T')[0] === new Date().toISOString().split('T')[0];
+
+    if (!isToday) return times;
 
     const now = new Date();
-    // Use the time from metadata if provided, or current Date
-    // Current time is 23:21, so for today most/all should be gone
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 
-    return availableSlots.times.filter(time => {
-      const [h, m] = time.split(':').map(Number);
+    return times.filter(slot => {
+      const [h, m] = slot.time.split(':').map(Number);
       if (h > currentHour) return true;
       if (h === currentHour && m > currentMinute) return true;
       return false;
     });
-  }, [selectedSlot.date, availableSlots]);
+  }, [selectedSlot?.date, availableSlots]);
 
   const renderDateItem = ({ item }) => {
     const isSelected = selectedSlot.date === item.date;
+    const isAllOccupied = item.slots.every(s => !s.isFree);
     const localizedLabel = item.label ? t(item.label) : formatIsoDate(item.date, 'weekday', t);
     const localizedDate = formatIsoDate(item.date, 'short', t);
 
     return (
       <TouchableOpacity
         activeOpacity={0.7}
+        disabled={isAllOccupied}
         onPress={() => onSelectSlot(item.date, selectedSlot.time)}
-        style={[styles.dateItem, isSelected && styles.dateItemSelected]}
+        style={[
+          styles.dateItem, 
+          isSelected && styles.dateItemSelected,
+          isAllOccupied && styles.dateItemDisabled
+        ]}
       >
-        <Text style={[styles.dateLabel, isSelected && styles.dateLabelSelected]}>{localizedLabel}</Text>
-        <Text style={[styles.dateValue, isSelected && styles.dateValueSelected]}>{localizedDate}</Text>
+        <Text style={[
+          styles.dateLabel, 
+          isSelected && styles.dateLabelSelected,
+          isAllOccupied && styles.dateLabelDisabled
+        ]}>{localizedLabel}</Text>
+        <Text style={[
+          styles.dateValue, 
+          isSelected && styles.dateValueSelected,
+          isAllOccupied && styles.dateValueDisabled
+        ]}>{localizedDate}</Text>
       </TouchableOpacity>
     );
   };
@@ -106,17 +125,28 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.timesGrid}
         >
-          {filteredTimes.map((time) => {
-            const isSelected = selectedSlot.time === time;
+          {filteredTimes.map((slot) => {
+            const isSelected = selectedSlot?.slotId === slot.id;
+            const isOccupied = !slot.isFree;
+
             return (
               <TouchableOpacity
-                key={time}
+                key={slot.id}
                 activeOpacity={0.7}
-                onPress={() => onSelectSlot(selectedSlot.date, time)}
-                style={[styles.timeItem, isSelected && styles.timeItemSelected]}
+                disabled={isOccupied}
+                onPress={() => onSelectSlot(selectedSlot.date, slot)}
+                style={[
+                  styles.timeItem, 
+                  isSelected && styles.timeItemSelected,
+                  isOccupied && styles.timeItemDisabled
+                ]}
               >
-                <Text style={[styles.timeText, isSelected && styles.timeTextSelected]}>
-                  {time}
+                <Text style={[
+                  styles.timeText, 
+                  isSelected && styles.timeTextSelected,
+                  isOccupied && styles.timeTextDisabled
+                ]}>
+                  {slot.time}
                 </Text>
               </TouchableOpacity>
             );
@@ -127,7 +157,7 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
         </ScrollView>
       </View>
 
-      {(selectedSlot.date && selectedSlot.time) && (
+      {(selectedSlot?.date && selectedSlot?.time) && (
         <View style={styles.selectionInfo}>
           <View style={styles.selectionIconContainer}>
             <Icon name="check" size={sizes.scale(24)} color={colors.p500} />
@@ -203,12 +233,18 @@ const themeStyles = (theme) => ({
   dateItemSelected: {
     backgroundColor: theme.colors.p500,
   },
+  dateItemDisabled: {
+    backgroundColor: theme.colors.n200,
+  },
   dateLabel: {
     ...theme.sizes.typography.bodySmall,
     color: theme.colors.p500,
   },
   dateLabelSelected: {
     color: theme.colors.white,
+  },
+  dateLabelDisabled: {
+    color: theme.colors.n400,
   },
   dateValue: {
     ...theme.sizes.typography.bodyMedium,
@@ -220,6 +256,9 @@ const themeStyles = (theme) => ({
   },
   dateValueSelected: {
     color: theme.colors.white,
+  },
+  dateValueDisabled: {
+    color: theme.colors.n400,
   },
   timesScrollContainer: {
     maxHeight: theme.sizes.scale(144),

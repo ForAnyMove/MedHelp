@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
+import { Avatar } from '../common/Avatar';
 
 export function NextPatientCard({ consultation, onOpenConsultation }) {
   const { colors, sizes } = useTheme();
@@ -22,10 +23,15 @@ export function NextPatientCard({ consultation, onOpenConsultation }) {
       <View style={styles.card}>
         <View style={styles.profileRow}>
           <View style={styles.avatarContainer}>
-            <Image source={{ uri: patient.avatarUrl }} style={styles.avatar} />
+            <Avatar
+              source={patient?.avatarUrl ? { uri: patient.avatarUrl } : null}
+              firstName={patient?.firstName}
+              lastName={patient?.lastName}
+              size={sizes.scale(78)}
+            />
           </View>
           <View style={styles.infoCol}>
-            <Text style={styles.name}>{patient.firstName} {patient.lastName}, {patient.age} y</Text>
+            <Text style={styles.name}>{patient?.firstName || ''} {patient?.lastName || ''}, {patient?.age || '??'} y</Text>
             <Text style={styles.subtitle}>{t('doctor_dashboard.new_symptoms')}</Text>
           </View>
         </View>

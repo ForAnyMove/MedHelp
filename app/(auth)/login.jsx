@@ -9,6 +9,7 @@ import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
 import { Images } from '../../src/assets';
+import { useSession } from '../../src/context/SessionContext';
 
 export default function Login() {
   const router = useRouter();
@@ -16,14 +17,27 @@ export default function Login() {
   const { t } = useTranslation();
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
+  const { sendOtp } = useSession();
 
   const [contact, setContact] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const isDoctor = role === 'doctor';
 
-  const handleContinue = () => {
-    // Navigate to Verification screen
-    router.push(`/(auth)/verify?role=${isDoctor ? 'doctor' : 'patient'}`);
+  const handleContinue = async () => {
+    if (contact.length < 5) return;
+    setLoading(true);
+    setErrorMsg('');
+    const result = await sendOtp(contact);
+    setLoading(false);
+
+    if (result.success) {
+      // Navigate to Verification screen and pass contact
+      router.push(`/(auth)/verify?role=${isDoctor ? 'doctor' : 'patient'}&contact=${encodeURIComponent(contact)}`);
+    } else {
+      setErrorMsg(result.error || 'Failed to send code');
+    }
   };
 
   return (
@@ -80,12 +94,15 @@ export default function Login() {
               {t('auth.terms_text')} <Text style={styles.link}>{t('auth.privacy_policy')}</Text> & <Text style={styles.link}>{t('auth.terms_of_use')}</Text>
             </Text>
 
+            {errorMsg ? <Text style={{color: 'red', textAlign: 'center', marginBottom: 10}}>{errorMsg}</Text> : null}
+
             <Button
               title={t('auth.continue_btn')}
               variant="primary"
               onPress={handleContinue}
               style={styles.button}
-              disabled={contact.length < 5}
+              disabled={contact.length < 5 || loading}
+              loading={loading}
             />
             <Button
               title={t('auth.login_google_btn')}

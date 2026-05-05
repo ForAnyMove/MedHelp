@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { Avatar } from '../../../../components/common/Avatar';
 
 export function ProfileHeader({ user }) {
   const { t } = useTranslation();
@@ -25,18 +26,24 @@ export function ProfileHeader({ user }) {
 
       <View style={styles.profileSection}>
         <View style={styles.avatarContainer}>
-          <Image
-            source={{ uri: user.avatarUrl }}
-            style={styles.avatar}
+          <Avatar
+            source={user?.avatarUrl ? { uri: user.avatarUrl } : null}
+            firstName={user?.firstName}
+            lastName={user?.lastName}
+            size={sizes.scale(90)}
           />
         </View>
         <View style={styles.nameRow}>
-          <Text style={styles.name}>{`${user.firstName} ${user.lastName}`}</Text>
+          <Text style={styles.name}>
+            {user?.firstName || user?.lastName 
+              ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+              : t('profile.no_name')}
+          </Text>
           <TouchableOpacity style={styles.editBtn}>
             <Icon name="edit" size={sizes.scale(24)} color={colors.white} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.email}>{user?.email}</Text>
       </View>
     </View>
   );
@@ -83,6 +90,7 @@ const themeStyles = (theme) => ({
     height: theme.sizes.scale(24),
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 0,
   },
   profileSection: {
     alignItems: 'center',
@@ -94,6 +102,9 @@ const themeStyles = (theme) => ({
     borderWidth: 2,
     borderColor: theme.colors.p200,
     marginBottom: theme.sizes.spacing.xs,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatar: {
     width: '100%',

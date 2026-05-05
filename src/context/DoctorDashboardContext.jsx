@@ -23,6 +23,7 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
   const [isSummarySaved, setIsSummarySaved] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [pendingTabIndex, setPendingTabIndex] = useState(null);
+  const [isAvailabilityModalVisible, setIsAvailabilityModalVisible] = useState(false);
 
   // ── Derived ───────────────────────────────────────────────────────
   /**
@@ -180,6 +181,8 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
         endConsultation,
         saveSummary,
         closeSummary,
+        isAvailabilityModalVisible,
+        setIsAvailabilityModalVisible,
         // Tab guard
         handleTabSwitchRequest,
         confirmExitSummary,

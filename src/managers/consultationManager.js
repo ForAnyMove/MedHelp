@@ -1,169 +1,136 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { getIsoDateWithOffset } from '../utils/dateUtils';
+import { createApiClient } from '../api/apiClient';
+import { createConsultationsApi } from '../api/consultationsApi';
+import { mapConsultationsToBookings, mapConsultationToBooking } from '../utils/consultationMapper';
 
 /**
- * Manager for Consultations and Active Sessions
+ * Manager for Consultations and Active Sessions.
+ * Replaces mock data with real API calls.
+ * Active session (timer) remains local state.
  */
-export default function consultationManager(setAppLoading) {
-  // Mock doctor for initial data
-  const mockDoctor = {
-    id: 'd2',
-    firstName: 'Olena',
-    lastName: 'Shevchenko',
-    specialization: 'specializations.general_practitioner',
-    rating: 4.8,
-    reviewsCount: 120,
-    experience: 10,
-    price: 25,
-    avatarUrl: null,
-  };
-
-  const [bookings, setBookings] = useState([
-    {
-      id: 'mock-booking-1',
-      doctor: mockDoctor,
-      duration: 60,
-      slot: { 
-        date: getIsoDateWithOffset(0, 9, 0), 
-        label: 'common.today', 
-      },
-      createdAt: new Date().toISOString(),
-      status: 'upcoming'
-    },
-    {
-      id: 'mock-booking-2',
-      doctor: mockDoctor,
-      duration: 30,
-      slot: { 
-        date: getIsoDateWithOffset(3, 14, 30), 
-        label: 'common.later', 
-      },
-      createdAt: new Date().toISOString(),
-      status: 'upcoming'
-    },
-    {
-      id: 'mock-booking-3',
-      doctor: mockDoctor,
-      duration: 45,
-      slot: { 
-        date: getIsoDateWithOffset(7, 11, 0), 
-        label: 'common.later', 
-      },
-      createdAt: new Date().toISOString(),
-      status: 'upcoming'
-    }
-  ]);
-
-  const [results, setResults] = useState([
-    {
-      id: 'mock-result-1',
-      doctorId: 'd2',
-      doctor: mockDoctor,
-      date: '2026-02-10T10:00:00Z',
-      duration: '45 min',
-      summary: 'During the consultation we discussed your test results.',
-      findings: [
-        'Low ferritin (iron stores) — this may indicate iron deficiency.',
-        'Elevated cholesterol level — which increases cardiovascular risk over time.',
-        'The condition is not critical, but requires correction and monitoring.'
-      ],
-      recommendations: [
-        { id: 1, text: 'Consider taking iron supplements', icon: 'check', color: '#FF7D7D' },
-        { id: 2, text: 'Assess the possible causes of the deficiency', icon: 'check', color: '#54DACC' },
-        { id: 3, text: 'Repeat tests in 4-6 weeks', icon: 'check', color: '#FFD789' },
-        { id: 4, text: 'See a doctor as soon as possible', icon: 'check', color: '#FFD789' },
-      ],
-      nextSteps: [
-        { id: 5, text: 'Consider taking iron supplements', icon: 'check', color: '#FF7D7D' },
-        { id: 6, text: 'Assess the possible causes of the deficiency', icon: 'check', color: '#54DACC' },
-      ]
-    }
-  ]);
-
+export default function consultationManager(setAppLoading, session) {
+  const [bookings, setBookings] = useState([]);
+  const [results,  setResults]  = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [activeSession, setActiveSession] = useState({
     bookingId: null,
-    status: 'idle', // 'idle', 'ongoing', 'finished'
+    status: 'idle',
     startTime: null,
     elapsedSeconds: 0,
   });
 
-  // Timer logic for ongoing consultation
+  const api        = createApiClient(session);
+  const consultApi = createConsultationsApi(api);
+
+  // ── Load consultations on mount / session change ──────────────────────────
+
+  const loadConsultations = useCallback(async () => {
+    if (!session?.userId) return;
+    try {
+      const raw = await consultApi.list();
+      const active   = mapConsultationsToBookings(raw ?? [], true);
+      const completed = (raw ?? [])
+        .filter(c => c.status === 'completed' || c.status === 'canceled');
+
+      setBookings(active);
+      setResults(completed.map(c => ({
+        id:          c.id,
+        doctorId:    c.doctor?.id,
+        doctor:      mapConsultationToBooking(c).doctor,
+        date:        c.slot?.start_at ?? c.created_at,
+        duration:    c.slot
+          ? `${Math.round((new Date(c.slot.end_at) - new Date(c.slot.start_at)) / 60000)} min`
+          : '—',
+        summary:     c.purpose ?? '',
+        findings:    [],
+        recommendations: [],
+        nextSteps:   [],
+        callId:      c.call_id ?? null,
+      })));
+    } catch (err) {
+      console.error('[consultationManager] loadConsultations error:', err.message);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, [session?.userId]);
+
+  useEffect(() => {
+    loadConsultations();
+  }, [loadConsultations]);
+
+  // ── Timer for ongoing session ─────────────────────────────────────────────
+
   useEffect(() => {
     let interval;
     if (activeSession.status === 'ongoing') {
       interval = setInterval(() => {
-        setActiveSession(prev => ({
-          ...prev,
-          elapsedSeconds: prev.elapsedSeconds + 1
-        }));
+        setActiveSession(prev => ({ ...prev, elapsedSeconds: prev.elapsedSeconds + 1 }));
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [activeSession.status]);
 
-  const addBooking = useCallback((booking) => {
-    setBookings(prev => [...prev, booking]);
-  }, []);
-
-  const cancelBooking = useCallback((bookingId) => {
-    setBookings(prev => prev.filter(b => b.id !== bookingId));
-  }, []);
+  // ── Local-only session actions (timer management) ─────────────────────────
 
   const startConsultation = useCallback((bookingId) => {
-    setActiveSession({
-      bookingId,
-      status: 'ongoing',
-      startTime: new Date().toISOString(),
-      elapsedSeconds: 0,
-    });
+    setActiveSession({ bookingId, status: 'ongoing', startTime: new Date().toISOString(), elapsedSeconds: 0 });
   }, []);
 
   const endConsultation = useCallback(() => {
-    setActiveSession(prev => ({
-      ...prev,
-      status: 'finished'
-    }));
+    setActiveSession(prev => ({ ...prev, status: 'finished' }));
   }, []);
 
   const resetSession = useCallback(() => {
-    setActiveSession({
-      bookingId: null,
-      status: 'idle',
-      startTime: null,
-      elapsedSeconds: 0,
-    });
+    setActiveSession({ bookingId: null, status: 'idle', startTime: null, elapsedSeconds: 0 });
   }, []);
 
+  // ── API-backed actions ────────────────────────────────────────────────────
+
+  /** Called by doctorManager.confirmBooking after successful POST, adds booking to state */
+  const addBooking = useCallback((rawConsultation) => {
+    const booking = mapConsultationToBooking(rawConsultation);
+    setBookings(prev => [booking, ...prev]);
+  }, []);
+
+  const cancelBooking = useCallback(async (bookingId) => {
+    setAppLoading(true);
+    try {
+      await consultApi.cancel(bookingId);
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+    } catch (err) {
+      console.error('[consultationManager] cancelBooking error:', err.message);
+      throw err;
+    } finally {
+      setAppLoading(false);
+    }
+  }, [session]);
+
+  // ── Derived state ─────────────────────────────────────────────────────────
+
   const upcomingBookings = useMemo(() => {
-    if (bookings.length === 0) return [];
-    
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // start of today
-    
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const limit = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     return bookings
       .filter(b => {
-        const bookingDate = new Date(b.slot.date);
-        return bookingDate >= now && bookingDate <= thirtyDaysFromNow;
+        const d = new Date(b.slot?.date);
+        return d >= now && d <= limit;
       })
-      .sort((a, b) => new Date(a.slot.date).getTime() - new Date(b.slot.date).getTime());
+      .sort((a, b) => new Date(a.slot?.date) - new Date(b.slot?.date));
   }, [bookings]);
 
-  const upcomingBooking = useMemo(() => {
-    return upcomingBookings.length > 0 ? upcomingBookings[0] : null;
-  }, [upcomingBookings]);
+  const upcomingBooking = useMemo(() => upcomingBookings[0] ?? null, [upcomingBookings]);
 
-  const getPreviousResult = useCallback((doctorId) => {
-    return results.find(r => r.doctorId === doctorId);
-  }, [results]);
+  const getPreviousResult = useCallback((doctorId) =>
+    results.find(r => r.doctorId === doctorId), [results]);
 
   return {
     bookings,
     results,
+    isLoaded,
     activeSession,
     upcomingBookings,
     upcomingBooking,
+    loadConsultations,
     addBooking,
     cancelBooking,
     startConsultation,

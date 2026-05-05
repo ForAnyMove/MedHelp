@@ -49,7 +49,7 @@ export function ConsultationSummary({ booking, onClose }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.summaryCardWrapper}>
           <RegularDoctorCard
-            doctor={doctor}
+            doctor={doctor || {}}
             variant="compact"
             onProfilePress={() => { }}
             containerStyle={styles.doctorCard}

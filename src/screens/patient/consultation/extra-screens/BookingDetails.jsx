@@ -27,7 +27,7 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
           </View>
 
           <RegularDoctorCard 
-            doctor={booking.doctor} 
+            doctor={booking.doctor || {}} 
             variant="compact" 
             onProfilePress={() => {}}
           />
@@ -53,7 +53,7 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
               <Icon name="CreditCard" size={20} color={colors.p500} />
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>{t('consultation.price_label')}</Text>
-                <Text style={styles.detailValue}>${booking.doctor.price}</Text>
+                <Text style={styles.detailValue}>${booking.doctor?.price || 0}</Text>
               </View>
             </View>
           </View>

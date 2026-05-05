@@ -6,7 +6,7 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { DoctorAvatar } from '../../../../components/doctor/DoctorAvatar';
 
-export function StatusCard({ doctor, statusText, onPress, icon = 'time', iconColor }) {
+export function StatusCard({ doctor, statusText, onPress, icon = 'time', iconColor, label }) {
   const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
@@ -30,7 +30,7 @@ export function StatusCard({ doctor, statusText, onPress, icon = 'time', iconCol
       <View style={styles.right}>
         <Icon name={icon} size={sizes.scale(24)} color={iconColor || colors.sCoral} wrapperStyle={[styles.iconBox]} wrapped />
         <View style={styles.statusInfo}>
-          <Text style={styles.statusLabel}>{t('consultation.start_in')}</Text>
+          <Text style={styles.statusLabel}>{label}</Text>
           <Text style={styles.statusValue}>{statusText}</Text>
         </View>
       </View>
