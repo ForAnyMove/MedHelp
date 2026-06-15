@@ -13,17 +13,14 @@ import { useSession } from '../../src/context/SessionContext';
 
 export default function Login() {
   const router = useRouter();
-  const { role } = useLocalSearchParams();
   const { t } = useTranslation();
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { sendOtp } = useSession();
 
   const [contact, setContact] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  const isDoctor = role === 'doctor';
 
   const handleContinue = async () => {
     if (contact.length < 5) return;
@@ -34,7 +31,7 @@ export default function Login() {
 
     if (result.success) {
       // Navigate to Verification screen and pass contact
-      router.push(`/(auth)/verify?role=${isDoctor ? 'doctor' : 'patient'}&contact=${encodeURIComponent(contact)}`);
+      router.push(`/(auth)/verify?contact=${encodeURIComponent(contact)}`);
     } else {
       setErrorMsg(result.error || 'Failed to send code');
     }
@@ -51,9 +48,9 @@ export default function Login() {
           <View style={styles.header}>
             <View style={styles.backButton}>
               <Icon
-                name="ArrowLeft"
+                name="arrow-back"
                 size={sizes.scale(24)}
-                color={styles.iconColor.color}
+                color={colors.p500}
                 onPress={() => router.push('/(auth)/welcome')}
               />
             </View>
@@ -69,7 +66,7 @@ export default function Login() {
           {/* Form Area */}
           <View style={styles.formContainer} accessibilityRole="form">
             <Text style={styles.title}>
-              {isDoctor ? t('auth.login_doctor_title') : t('auth.welcome_subtitle')}
+              {t('auth.welcome_subtitle')}
             </Text>
 
             <View style={styles.inputWrapper}>
@@ -94,7 +91,7 @@ export default function Login() {
               {t('auth.terms_text')} <Text style={styles.link}>{t('auth.privacy_policy')}</Text> & <Text style={styles.link}>{t('auth.terms_of_use')}</Text>
             </Text>
 
-            {errorMsg ? <Text style={{color: 'red', textAlign: 'center', marginBottom: 10}}>{errorMsg}</Text> : null}
+            {errorMsg ? <Text style={{ color: 'red', textAlign: 'center', marginBottom: 10 }}>{errorMsg}</Text> : null}
 
             <Button
               title={t('auth.continue_btn')}

@@ -6,6 +6,11 @@ export const Images = {
   onboardingBg2: require('../../assets/onboarding/onboarding-bg-2.png'),
   onboardingBg3: require('../../assets/onboarding/onboarding-bg-3.png'),
   onboardingMask1: require('../../assets/onboarding/onboarding-mask-1.png'),
+  // Choose role screen illustrations
+  patientCard: require('../../assets/illustrations/patient-card.png'),
+  doctorCard: require('../../assets/illustrations/doctor-card.png'),
+  // Profile created success screen
+  profileCreated: require('../../assets/illustrations/profile-created.png'),
 };
 
 // Return as an array for use with Asset.loadAsync

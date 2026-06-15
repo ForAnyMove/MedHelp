@@ -16,56 +16,70 @@ const getApiUrl = () => {
  * @param {object|null} session - Session from SessionContext
  * @returns {{ get, post, patch, del }}
  */
-export function createApiClient(session) {
+export function createApiClient(session, refreshSessionToken = null) {
   const BASE_URL = getApiUrl();
 
-  const buildHeaders = () => {
+  const buildHeaders = (customSession = session) => {
     const headers = { 'Content-Type': 'application/json' };
-    if (session?.accessToken) {
-      headers['Authorization'] = `Bearer ${session.accessToken}`;
+    if (customSession?.accessToken) {
+      headers['Authorization'] = `Bearer ${customSession.accessToken}`;
     } else {
       // Dev bypass — allows testing without real Supabase tokens
       headers['Authorization'] = 'Bearer mock-token';
     }
-    if (session?.userId) {
-      headers['X-Mock-User-Id'] = session.userId;
+    if (customSession?.userId) {
+      headers['X-Mock-User-Id'] = customSession.userId;
     }
     return headers;
   };
 
-  const handleResponse = async (res) => {
+  const executeRequest = async (url, options) => {
+    let res = await fetch(url, options);
+    
+    // If 401 and we have a refresh function, attempt to refresh and retry
+    if (res.status === 401 && refreshSessionToken) {
+      const newSession = await refreshSessionToken();
+      if (newSession) {
+        // Retry with new headers
+        options.headers = buildHeaders(newSession);
+        res = await fetch(url, options);
+      }
+    }
+
     let json;
     try { json = await res.json(); } catch { json = {}; }
+    
     if (!res.ok || json.success === false) {
       const err = new Error(json.error || `HTTP ${res.status}`);
       err.status = res.status;
       throw err;
     }
+    
     return json.data;
   };
 
   const get = (path, params = {}) => {
     const url = new URL(`${BASE_URL}${path}`);
     Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
-    return fetch(url.toString(), { method: 'GET', headers: buildHeaders() }).then(handleResponse);
+    return executeRequest(url.toString(), { method: 'GET', headers: buildHeaders() });
   };
 
   const post = (path, body = {}) =>
-    fetch(`${BASE_URL}${path}`, {
+    executeRequest(`${BASE_URL}${path}`, {
       method: 'POST',
       headers: buildHeaders(),
       body: JSON.stringify(body),
-    }).then(handleResponse);
+    });
 
   const patch = (path, body = {}) =>
-    fetch(`${BASE_URL}${path}`, {
+    executeRequest(`${BASE_URL}${path}`, {
       method: 'PATCH',
       headers: buildHeaders(),
       body: JSON.stringify(body),
-    }).then(handleResponse);
+    });
 
   const del = (path) =>
-    fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers: buildHeaders() }).then(handleResponse);
+    executeRequest(`${BASE_URL}${path}`, { method: 'DELETE', headers: buildHeaders() });
 
   return { get, post, patch, del };
 }

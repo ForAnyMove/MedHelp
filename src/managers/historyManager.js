@@ -11,7 +11,7 @@ import {
  * pastConsultations and doctorPastConsultations loaded from API.
  * Metrics, vitamins, and timeline remain static until a separate health-data API is built.
  */
-export default function historyManager(setAppLoading, session) {
+export default function historyManager(setAppLoading, session, refreshSessionToken) {
   // ── Static health metrics (no API yet) ───────────────────────────────────
   const [metrics] = useState({
     hemoglobin: { value: 132, label: 'history.metrics.hemoglobin', color: '#F05252' },
@@ -46,7 +46,7 @@ export default function historyManager(setAppLoading, session) {
   const loadHistory = useCallback(async () => {
     if (!session?.userId) return;
     try {
-      const api        = createApiClient(session);
+      const api        = createApiClient(session, refreshSessionToken);
       const consultApi = createConsultationsApi(api);
 
       const raw = await consultApi.list({ status: 'completed' });

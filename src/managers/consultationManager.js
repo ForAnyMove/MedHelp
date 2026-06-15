@@ -8,7 +8,7 @@ import { mapConsultationsToBookings, mapConsultationToBooking } from '../utils/c
  * Replaces mock data with real API calls.
  * Active session (timer) remains local state.
  */
-export default function consultationManager(setAppLoading, session) {
+export default function consultationManager(setAppLoading, session, refreshSessionToken) {
   const [bookings, setBookings] = useState([]);
   const [results,  setResults]  = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -19,7 +19,7 @@ export default function consultationManager(setAppLoading, session) {
     elapsedSeconds: 0,
   });
 
-  const api        = createApiClient(session);
+  const api        = createApiClient(session, refreshSessionToken);
   const consultApi = createConsultationsApi(api);
 
   // ── Load consultations on mount / session change ──────────────────────────

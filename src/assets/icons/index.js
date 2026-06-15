@@ -52,4 +52,16 @@ export const CustomIcons = {
   'upload': require('../../../assets/icons/upload.svg').default,
   'video': require('../../../assets/icons/video.svg').default,
   'medical-document': require('../../../assets/icons/medical-document.svg').default,
+  // Onboarding / registration icons
+  'gender-female': require('../../../assets/icons/gender-female.svg').default,
+  'gender-male': require('../../../assets/icons/gender-male.svg').default,
+  'doc-diploma': require('../../../assets/icons/doc-diploma.svg').default,
+  'doc-license': require('../../../assets/icons/doc-license.svg').default,
+  'doc-certificate': require('../../../assets/icons/doc-certificate.svg').default,
+  'doc-identity': require('../../../assets/icons/doc-identity.svg').default,
+  'shield-lock': require('../../../assets/icons/shield-lock.svg').default,
+  'radio-selected': require('../../../assets/icons/radio-selected.svg').default,
+  'radio-empty': require('../../../assets/icons/radio-empty.svg').default,
+  'radio-disabled': require('../../../assets/icons/radio-disabled.svg').default,
+  'search': require('../../../assets/icons/search.svg').default,
 };

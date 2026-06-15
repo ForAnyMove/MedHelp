@@ -12,8 +12,8 @@ import { useServerTimeSync } from '../hooks/useServerTime';
 const ComponentContext = createContext();
 
 export const ComponentProvider = ({ children }) => {
-  const { session } = useSession();
-  useServerTimeSync(session);
+  const { session, refreshSessionToken } = useSession();
+  useServerTimeSync(session, refreshSessionToken);
 
   const themeController = themeManager();
   const userController  = userManager(session);
@@ -27,11 +27,11 @@ export const ComponentProvider = ({ children }) => {
     });
   };
 
-  // Pass session to every manager that makes API calls
-  const consultationController  = consultationManager(setAppLoading, session);
-  const doctorController        = doctorManager(consultationController, setAppLoading, session);
-  const historyController       = historyManager(setAppLoading, session);
-  const doctorProfileController = myDoctorProfileManager(setAppLoading, session);
+  // Pass session and refreshSessionToken to every manager that makes API calls
+  const consultationController  = consultationManager(setAppLoading, session, refreshSessionToken);
+  const doctorController        = doctorManager(consultationController, setAppLoading, session, refreshSessionToken);
+  const historyController       = historyManager(setAppLoading, session, refreshSessionToken);
+  const doctorProfileController = myDoctorProfileManager(setAppLoading, session, refreshSessionToken);
 
   const value = {
     themeController,

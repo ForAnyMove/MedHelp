@@ -7,11 +7,11 @@ let isSynced = false;
 /**
  * Hook to get the current server time synchronized.
  */
-export function useServerTimeSync(session) {
+export function useServerTimeSync(session, refreshSessionToken) {
   useEffect(() => {
     if (isSynced) return;
     
-    const apiClient = createApiClient(session);
+    const apiClient = createApiClient(session, refreshSessionToken);
     apiClient.get('/common/time')
       .then(res => {
         const serverTime = res.timestamp;
@@ -20,7 +20,7 @@ export function useServerTimeSync(session) {
         isSynced = true;
       })
       .catch(err => console.error('[useServerTimeSync] Sync failed:', err));
-  }, [session]);
+  }, [session, refreshSessionToken]);
 
   return {
     getServerTime: () => new Date(Date.now() + serverOffset),

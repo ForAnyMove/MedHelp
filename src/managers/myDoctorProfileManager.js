@@ -11,7 +11,7 @@ import { getIsoDateWithOffset } from '../utils/dateUtils';
  * Converted from class-based singleton to a hook, matching other manager patterns.
  * Receives `session` for authenticated API calls.
  */
-export default function myDoctorProfileManager(setAppLoading, session) {
+export default function myDoctorProfileManager(setAppLoading, session, refreshSessionToken) {
   const [profile, setProfile]               = useState(null);
   const [consultations, setConsultations]   = useState([]);
   const [pastConsultations, setPast]        = useState([]);
@@ -32,7 +32,7 @@ export default function myDoctorProfileManager(setAppLoading, session) {
 
     setAppLoading(true);
     try {
-      const api        = createApiClient(session);
+      const api        = createApiClient(session, refreshSessionToken);
 
       // Explicitly fetch latest profile data from auth to ensure name/lastName are fresh
       const freshProfile = await api.get('/auth/profile').catch(() => null);
@@ -150,8 +150,8 @@ export default function myDoctorProfileManager(setAppLoading, session) {
 
   const slotsApi = useMemo(() => {
     if (!session) return null;
-    return createSlotsApi(createApiClient(session));
-  }, [session]);
+    return createSlotsApi(createApiClient(session, refreshSessionToken));
+  }, [session, refreshSessionToken]);
 
   return {
     profile,

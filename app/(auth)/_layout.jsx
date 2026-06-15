@@ -14,9 +14,6 @@ export default function AuthLayout() {
       <Stack.Screen name="welcome" />
       <Stack.Screen name="login" />
       <Stack.Screen name="verify" />
-      <Stack.Screen name="patient-onboarding" />
-      <Stack.Screen name="doctor-upload" />
-      <Stack.Screen name="doctor-pending" />
     </Stack>
   );
 }

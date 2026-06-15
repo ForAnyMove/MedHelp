@@ -3,7 +3,7 @@ import { View, TextInput, Text, Platform } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 
-export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style, rounded, ...props }) {
+export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style, rounded, rightElement, ...props }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const [isFocused, setIsFocused] = useState(false);
@@ -30,6 +30,7 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
           onBlur={() => setIsFocused(false)}
           {...props}
         />
+        {rightElement ? <View style={styles.rightElement}>{rightElement}</View> : null}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
@@ -81,5 +82,8 @@ const themeStyles = (theme) => {
       marginTop: sizes.spacing.xs,
       marginLeft: sizes.spacing.xs,
     },
+    rightElement: {
+      marginLeft: sizes.spacing.s,
+    }
   };
 };

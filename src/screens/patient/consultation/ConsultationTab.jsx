@@ -20,7 +20,7 @@ import { getEstimatedServerDate } from '../../../hooks/useServerTime';
 
 export function ConsultationTab() {
   const { t } = useTranslation();
-  const { session } = useSession();
+  const { session, refreshSessionToken } = useSession();
   const { consultationController, themeController: { colors, sizes } } = useComponentContext();
   const {
     bookings,
@@ -132,7 +132,7 @@ export function ConsultationTab() {
       try {
         const { createApiClient } = require('../../../api/apiClient');
         const { createConsultationsApi } = require('../../../api/consultationsApi');
-        const api = createApiClient(session);
+        const api = createApiClient(session, refreshSessionToken);
         const consultApi = createConsultationsApi(api);
         
         const { callId } = await consultApi.getOrCreateCall(activeSession.bookingId);

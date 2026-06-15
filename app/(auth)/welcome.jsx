@@ -47,12 +47,6 @@ export default function Welcome() {
           onPress={() => router.push('/(auth)/login')}
           style={styles.button}
         />
-        <Button
-          title={t('auth.continue_doctor_btn')}
-          variant="outlined"
-          onPress={() => router.push('/(auth)/login?role=doctor')}
-          style={styles.button}
-        />
       </View>
     </Screen>
   );

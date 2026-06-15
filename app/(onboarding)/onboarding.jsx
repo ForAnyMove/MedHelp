@@ -7,17 +7,15 @@ import { Screen } from '../../src/components/ui/Screen';
 import { Button } from '../../src/components/ui/Button';
 import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
-import { useSession } from '../../src/context/SessionContext';
 import { Images } from '../../src/assets';
 
-export default function PatientOnboarding() {
+export default function Onboarding() {
   const router = useRouter();
   const { t } = useTranslation();
   const pagerRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
-  const { updateSession } = useSession();
 
   const ONBOARDING_DATA = [
     {
@@ -46,18 +44,16 @@ export default function PatientOnboarding() {
     pagerRef.current?.setPage(page);
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentPage < ONBOARDING_DATA.length - 1) {
       goToPage(currentPage + 1);
     } else {
-      // Mark onboarded — NavigationManager will redirect to /home
-      await updateSession({ onboarded: true });
+      router.push('/(onboarding)/profile-setup');
     }
   };
 
-  const handleSkip = async () => {
-    // Mark onboarded — NavigationManager will redirect to /home
-    await updateSession({ onboarded: true });
+  const handleSkip = () => {
+    router.push('/(onboarding)/profile-setup');
   };
 
   const handlePageSelected = (e) => {
@@ -93,7 +89,7 @@ export default function PatientOnboarding() {
         {ONBOARDING_DATA.map((page, index) => (
           <View key={page.key} style={styles.page}>
             {/* Image with optional mask overlay */}
-            <View style={[styles.imageContainer, imageSize(index) ]}>
+            <View style={[styles.imageContainer, imageSize(index)]}>
               <Image source={page.image} style={styles.slideImage} resizeMode="contain" />
               {page.mask && (
                 <Image source={page.mask} style={styles.maskImage} resizeMode="contain" />
@@ -111,7 +107,7 @@ export default function PatientOnboarding() {
         <View style={styles.pagination}>
           {ONBOARDING_DATA.map((_, index) => (
             <TouchableOpacity
-              key={index}
+              key={index + 'dot'}
               onPress={() => goToPage(index)}
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
@@ -120,10 +116,10 @@ export default function PatientOnboarding() {
             </TouchableOpacity>
           ))}
         </View>
-        
-        <Button 
-          title={currentPage === ONBOARDING_DATA.length - 1 ? t('onboarding.start_btn') : t('onboarding.next_btn')} 
-          variant="primary" 
+
+        <Button
+          title={currentPage === ONBOARDING_DATA.length - 1 ? t('onboarding.start_btn') : t('onboarding.next_btn')}
+          variant="primary"
           onPress={handleNext}
         />
       </View>
@@ -133,7 +129,7 @@ export default function PatientOnboarding() {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.s,
   },
   header: {
@@ -204,4 +200,3 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.p500,
   }
 });
-

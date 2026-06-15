@@ -9,14 +9,14 @@ import { groupSlotsForCalendar, mapDoctor } from '../utils/consultationMapper';
  * Manager for Doctor Profiles and Booking Flow (patient-side).
  * Replaces all mock data with real API calls.
  */
-export default function doctorManager(consultationController, setAppLoading, session) {
+export default function doctorManager(consultationController, setAppLoading, session, refreshSessionToken) {
   const [doctors, setDoctors] = useState([]);
   const [currentDoctorView, setCurrentDoctorView] = useState('list');
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [availableSlots, setAvailableSlots] = useState({ dates: [], times: [] });
   const [selectedSlot, setSelectedSlot] = useState({ slotId: null, date: null, time: null });
 
-  const api      = createApiClient(session);
+  const api      = createApiClient(session, refreshSessionToken);
   const doctorsApi = createDoctorsApi(api);
   const slotsApi   = createSlotsApi(api);
   const consultApi = createConsultationsApi(api);

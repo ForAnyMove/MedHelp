@@ -12,7 +12,7 @@ import { Images } from '../../src/assets';
 
 export default function Verify() {
   const router = useRouter();
-  const { role, contact } = useLocalSearchParams();
+  const { contact } = useLocalSearchParams();
   const { t } = useTranslation();
   const { sizes } = useTheme();
   const styles = useStyles(themeStyles);
@@ -45,15 +45,13 @@ export default function Verify() {
     }
   };
 
-  const isDoctor = role === 'doctor';
-
   const handleConfirm = async (overrideCode) => {
     const codeToVerify = overrideCode || code;
     if (codeToVerify.length < 6) return;
 
     setLoading(true);
     setError('');
-    const result = await verifyOtp(contact || 'user@example.com', codeToVerify, role || 'patient');
+    const result = await verifyOtp(contact || 'user@example.com', codeToVerify);
     setLoading(false);
     if (result.success) {
       // Session is now set via verifyOtp → login.
@@ -74,7 +72,7 @@ export default function Verify() {
                 name="ArrowLeft"
                 size={sizes.scale(24)}
                 color={styles.iconColor.color}
-                onPress={() => router.back()}
+                onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/login')}
               />
             </View>
             <View style={styles.logoContainer}>

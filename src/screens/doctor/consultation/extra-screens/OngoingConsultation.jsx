@@ -39,7 +39,7 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
 
   const digits = formatTimer(timer);
 
-  const { session } = require('../../../../context/SessionContext').useSession();
+  const { session, refreshSessionToken } = require('../../../../context/SessionContext').useSession();
   const [isStartingCall, setIsStartingCall] = React.useState(false);
 
   const handleActionPress = async (actionId) => {
@@ -48,7 +48,7 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
         setIsStartingCall(true);
         const { createApiClient } = require('../../../../api/apiClient');
         const { createConsultationsApi } = require('../../../../api/consultationsApi');
-        const api = createApiClient(session);
+        const api = createApiClient(session, refreshSessionToken);
         const consultApi = createConsultationsApi(api);
         
         const { callId } = await consultApi.getOrCreateCall(consultation.id);
