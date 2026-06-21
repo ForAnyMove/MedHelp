@@ -6,7 +6,7 @@ import { Icon } from '../../../../components/ui/Icon';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { Avatar } from '../../../../components/common/Avatar';
 
-export function ProfileHeader({ user }) {
+export function ProfileHeader({ user, isSheetOpen, onEditPress, onNotificationPress, onCloseSheetPress }) {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
@@ -19,9 +19,15 @@ export function ProfileHeader({ user }) {
 
       <View style={styles.topBar}>
         <Text style={styles.title}>{t('profile.title')}</Text>
-        <TouchableOpacity style={styles.notificationBtn}>
-          <Icon name="notifications" size={sizes.scale(24)} color={colors.white} />
-        </TouchableOpacity>
+        {isSheetOpen ? (
+          <TouchableOpacity style={styles.notificationBtn} onPress={onCloseSheetPress}>
+            <Icon name="close" size={sizes.scale(24)} color={colors.white} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.notificationBtn} onPress={onNotificationPress}>
+            <Icon name="notifications" size={sizes.scale(24)} color={colors.white} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.profileSection}>
@@ -35,11 +41,11 @@ export function ProfileHeader({ user }) {
         </View>
         <View style={styles.nameRow}>
           <Text style={styles.name}>
-            {user?.firstName || user?.lastName 
+            {user?.firstName || user?.lastName
               ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
               : t('profile.no_name')}
           </Text>
-          <TouchableOpacity style={styles.editBtn}>
+          <TouchableOpacity style={styles.editBtn} onPress={onEditPress}>
             <Icon name="edit" size={sizes.scale(24)} color={colors.white} />
           </TouchableOpacity>
         </View>

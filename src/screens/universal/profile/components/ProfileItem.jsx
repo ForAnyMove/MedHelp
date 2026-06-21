@@ -4,7 +4,7 @@ import { Icon } from '../../../../components/ui/Icon';
 import { Switch } from '../../../../components/ui/Switch';
 import { useTheme } from '../../../../theme/ThemeContext';
 
-export function ProfileItem({ label, value, type = 'chevron', isLast = false, onPress, onToggle, isToggled, isDanger = false }) {
+export function ProfileItem({ label, value, type = 'chevron', isLast = false, onPress, onToggle, isToggled, isDanger = false, statusColor, statusIcon }) {
   const styles = useStyles(themeStyles);
   const { colors, sizes } = useTheme();
 
@@ -12,15 +12,25 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
     <View style={styles.wrapper}>
       <TouchableOpacity
         style={styles.item}
-        disabled={type === 'toggle'}
+        disabled={type === 'toggle' || type === 'status' || !onPress}
         onPress={onPress}
         activeOpacity={0.7}
       >
         <Text style={[styles.label, isDanger && styles.dangerText]}>{label}</Text>
         <View style={styles.right}>
-          {value && <Text style={styles.value}>{value}</Text>}
+          {value && (
+            <Text style={[styles.value, type === 'status' && statusColor && { color: statusColor }]}>
+              {value}
+            </Text>
+          )}
 
-          {type === 'toggle' ? (
+          {type === 'status' && statusIcon ? (
+            <Icon
+              name={statusIcon}
+              size={sizes.scale(24)}
+              color={statusColor || colors.p500}
+            />
+          ) : type === 'toggle' ? (
             <Switch
               value={isToggled}
               onValueChange={onToggle}

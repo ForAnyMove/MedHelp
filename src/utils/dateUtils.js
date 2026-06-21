@@ -88,3 +88,31 @@ export const computeConsultationTime = (booking, t) => {
 
   return '';
 };
+
+/**
+ * Helper to compute relative time string (e.g. "2 min ago", "1 h ago")
+ */
+export const formatRelativeTime = (isoString, t) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return isoString;
+
+  const now = new Date();
+  const diffMs = now - date;
+  
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) {
+      return t('common.time.just_now', { defaultValue: 'Just now' });
+  }
+  if (diffMins < 60) {
+    return t('common.time.minutes_ago', { count: diffMins, defaultValue: `${diffMins} min ago` });
+  }
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) {
+    return t('common.time.hours_ago', { count: diffHours, defaultValue: `${diffHours} h ago` });
+  }
+  
+  const diffDays = Math.floor(diffHours / 24);
+  return t('common.time.days_ago', { count: diffDays, defaultValue: `${diffDays} d ago` });
+};

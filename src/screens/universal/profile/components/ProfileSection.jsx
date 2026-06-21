@@ -1,13 +1,23 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useStyles } from '../../../../theme/useStyles';
+import { Icon } from '../../../../components/ui/Icon';
+import { useTheme } from '../../../../theme/ThemeContext';
 
-export function ProfileSection({ title, children }) {
+export function ProfileSection({ title, children, onEdit }) {
   const styles = useStyles(themeStyles);
+  const { sizes, colors } = useTheme();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{title}</Text>
+        {onEdit && (
+          <TouchableOpacity onPress={onEdit} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Icon name="edit" size={sizes.scale(24)} color={colors.p500} />
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={styles.card}>
         {children}
       </View>
@@ -20,10 +30,15 @@ const themeStyles = (theme) => ({
     paddingHorizontal: theme.sizes.spacing.m,
     marginTop: theme.sizes.spacing.l,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.sizes.spacing.m,
+  },
   title: {
     ...theme.sizes.typography.h3,
     color: theme.colors.n700,
-    marginBottom: theme.sizes.spacing.m,
   },
   card: {
     backgroundColor: theme.colors.white,

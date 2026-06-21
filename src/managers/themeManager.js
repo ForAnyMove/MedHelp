@@ -3,7 +3,7 @@ import { useWindowDimensions, Platform } from 'react-native';
 import { scaleByHeight, scaleByHeightMobile } from '../utils/resizeFuncs';
 
 const lightColors = {
-  p500: '#23D3C2', 
+  p500: '#23D3C2',
   p400: '#4EE6D8',
   p300: '#84F2E8',
   p200: '#CEF9F1',
@@ -27,7 +27,7 @@ const lightColors = {
   sn500: '#8F9BA3',
   sn300: '#DCE4E9',
   white: '#FFFFFF',
-  bg: '#F3F9FE', 
+  bg: '#F3F9FE',
   success: '#3CC480',
   warning: '#FFB547',
   danger: '#FF6B6B',
@@ -49,6 +49,8 @@ export default function themeManager() {
     const scale = isWebLandscape ? webScale : mobileScale;
 
     return {
+      height,
+      width,
       scale,
       typography: {
         displayL: { fontFamily: 'Manrope_700Bold', fontSize: scale(52), lineHeight: scale(60), letterSpacing: -0.25 },

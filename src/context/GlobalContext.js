@@ -8,6 +8,7 @@ import historyManager from '../managers/historyManager';
 import myDoctorProfileManager from '../managers/myDoctorProfileManager';
 import { useSession } from './SessionContext';
 import { useServerTimeSync } from '../hooks/useServerTime';
+import notificationManager from '../managers/notificationManager';
 
 const ComponentContext = createContext();
 
@@ -16,7 +17,7 @@ export const ComponentProvider = ({ children }) => {
   useServerTimeSync(session, refreshSessionToken);
 
   const themeController = themeManager();
-  const userController  = userManager(session);
+  const userController = userManager(session);
 
   const [loadingCounter, setLoadingCounter] = useState(0);
 
@@ -28,10 +29,12 @@ export const ComponentProvider = ({ children }) => {
   };
 
   // Pass session and refreshSessionToken to every manager that makes API calls
-  const consultationController  = consultationManager(setAppLoading, session, refreshSessionToken);
-  const doctorController        = doctorManager(consultationController, setAppLoading, session, refreshSessionToken);
-  const historyController       = historyManager(setAppLoading, session, refreshSessionToken);
+  const consultationController = consultationManager(setAppLoading, session, refreshSessionToken);
+  const doctorController = doctorManager(consultationController, setAppLoading, session, refreshSessionToken);
+  const historyController = historyManager(setAppLoading, session, refreshSessionToken);
   const doctorProfileController = myDoctorProfileManager(setAppLoading, session, refreshSessionToken);
+
+  const notificationController = notificationManager(setAppLoading, session, refreshSessionToken);
 
   const value = {
     themeController,
@@ -40,6 +43,7 @@ export const ComponentProvider = ({ children }) => {
     consultationController,
     historyController,
     doctorProfileController,
+    notificationController,
     setAppLoading,
   };
 

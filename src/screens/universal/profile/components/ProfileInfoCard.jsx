@@ -9,11 +9,19 @@ export function ProfileInfoCard({ user }) {
 
   return (
     <View style={styles.card}>
-      <InfoRow label={t('profile.phone_number')} value={user.phone} isFirst />
-      <InfoRow label={t('profile.dob')} value={user.dob} />
-      <InfoRow label={t('profile.gender')} value={user.gender} />
-      <InfoRow label={t('profile.height_weight')} value={`${user.height} / ${user.weight}`} />
-      <InfoRow label={t('profile.blood_type')} value={user.bloodType} />
+      <InfoRow label={t('profile.phone_number')} value={user.phone ? user.phone : '-'} isFirst />
+      <InfoRow label={t('profile.dob')} value={user.dob ? user.dob : '-'} />
+      <InfoRow label={t('profile.gender')} value={user.gender ? t(`profile.genders.${user.gender}`) : '-'} />
+      {user.role === 'patient' ?
+        <>
+          <InfoRow label={t('profile.height_weight')} value={user.height || user.weight ? `${user.height || '--'} ${t('dashboard.cm')} / ${user.weight || '--'} ${t('dashboard.kg')}` : '--'} />
+          <InfoRow label={t('profile.blood_type')} value={user.bloodType || t('profile.not_specified')} />
+        </>
+        :
+        <>
+          <InfoRow label={t('profile.specializations')} value={user.professionCodes.map(code => t(`professions.${code}`)).join(', ')} />
+        </>
+      }
     </View>
   );
 }

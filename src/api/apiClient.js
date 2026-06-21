@@ -78,8 +78,15 @@ export function createApiClient(session, refreshSessionToken = null) {
       body: JSON.stringify(body),
     });
 
+  const put = (path, body = {}) =>
+    executeRequest(`${BASE_URL}${path}`, {
+      method: 'PUT',
+      headers: buildHeaders(),
+      body: JSON.stringify(body),
+    });
+
   const del = (path) =>
     executeRequest(`${BASE_URL}${path}`, { method: 'DELETE', headers: buildHeaders() });
 
-  return { get, post, patch, del };
+  return { get, post, patch, put, del };
 }

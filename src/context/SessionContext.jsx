@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Asset } from 'expo-asset';
 import Constants from 'expo-constants';
 import { allImages } from '../assets';
+import { createApiClient } from '../api/apiClient';
 
 const SESSION_KEY = 'medhelp_session';
 
@@ -210,31 +211,6 @@ export function SessionProvider({ children }) {
   }, [login]);
 
   /**
-   * Set role for a new user (called from choose-role screen).
-   */
-  const setRole = useCallback(async (role) => {
-    try {
-      const response = await fetch(`${API_URL}/auth/set-role`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.accessToken}`
-        },
-        body: JSON.stringify({ role })
-      });
-      const json = await response.json();
-      if (json.success && json.data?.role) {
-        await updateSession({ role: json.data.role });
-        return { success: true };
-      }
-      return { success: false, error: json.error || 'Failed to set role' };
-    } catch (e) {
-      console.error('Set role error:', e);
-      return { success: false, error: 'Network error' };
-    }
-  }, [session?.accessToken]);
-
-  /**
    * Update current session data.
    */
   const updateSession = useCallback(async (newData) => {
@@ -244,6 +220,21 @@ export function SessionProvider({ children }) {
       return updated;
     });
   }, []);
+
+  /**
+   * Set role for a new user (called from choose-role screen).
+   */
+  const setRole = useCallback(async (role) => {
+    try {
+      const api = createApiClient(session, refreshSessionToken);
+      const data = await api.put('/auth/set-role', { role });
+      await updateSession({ role: data.role });
+      return { success: true };
+    } catch (e) {
+      console.error('Set role error:', e);
+      return { success: false, error: e.message || 'Network error' };
+    }
+  }, [session, refreshSessionToken, updateSession]);
 
   /**
    * Register profile (called from profile-setup screen).
@@ -256,6 +247,10 @@ export function SessionProvider({ children }) {
     gender,
     professionCodes,  // string[] — for doctors, list of specialization codes
     professionNames,  // string[] — display names for specializations (stored locally)
+    height,
+    weight,
+    bloodType,
+    about,
   }) => {
     try {
       // Split full name into first_name / last_name
@@ -263,53 +258,52 @@ export function SessionProvider({ children }) {
       const first_name = parts[0] || '';
       const last_name = parts.slice(1).join(' ') || '';
 
-      const response = await fetch(`${API_URL}/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.accessToken}`
-        },
-        body: JSON.stringify({
-          first_name,
-          last_name,
-          phone: phone || null,
-          date_of_birth: dateOfBirth || null,
-          gender: gender || null,
-          profession_codes: professionCodes || [],
-          // Legacy single code for backward compat
-          profession_code: professionCodes?.[0] || null,
-        })
+      const api = createApiClient(session, refreshSessionToken);
+      const data = await api.put('/auth/profile', {
+        first_name,
+        last_name,
+        phone: phone || null,
+        date_of_birth: dateOfBirth || null,
+        gender: gender || null,
+        height: height || null,
+        weight: weight || null,
+        blood_type: bloodType || null,
+        about: about !== undefined ? about : undefined,
+        profession_codes: professionCodes || [],
+        // Legacy single code for backward compat
+        profession_code: professionCodes?.[0] || null,
       });
-      const json = await response.json();
-      if (json.success && json.data) {
-        // Reset doc-upload flag when re-submitting profile
-        // (user may have gone back and changed specializations)
-        setDocUploadHandledThisSession(false);
 
-        await updateSession({
-          isRegistered: json.data.isRegistered,
-          firstName: json.data.firstName,
-          lastName: json.data.lastName,
-          avatarUrl: json.data.avatarUrl,
-          role: json.data.role,
-          professionCodes: json.data.professionCodes || professionCodes || [],
-          professionNames: professionNames || [],
-          // Store form data for pre-filling on back navigation
-          phone: phone || null,
-          dateOfBirth: dateOfBirth || null,
-          gender: gender || null,
-          // Reset doc status to 'none' since profile was re-submitted
-          // (specializations may have changed → old docs are invalid)
-          docVerificationStatus: 'none',
-        });
-        return { success: true };
-      }
-      return { success: false, error: json.error || 'Failed to update profile' };
+      // Reset doc-upload flag when re-submitting profile
+      // (user may have gone back and changed specializations)
+      setDocUploadHandledThisSession(false);
+
+      await updateSession({
+        isRegistered: data.isRegistered,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        avatarUrl: data.avatarUrl,
+        about: data.about,
+        role: data.role,
+        professionCodes: data.professionCodes || professionCodes || [],
+        professionNames: professionNames || [],
+        height: data.height,
+        weight: data.weight,
+        bloodType: data.bloodType,
+        // Store form data for pre-filling on back navigation
+        phone: phone || null,
+        dateOfBirth: dateOfBirth || null,
+        gender: gender || null,
+        // Reset doc status to 'none' since profile was re-submitted
+        // (specializations may have changed → old docs are invalid)
+        docVerificationStatus: 'none',
+      });
+      return { success: true };
     } catch (e) {
       console.error('Update profile error:', e);
-      return { success: false, error: 'Network error' };
+      return { success: false, error: e.message || 'Network error' };
     }
-  }, [session?.accessToken, updateSession]);
+  }, [session, refreshSessionToken, updateSession]);
 
   /**
    * Update doctor's document verification status.
@@ -317,27 +311,20 @@ export function SessionProvider({ children }) {
    */
   const updateDocStatus = useCallback(async (status) => {
     try {
-      const response = await fetch(`${API_URL}/auth/doc-status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.accessToken}`
-        },
-        body: JSON.stringify({ status })
-      });
-      const json = await response.json();
-      if (json.success && json.data?.docVerificationStatus) {
-        await updateSession({ docVerificationStatus: json.data.docVerificationStatus });
+      const api = createApiClient(session, refreshSessionToken);
+      const data = await api.put('/auth/doc-status', { status });
+      if (data?.docVerificationStatus) {
+        await updateSession({ docVerificationStatus: data.docVerificationStatus });
         return { success: true };
       }
-      return { success: false, error: json.error || 'Failed to update doc status' };
+      return { success: false, error: 'Failed to update doc status' };
     } catch (e) {
       console.error('updateDocStatus error:', e);
       // Still update locally even if network fails (optimistic update)
       await updateSession({ docVerificationStatus: status });
       return { success: true };
     }
-  }, [session?.accessToken, updateSession]);
+  }, [session, refreshSessionToken, updateSession]);
 
   /**
    * Fetch professions list for doctor specialization.
