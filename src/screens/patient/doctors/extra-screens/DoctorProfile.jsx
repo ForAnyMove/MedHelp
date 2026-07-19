@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComponentContext } from '../../../../context/GlobalContext';
 import { useStyles } from '../../../../theme/useStyles';
@@ -7,6 +7,8 @@ import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 import { DoctorAvatar } from '../../../../components/doctor/DoctorAvatar';
 import { SlotPicker } from '../../../../components/doctor/SlotPicker';
+import { useSession } from '../../../../context/SessionContext';
+import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
 
 export function DoctorProfile() {
   const { t } = useTranslation();
@@ -17,8 +19,53 @@ export function DoctorProfile() {
     selectedSlot,
     selectSlot,
     navigateToSummary,
-    goBack
+    goBack,
+    rescheduleBooking,
+    setRescheduleBooking
   } = doctorController;
+
+  const { session, refreshSessionToken } = useSession();
+  const { navigateToConsultationDetail, updateUrlParams } = usePatientDashboard();
+  const { consultationController } = useComponentContext();
+
+  const [modalState, setModalState] = useState('hidden');
+
+  const executeReschedule = async () => {
+    setModalState('loading');
+    try {
+      const { createApiClient } = require('../../../../api/apiClient');
+      const { createConsultationsApi } = require('../../../../api/consultationsApi');
+      const api = createApiClient(session, refreshSessionToken);
+      const consultApi = createConsultationsApi(api);
+      
+      await consultApi.update(rescheduleBooking.id, { slot_id: selectedSlot.slotId });
+      
+      if (consultationController?.loadConsultations) {
+        await consultationController.loadConsultations();
+      }
+      setModalState('success');
+    } catch (err) {
+      console.error('Reschedule failed', err);
+      setModalState('error');
+    }
+  };
+
+  const handleBack = () => {
+    if (rescheduleBooking) {
+      const b = rescheduleBooking;
+      setRescheduleBooking(null);
+      goBack();
+      if (consultationController?.bookings) {
+        const updated = consultationController.bookings.find(bx => bx.id === b.id) || b;
+        navigateToConsultationDetail(updated);
+      } else {
+        navigateToConsultationDetail(b);
+      }
+    } else {
+      goBack();
+      if (updateUrlParams) updateUrlParams('doctors');
+    }
+  };
 
   const styles = useStyles(themeStyles);
 
@@ -31,7 +78,7 @@ export function DoctorProfile() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={goBack} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
           </TouchableOpacity>
         </View>
@@ -88,10 +135,17 @@ export function DoctorProfile() {
             />
 
             <Button
-              title={t('doctors.book_consultation')}
+              title={rescheduleBooking ? t('common.reschedule', 'Перенести консультацию') : t('doctors.book_consultation')}
               variant="primary"
               disabled={!selectedSlot?.date || !selectedSlot?.time}
-              onPress={navigateToSummary}
+              onPress={() => {
+                if (rescheduleBooking) {
+                  setModalState('confirm');
+                } else {
+                  navigateToSummary();
+                  if (updateUrlParams) updateUrlParams('doctors', 'summary', selectedDoctor?.id);
+                }
+              }}
               style={styles.bookButton}
             />
           </View>
@@ -99,6 +153,61 @@ export function DoctorProfile() {
           <Text style={styles.disclaimer}>{t('doctors.free_cancellation')}</Text>
         </View>
       </ScrollView>
+
+      <Modal visible={modalState !== 'hidden'} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {modalState === 'confirm' && (
+              <>
+                <Text style={styles.modalTitle}>{t('common.confirm_reschedule', 'Подтверждение переноса')}</Text>
+                <Text style={styles.modalText}>
+                  {t('common.reschedule_desc', 'Вы уверены, что хотите перенести консультацию на')} {selectedSlot?.date} {selectedSlot?.time}?
+                </Text>
+                <View style={styles.modalButtons}>
+                  <Button title={t('common.cancel', 'Отмена')} variant="outlined" onPress={() => setModalState('hidden')} style={{ flex: 1, marginRight: sizes.spacing.s }} />
+                  <Button title={t('common.confirm', 'Да, перенести')} variant="primary" onPress={executeReschedule} style={{ flex: 1, marginLeft: sizes.spacing.s }} />
+                </View>
+              </>
+            )}
+            {modalState === 'loading' && (
+              <View style={{ padding: sizes.spacing.xl, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.p500} />
+                <Text style={[styles.modalText, { marginTop: sizes.spacing.m }]}>{t('common.updating', 'Обновление данных...')}</Text>
+              </View>
+            )}
+            {modalState === 'success' && (
+              <>
+                <Icon name="check-circle" size={sizes.scale(48)} color={colors.success} style={{ alignSelf: 'center', marginBottom: sizes.spacing.m }} />
+                <Text style={[styles.modalTitle, { textAlign: 'center' }]}>{t('common.success', 'Успешно')}</Text>
+                <Text style={[styles.modalText, { textAlign: 'center', marginBottom: sizes.spacing.xl }]}>{t('common.reschedule_success', 'Ваша консультация успешно перенесена.')}</Text>
+                <Button title={t('common.ok', 'OK')} variant="primary" onPress={() => {
+                  setModalState('hidden');
+                  const b = rescheduleBooking;
+                  setRescheduleBooking(null);
+                  goBack();
+                  if (consultationController?.bookings) {
+                    const updated = consultationController.bookings.find(bx => bx.id === b.id) || b;
+                    navigateToConsultationDetail(updated);
+                  } else {
+                    navigateToConsultationDetail(b);
+                  }
+                }} />
+              </>
+            )}
+            {modalState === 'error' && (
+              <>
+                <Icon name="alert-circle" size={sizes.scale(48)} color={colors.danger} style={{ alignSelf: 'center', marginBottom: sizes.spacing.m }} />
+                <Text style={[styles.modalTitle, { textAlign: 'center' }]}>{t('common.error', 'Ошибка')}</Text>
+                <Text style={[styles.modalText, { textAlign: 'center', marginBottom: sizes.spacing.xl }]}>{t('common.reschedule_error', 'Не удалось перенести консультацию. Попробуйте еще раз.')}</Text>
+                <View style={styles.modalButtons}>
+                  <Button title={t('common.close', 'Закрыть')} variant="outlined" onPress={() => setModalState('hidden')} style={{ flex: 1, marginRight: sizes.spacing.s }} />
+                  <Button title={t('common.try_again', 'Повторить')} variant="primary" onPress={executeReschedule} style={{ flex: 1, marginLeft: sizes.spacing.s }} />
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -131,8 +240,8 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
@@ -184,7 +293,7 @@ const themeStyles = (theme) => ({
     marginLeft: theme.sizes.spacing.xs,
   },
   statDivider: {
-    width: 1,
+    width: theme.sizes.scale(1),
     height: '100%',
     backgroundColor: theme.colors.n200,
     alignSelf: 'center',
@@ -200,8 +309,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 2,
@@ -225,5 +334,34 @@ const themeStyles = (theme) => ({
     color: theme.colors.n500,
     textAlign: 'center',
     marginTop: theme.sizes.spacing.s,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.sizes.spacing.l,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: theme.sizes.scale(400),
+  },
+  modalTitle: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.m,
+  },
+  modalText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n500,
+    marginBottom: theme.sizes.spacing.xl,
+    lineHeight: theme.sizes.scale(22),
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   }
 });

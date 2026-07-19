@@ -70,7 +70,7 @@ const themeStyles = (theme) => ({
     width: theme.sizes.scale(250),
     height: theme.sizes.scale(250),
     borderRadius: theme.sizes.scale(125),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: /* TODO: color */ 'rgba(255, 255, 255, 0.2)',
   },
   shape2: {
     position: 'absolute',
@@ -79,7 +79,7 @@ const themeStyles = (theme) => ({
     width: theme.sizes.scale(200),
     height: theme.sizes.scale(200),
     borderRadius: theme.sizes.scale(100),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: /* TODO: color */ 'rgba(255, 255, 255, 0.2)',
   },
   topBar: {
     flexDirection: 'row',
@@ -96,7 +96,7 @@ const themeStyles = (theme) => ({
     height: theme.sizes.scale(24),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 0,
+    marginBottom: theme.sizes.scale(0),
   },
   profileSection: {
     alignItems: 'center',

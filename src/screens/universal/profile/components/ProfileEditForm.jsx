@@ -10,7 +10,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }) {
   const { t, i18n } = useTranslation();
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
 
   const isDoctor = role === 'doctor';
@@ -198,7 +198,7 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
         />
 
         <Input
-          label="Email"
+          label={t('auth.email', 'Email')}
           value={user?.email || ''}
           editable={false}
           rounded
@@ -228,13 +228,13 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
               onPress={() => {
                 if (Platform.OS !== 'web') setShowDatePicker(true);
               }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: sizes.scale(10), bottom: sizes.scale(10), left: sizes.scale(10), right: sizes.scale(10) }}
               style={{ position: 'relative', overflow: 'hidden' }}
             >
               <Icon name="calendar" size={sizes.scale(24)} color={styles.iconInactive.color} />
               {Platform.OS === 'web' && React.createElement('input', {
                 type: 'date',
-                style: { position: 'absolute', opacity: 0, top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' },
+                style: { position: 'absolute', opacity: 0, top: sizes.scale(0), left: sizes.scale(0), width: '100%', height: '100%', cursor: 'pointer' },
                 onChange: (e) => {
                   const val = e.target.value;
                   if (val) {
@@ -421,8 +421,8 @@ const themeStyles = (theme) => ({
     borderColor: theme.colors.n200,
     borderRadius: theme.sizes.borderRadius.large,
     paddingVertical: theme.sizes.spacing.s,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
@@ -511,7 +511,7 @@ const themeStyles = (theme) => ({
     marginHorizontal: -theme.sizes.spacing.m,
     paddingTop: theme.sizes.scale(14),
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: -8 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(-8) },
     shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 2,

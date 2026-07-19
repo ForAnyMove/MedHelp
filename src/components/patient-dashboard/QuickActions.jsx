@@ -11,9 +11,9 @@ export function QuickActions({ onAction }) {
   const styles = useStyles(themeStyles);
 
   const actions = [
-    { id: 'upload', title: t('dashboard.upload_analysis'), desc: t('dashboard.upload_desc'), icon: 'Upload', color: colors.sCoral },
-    { id: 'checker', title: t('dashboard.symptom_checker'), desc: t('dashboard.checker_desc'), icon: 'Stethoscope', color: colors.warning },
-    { id: 'consult', title: t('dashboard.next_consultation'), desc: t('dashboard.consult_desc'), icon: 'User', color: colors.info },
+    { id: 'upload', title: t('dashboard.upload_analysis'), desc: t('dashboard.upload_desc'), icon: 'upload', color: colors.sCoral },
+    { id: 'checker', title: t('dashboard.symptom_checker'), desc: t('dashboard.checker_desc'), icon: 'stethoscope', color: colors.warning },
+    { id: 'consult', title: t('dashboard.next_consultation'), desc: t('dashboard.consult_desc'), icon: 'profile', color: colors.info },
   ];
 
   return (
@@ -58,7 +58,7 @@ const themeStyles = (theme) => ({
     padding: theme.sizes.scale(12),
     // Soft shadow for cards
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,

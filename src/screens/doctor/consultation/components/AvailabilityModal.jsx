@@ -9,8 +9,10 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -20,8 +22,8 @@ import { useComponentContext } from '../../../../context/GlobalContext';
 import { createSlotsApi } from '../../../../api/slotsApi';
 
 export function AvailabilityModal({ visible, onClose }) {
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
-  const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const { session, setAppLoading, doctorProfileController } = useComponentContext();
 
@@ -33,6 +35,50 @@ export function AvailabilityModal({ visible, onClose }) {
   const [breakDuration, setBreakDuration] = useState(0); // in minutes
   const [existingSlots, setExistingSlots] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showPicker, setShowPicker] = useState(null); // 'start' | 'end' | null
+
+  const handleTimeChange = (text, setter) => {
+    let cleaned = text.replace(/[^0-9:]/g, '');
+    if (cleaned.length === 2 && text.length === 2 && !cleaned.includes(':')) {
+      cleaned += ':';
+    }
+    setter(cleaned);
+  };
+
+  const handleTimeBlur = (val, setter) => {
+    if (!/^\d{2}:\d{2}$/.test(val)) {
+      if (val.length === 5 && val[2] === ':') {
+        const [h, m] = val.split(':');
+        const validH = Math.min(23, Math.max(0, parseInt(h) || 0)).toString().padStart(2, '0');
+        const validM = Math.min(59, Math.max(0, parseInt(m) || 0)).toString().padStart(2, '0');
+        setter(`${validH}:${validM}`);
+      } else {
+        setter('09:00');
+      }
+    } else {
+        const [h, m] = val.split(':');
+        const validH = Math.min(23, Math.max(0, parseInt(h) || 0)).toString().padStart(2, '0');
+        const validM = Math.min(59, Math.max(0, parseInt(m) || 0)).toString().padStart(2, '0');
+        if (`${validH}:${validM}` !== val) setter(`${validH}:${validM}`);
+    }
+  };
+
+  const handlePickerChange = (event, selectedDate) => {
+    setShowPicker(null);
+    if (selectedDate && event.type !== 'dismissed') {
+      const h = selectedDate.getHours().toString().padStart(2, '0');
+      const m = selectedDate.getMinutes().toString().padStart(2, '0');
+      if (showPicker === 'start') setStartTime(`${h}:${m}`);
+      if (showPicker === 'end') setEndTime(`${h}:${m}`);
+    }
+  };
+
+  const getTimeDate = (timeStr) => {
+    const [h, m] = (timeStr || '09:00').split(':');
+    const d = new Date();
+    d.setHours(parseInt(h) || 0, parseInt(m) || 0, 0, 0);
+    return d;
+  };
 
   // Generate 14 days for the horizontal picker
   const days = useMemo(() => {
@@ -135,10 +181,10 @@ export function AvailabilityModal({ visible, onClose }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <Icon name="X" size={sizes.scale(24)} color={colors.n900} />
+                <Icon name="close" size={sizes.scale(24)} color={colors.n900}  />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('doctor_dashboard.manage_availability')}</Text>
-            <View style={{ width: 40 }} />
+            <View style={{ width: sizes.scale(40) }} />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -157,7 +203,7 @@ export function AvailabilityModal({ visible, onClose }) {
                                 onPress={() => toggleDate(iso)}
                             >
                                 <Text style={[styles.dayName, isSelected && styles.textWhite]}>
-                                    {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                                    {t(`days.${d.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase()}`, d.toLocaleDateString('en-US', { weekday: 'short' }))}
                                 </Text>
                                 <Text style={[styles.dayNum, isSelected && styles.textWhite]}>
                                     {d.getDate()}
@@ -175,28 +221,51 @@ export function AvailabilityModal({ visible, onClose }) {
                     <View style={styles.inputCol}>
                         <Text style={styles.label}>{t('common.from')}</Text>
                         <View style={styles.timeInput}>
-                            <TextInput 
-                                style={styles.timeText} 
-                                value={startTime} 
-                                onChangeText={setStartTime}
-                                placeholder="09:00"
-                                maxLength={5}
-                            />
+                            {Platform.OS === 'web' ? (
+                                <TextInput 
+                                    style={styles.timeText} 
+                                    value={startTime} 
+                                    onChangeText={(txt) => handleTimeChange(txt, setStartTime)}
+                                    onBlur={() => handleTimeBlur(startTime, setStartTime)}
+                                    placeholder="09:00"
+                                    maxLength={5}
+                                />
+                            ) : (
+                                <TouchableOpacity style={styles.timeTouchable} onPress={() => setShowPicker('start')}>
+                                    <Text style={styles.timeText}>{startTime}</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                     <View style={styles.inputCol}>
                         <Text style={styles.label}>{t('common.to')}</Text>
                         <View style={styles.timeInput}>
-                            <TextInput 
-                                style={styles.timeText} 
-                                value={endTime} 
-                                onChangeText={setEndTime}
-                                placeholder="18:00"
-                                maxLength={5}
-                            />
+                            {Platform.OS === 'web' ? (
+                                <TextInput 
+                                    style={styles.timeText} 
+                                    value={endTime} 
+                                    onChangeText={(txt) => handleTimeChange(txt, setEndTime)}
+                                    onBlur={() => handleTimeBlur(endTime, setEndTime)}
+                                    placeholder="18:00"
+                                    maxLength={5}
+                                />
+                            ) : (
+                                <TouchableOpacity style={styles.timeTouchable} onPress={() => setShowPicker('end')}>
+                                    <Text style={styles.timeText}>{endTime}</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </View>
+
+                {showPicker && (
+                    <DateTimePicker
+                        value={getTimeDate(showPicker === 'start' ? startTime : endTime)}
+                        mode="time"
+                        display="default"
+                        onChange={handlePickerChange}
+                    />
+                )}
             </View>
 
             {/* 3. Duration & Breaks Settings */}
@@ -210,13 +279,13 @@ export function AvailabilityModal({ visible, onClose }) {
                             onPress={() => setDuration(val)}
                         >
                             <Text style={[styles.durationBtnText, duration === val && styles.textWhite]}>
-                                {val}m
+                                {val} {t('common.min_short', 'm')}
                             </Text>
                         </TouchableOpacity>
                     ))}
                 </View>
                 
-                <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Перерыв между сеансами</Text>
+                <Text style={[styles.sectionTitle, { marginTop: sizes.scale(20) }]}>{t('doctor_dashboard.break_between_sessions', 'Перерыв между сеансами')}</Text>
                 <View style={styles.durationGrid}>
                     {[0, 5, 10, 15].map(val => (
                         <TouchableOpacity 
@@ -225,7 +294,7 @@ export function AvailabilityModal({ visible, onClose }) {
                             onPress={() => setBreakDuration(val)}
                         >
                             <Text style={[styles.durationBtnText, breakDuration === val && styles.textWhite]}>
-                                {val}m
+                                {val} {t('common.min_short', 'm')}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -255,13 +324,13 @@ export function AvailabilityModal({ visible, onClose }) {
                                     <Text style={styles.slotTime}>
                                         {new Date(slot.start_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                         {"  •  "}
-                                        {formatTime(slot.start_at)} ({slot.duration}m)
+                                        {formatTime(slot.start_at)} ({slot.duration} {t('common.min_short', 'm')})
                                     </Text>
-                                    {slot.booking_id && <View style={styles.bookedBadge}><Text style={styles.bookedText}>Booked</Text></View>}
+                                    {slot.booking_id && <View style={styles.bookedBadge}><Text style={styles.bookedText}>{t('doctor_dashboard.booked', 'Booked')}</Text></View>}
                                 </View>
                                 {!slot.booking_id && (
                                     <TouchableOpacity onPress={() => handleDeleteSlot(slot.id)}>
-                                        <Icon name="Trash2" size={sizes.scale(18)} color={colors.d500} />
+                                        <Icon name = 'Trash2' size={sizes.scale(18)} color={colors.d500}  />
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -329,7 +398,7 @@ const themeStyles = (theme) => ({
   dayName: {
       ...theme.sizes.typography.caption,
       color: theme.colors.n600,
-      marginBottom: 4,
+      marginBottom: theme.sizes.scale(4),
   },
   dayNum: {
       ...theme.sizes.typography.h3,
@@ -348,7 +417,7 @@ const themeStyles = (theme) => ({
   label: {
       ...theme.sizes.typography.caption,
       color: theme.colors.n500,
-      marginBottom: 6,
+      marginBottom: theme.sizes.scale(6),
   },
   timeInput: {
       backgroundColor: theme.colors.white,
@@ -357,10 +426,20 @@ const themeStyles = (theme) => ({
       borderColor: theme.colors.n200,
       padding: theme.sizes.spacing.m,
       alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+  },
+  timeTouchable: {
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
   },
   timeText: {
       ...theme.sizes.typography.bodyLarge,
       color: theme.colors.n900,
+      textAlign: 'center',
+      width: '100%',
+      padding: theme.sizes.scale(0), // Reset padding for TextInput to avoid overflow
   },
   durationGrid: {
       flexDirection: 'row',
@@ -399,9 +478,9 @@ const themeStyles = (theme) => ({
       alignItems: 'center',
   },
   dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+      width: theme.sizes.scale(8),
+      height: theme.sizes.scale(8),
+      borderRadius: theme.sizes.scale(4),
       backgroundColor: theme.colors.p500,
       marginRight: theme.sizes.spacing.s,
   },
@@ -413,17 +492,17 @@ const themeStyles = (theme) => ({
       ...theme.sizes.typography.bodyMedium,
       color: theme.colors.n500,
       textAlign: 'center',
-      marginTop: 20,
+      marginTop: theme.sizes.scale(20),
   },
   bookedBadge: {
       backgroundColor: theme.colors.opacityP100,
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 4,
-      marginLeft: 10,
+      paddingHorizontal: theme.sizes.scale(8),
+      paddingVertical: theme.sizes.scale(2),
+      borderRadius: theme.sizes.scale(4),
+      marginLeft: theme.sizes.scale(10),
   },
   bookedText: {
-      fontSize: 10,
+      fontSize: theme.sizes.scale(10),
       color: theme.colors.p600,
       fontWeight: 'bold',
   }

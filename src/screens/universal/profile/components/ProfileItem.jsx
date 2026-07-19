@@ -5,8 +5,8 @@ import { Switch } from '../../../../components/ui/Switch';
 import { useTheme } from '../../../../theme/ThemeContext';
 
 export function ProfileItem({ label, value, type = 'chevron', isLast = false, onPress, onToggle, isToggled, isDanger = false, statusColor, statusIcon }) {
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
-  const { colors, sizes } = useTheme();
 
   return (
     <View style={styles.wrapper}>
@@ -19,7 +19,11 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
         <Text style={[styles.label, isDanger && styles.dangerText]}>{label}</Text>
         <View style={styles.right}>
           {value && (
-            <Text style={[styles.value, type === 'status' && statusColor && { color: statusColor }]}>
+            <Text 
+              style={[styles.value, type === 'status' && statusColor && { color: statusColor }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {value}
             </Text>
           )}
@@ -40,10 +44,10 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
             />
           ) : (
             <Icon
-              name="ChevronRight"
+              name="arrow-right"
               size={sizes.scale(24)}
               color={isDanger ? colors.danger : colors.p500}
-            />
+             />
           )}
         </View>
       </TouchableOpacity>
@@ -71,15 +75,20 @@ const themeStyles = (theme) => ({
   right: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
+    flex: 2,
+    justifyContent: 'flex-end',
   },
   value: {
     ...theme.sizes.typography.bodyLarge,
     color: theme.colors.n700,
     fontFamily: 'Manrope_600SemiBold',
     marginRight: theme.sizes.spacing.s,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   divider: {
-    height: 1,
+    height: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
   },
   dangerText: {

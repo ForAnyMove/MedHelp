@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import { useComponentContext } from '../../../context/GlobalContext';
 import { useStyles } from '../../../theme/useStyles';
 import { HistorySummaryCard } from './components/HistorySummaryCard';
@@ -11,23 +12,28 @@ import { EmptyState } from '../../../components/common/EmptyState';
 import { SkeletonCard } from '../../../components/common/SkeletonCard';
 import { Icon } from '../../../components/ui/Icon';
 import { formatIsoDate } from '../../../utils/dateUtils';
+import { usePatientDashboard } from '../../../context/PatientDashboardContext';
+import { PatientAllConsultations } from './extra-screens/PatientAllConsultations';
+import { PatientCompletedConsultation } from './extra-screens/PatientCompletedConsultation';
+import { DoctorProfileSubView } from './extra-screens/DoctorProfileSubView';
+import { ConsultationSummary } from '../consultation/extra-screens/ConsultationSummary';
 
 export function HistoryTab() {
   const { historyController, themeController: { sizes } } = useComponentContext();
-  const { metrics, analysisSummary, vitamins, timeline, pastConsultations = [] } = historyController;
   const styles = useStyles(themeStyles);
-  const [activeSegment, setActiveSegment] = useState('overview'); // 'overview' | 'consultations'
+  const { metrics, analysisSummary, vitamins, timeline, pastConsultations = [] } = historyController;
+  const router = useRouter();
+  const [activeSegment, setActiveSegment] = useState('all'); // 'all' or 'latest'
   const { t } = useTranslation();
+  const { historyView, historySelectedId, historyDoctorProfileId, navigateToHistoryAll, navigateToHistoryDetail, navigateBack } = usePatientDashboard();
 
   const [loading, setLoading] = useState(true);
-  const [consultations, setConsultations] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       await new Promise(resolve => setTimeout(resolve, 600));
       if (!cancelled) {
-        setConsultations(pastConsultations);
         setLoading(false);
       }
     };
@@ -35,70 +41,69 @@ export function HistoryTab() {
     return () => { cancelled = true; };
   }, []);
 
+  const currentSummary = React.useMemo(() => {
+    let data = pastConsultations || [];
+    if (activeSegment === 'latest') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      data = data.filter(c => new Date(c.date) >= weekAgo);
+    }
+    const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return {
+      ...analysisSummary,
+      lastOverview: sortedData.length > 0 ? sortedData[0].date : analysisSummary.lastOverview,
+      consultationsCount: data.length,
+      analysesCount: activeSegment === 'all' ? analysisSummary.analysesCount : Math.max(0, Math.floor(analysisSummary.analysesCount / 4)),
+    };
+  }, [pastConsultations, activeSegment, analysisSummary]);
+
+  if (historyView === 'all') {
+    return <PatientAllConsultations activeSegment={activeSegment} />;
+  }
+
+  if (historyView === 'detail' && historySelectedId) {
+    return <PatientCompletedConsultation id={historySelectedId} />;
+  }
+
+  if (historyView === 'summary' && historySelectedId) {
+    const booking = pastConsultations.find(c => String(c.id) === String(historySelectedId));
+    return <ConsultationSummary booking={booking} onClose={() => navigateToHistoryDetail(historySelectedId)} />;
+  }
+
+  if (historyView === 'doctor-profile' && historyDoctorProfileId) {
+    return <DoctorProfileSubView doctorId={historyDoctorProfileId} onBack={navigateBack} />;
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>{t('history.title')}</Text>
 
-        {/* Segment control */}
-        <View style={styles.segmentRow}>
-          <TouchableOpacity
-            style={[styles.segBtn, activeSegment === 'overview' && styles.segBtnActive]}
-            onPress={() => setActiveSegment('overview')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.segBtnText, activeSegment === 'overview' && styles.segBtnTextActive]}>
-              {t('history.overview') || 'Overview'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.segBtn, activeSegment === 'consultations' && styles.segBtnActive]}
-            onPress={() => setActiveSegment('consultations')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.segBtnText, activeSegment === 'consultations' && styles.segBtnTextActive]}>
-              {t('history.consultations') || 'Consultations'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Removed duplicate segmentRow */}
 
-        {activeSegment === 'overview' ? (
-          <>
-            <HistorySummaryCard
-              activeSegment={activeSegment}
-              onSegmentChange={() => {}}
-              summary={analysisSummary}
-            />
-            <HealthMetricsCard metrics={metrics} />
-            <AnalysisProgressCard vitamins={vitamins} />
-            {timeline.map(item => (
-              <HistoryTimelineItem key={item.id} item={item} />
-            ))}
-          </>
-        ) : (
-          <>
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} lines={3} />)
-            ) : consultations.length === 0 ? (
-              <EmptyState
-                icon="ClipboardList"
-                title={t('history.empty_title') || 'No consultations yet'}
-                description={t('history.empty_desc') || 'Your past consultations will appear here.'}
-              />
-            ) : (
-              consultations.map(c => (
-                <PastConsultationCard key={c.id} consultation={c} styles={styles} t={t} />
-              ))
-            )}
-          </>
-        )}
+        <>
+          <HistorySummaryCard
+            activeSegment={activeSegment}
+            onSegmentChange={(v) => setActiveSegment(v)}
+            summary={currentSummary}
+            onConsultationsPress={() => navigateToHistoryAll(activeSegment)}
+          />
+          <HealthMetricsCard metrics={metrics} />
+          <AnalysisProgressCard vitamins={vitamins} />
+          {timeline.map(item => (
+            <HistoryTimelineItem key={item.id} item={item} />
+          ))}
+        </>
       </ScrollView>
     </View>
   );
 }
 
-function PastConsultationCard({ consultation: c, styles, t }) {
+function PastConsultationCard({ consultation: c, styles, sizes, t }) {
   const date = formatIsoDate(c.date, 'medium', t);
+  const isCanceled = c.status === 'canceled';
+
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.85}>
       <Image source={{ uri: c.avatarUrl }} style={styles.avatar} />
@@ -107,15 +112,17 @@ function PastConsultationCard({ consultation: c, styles, t }) {
         <Text style={styles.specialty}>{c.specialty}</Text>
         <Text style={styles.diagnosis} numberOfLines={1}>{c.diagnosis}</Text>
         <View style={styles.meta}>
-          <Icon name="Calendar" size={12} color={styles.metaIcon.color} />
+          <Icon name="calendar" size={sizes.scale(24)} color={styles.metaIcon.color}  />
           <Text style={styles.metaText}>{date}</Text>
-          <Icon name="Clock" size={12} color={styles.metaIcon.color} />
+          <Icon name="time" size={sizes.scale(24)} color={styles.metaIcon.color}  />
           <Text style={styles.metaText}>{c.duration} min</Text>
         </View>
       </View>
       <View style={styles.statusBadge}>
-        <View style={styles.statusDot} />
-        <Text style={styles.statusText}>{t('history.status.completed') || 'Done'}</Text>
+        <View style={[styles.statusDot, isCanceled && styles.statusDotCanceled]} />
+        <Text style={[styles.statusText, isCanceled && styles.statusTextCanceled]}>
+          {isCanceled ? (t('history.status.canceled') || 'Canceled') : (t('history.status.completed') || 'Done')}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -124,16 +131,16 @@ function PastConsultationCard({ consultation: c, styles, t }) {
 const themeStyles = (theme) => ({
   container: {
     flex: 1,
-    backgroundColor: '#F3F9F9',
+    backgroundColor: /* TODO: color */ '#F3F9F9',
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.xl * 2,
   },
   headerTitle: {
     ...theme.sizes.typography.h2,
-    color: '#2D4A4A',
+    color: /* TODO: color */ '#2D4A4A',
     marginBottom: theme.sizes.spacing.l,
     fontFamily: 'Manrope_700Bold',
   },
@@ -141,10 +148,10 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
-    padding: 4,
+    padding: theme.sizes.scale(4),
     marginBottom: theme.sizes.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
@@ -174,16 +181,16 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.l,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: theme.sizes.scale(48),
+    height: theme.sizes.scale(48),
+    borderRadius: theme.sizes.scale(24),
     marginRight: theme.sizes.spacing.m,
   },
   cardBody: {
@@ -193,12 +200,12 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n900,
     fontFamily: 'Manrope_700Bold',
-    marginBottom: 1,
+    marginBottom: theme.sizes.scale(1),
   },
   specialty: {
     ...theme.sizes.typography.caption,
     color: theme.colors.p500,
-    marginBottom: 4,
+    marginBottom: theme.sizes.scale(4),
   },
   diagnosis: {
     ...theme.sizes.typography.bodySmall,
@@ -208,7 +215,7 @@ const themeStyles = (theme) => ({
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: theme.sizes.scale(4),
   },
   metaIcon: {
     color: theme.colors.n400,
@@ -219,17 +226,23 @@ const themeStyles = (theme) => ({
   },
   statusBadge: {
     alignItems: 'center',
-    gap: 4,
+    gap: theme.sizes.scale(4),
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#0E9F6E',
+    width: theme.sizes.scale(8),
+    height: theme.sizes.scale(8),
+    borderRadius: theme.sizes.scale(4),
+    backgroundColor: /* TODO: color */ '#0E9F6E',
+  },
+  statusDotCanceled: {
+    backgroundColor: theme.colors.error || /* TODO: color */ '#F05252',
   },
   statusText: {
     ...theme.sizes.typography.caption,
-    color: '#0E9F6E',
+    color: /* TODO: color */ '#0E9F6E',
     fontFamily: 'Manrope_600SemiBold',
+  },
+  statusTextCanceled: {
+    color: theme.colors.error || /* TODO: color */ '#F05252',
   },
 });

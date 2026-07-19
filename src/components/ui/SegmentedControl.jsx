@@ -36,29 +36,31 @@ export function SegmentedControl({ options, value, onChange, style }) {
 const themeStyles = (theme) => ({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#EBF4F4', // Light background pill
-    borderRadius: 20,
-    padding: 4,
+    backgroundColor: theme.colors.n300, // Light background pill
+    borderRadius: theme.sizes.borderRadius.full,
+    padding: theme.sizes.scale(1),
   },
   segment: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: theme.sizes.spacing.s,
+    paddingHorizontal: theme.sizes.spacing.xs,
     alignItems: 'center',
-    borderRadius: 16,
+    justifyContent: 'center',
+    borderRadius: theme.sizes.borderRadius.full,
   },
   activeSegment: {
     backgroundColor: theme.colors.p500,
     // Subtle shadow for the active pill
     shadowColor: theme.colors.p500,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 3,
   },
   segmentText: {
     ...theme.sizes.typography.bodyMedium,
-    color: '#8A9999',
-    fontWeight: '600',
+    color: theme.colors.n700,
+    textAlign: 'center',
   },
   activeSegmentText: {
     color: theme.colors.white,

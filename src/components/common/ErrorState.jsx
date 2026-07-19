@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../theme/ThemeContext';
 
 /**
  * Universal error state for failed data-fetching.
@@ -14,19 +16,21 @@ export function ErrorState({
   message = 'Something went wrong. Please try again.',
   onRetry,
 }) {
+  const { sizes, colors } = useTheme();
+  const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
   return (
     <View style={styles.container}>
       <View style={styles.iconBox}>
-        <Icon name="AlertCircle" size={36} color={styles.iconColor.color} />
+        <Icon name="warning" size={sizes.scale(36)} color={styles.iconColor.color}  />
       </View>
-      <Text style={styles.title}>Oops!</Text>
+      <Text style={styles.title}>{t('common.oops', 'Oops!')}</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry ? (
         <TouchableOpacity style={styles.btn} onPress={onRetry} activeOpacity={0.8}>
-          <Icon name="RefreshCcw" size={16} color={styles.btnIcon.color} />
-          <Text style={styles.btnText}>Try again</Text>
+          <Icon name = 'RefreshCcw' size={sizes.scale(20)} color={styles.btnIcon.color}  />
+          <Text style={styles.btnText}>{t('common.try_again', 'Try again')}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -41,10 +45,10 @@ const themeStyles = (theme) => ({
     paddingHorizontal: theme.sizes.spacing.xl,
   },
   iconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFF0F0',
+    width: theme.sizes.scale(80),
+    height: theme.sizes.scale(80),
+    borderRadius: theme.sizes.scale(40),
+    backgroundColor: /* TODO: color */ '#FFF0F0',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.sizes.spacing.l,

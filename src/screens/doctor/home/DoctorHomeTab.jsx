@@ -11,11 +11,15 @@ import { NextPatientCard } from '../../../components/doctor-dashboard/NextPatien
 import { DoctorQuickActions } from '../../../components/doctor-dashboard/DoctorQuickActions';
 import { useDoctorDashboard } from '../../../context/DoctorDashboardContext';
 import { useComponentContext } from '../../../context/GlobalContext';
+import { BottomSheet } from '../../../components/ui/BottomSheet';
+import { ProfileNotifications } from '../../universal/profile/components/ProfileNotifications';
 
 export function DoctorHomeTab() {
   const styles = useStyles(themeStyles);
   const { navigateToPatientCard, setTabIndex, scrollViewRef } = useDoctorDashboard();
-  const { doctorProfileController } = useComponentContext();
+  const { doctorProfileController, user } = useComponentContext();
+  const { sizes, colors } = useTheme();
+  const [isNotificationSheetOpen, setIsNotificationSheetOpen] = React.useState(false);
   
   const data = doctorProfileController.getDashboardData();
 
@@ -34,7 +38,10 @@ export function DoctorHomeTab() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <DoctorHeader profile={data.profile} />
+        <DoctorHeader 
+          profile={data.profile} 
+          onNotificationPress={() => setIsNotificationSheetOpen(true)} 
+        />
         <TodayStatusCard
           consultationCount={data.consultationsTodayCount}
           onConsultationPress={handleConsultationPress}
@@ -46,6 +53,14 @@ export function DoctorHomeTab() {
         <DoctorQuickActions />
         <ProfitStatusCard profit={data.profit} />
       </ScrollView>
+
+      <BottomSheet
+        visible={isNotificationSheetOpen}
+        onClose={() => setIsNotificationSheetOpen(false)}
+        initialHeight={sizes.height}
+      >
+        <ProfileNotifications user={user} />
+      </BottomSheet>
     </View>
   );
 }

@@ -16,7 +16,7 @@ export function HealthIndications() {
     { id: 'temp', label: t('dashboard.temperature'), icon: 'temperature', color: colors.sBlue, isAdd: false, extra: '36.6 °C' },
     { id: 'bmi', label: t('dashboard.bmi'), icon: 'profile', color: colors.sBlue, isAdd: false, extra: '22.5' },
     { id: 'waist', label: t('dashboard.w_circumference'), icon: 'chemical', color: colors.sCoral, isAdd: false, extra: null },
-    { id: 'devices', label: t('dashboard.my_devices'), icon: 'Smartphone', color: colors.sYell, isAdd: true, extra: null },
+    { id: 'devices', label: t('dashboard.my_devices'), icon: 'phone-on', color: colors.sYell, isAdd: true, extra: null },
   ];
 
   const plusIndicator = {
@@ -75,7 +75,7 @@ const themeStyles = (theme) => ({
     height: theme.sizes.scale(120),
     justifyContent: 'space-between',
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,

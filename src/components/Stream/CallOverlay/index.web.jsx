@@ -13,6 +13,7 @@ export default function CallOverlay() {
   const { activeCall, isMinimized, setIsMinimized, setActiveCall } = useStreamContext();
   const router = useRouter();
   const { colors, sizes } = useTheme();
+  const styles = getStyles(sizes, colors);
 
   // Dynamic theme-based dimensions
   const WIDGET_SIZE = useMemo(() => sizes.scale(160), [sizes]);
@@ -154,10 +155,10 @@ export default function CallOverlay() {
             
             <View style={[styles.controls, { bottom: sizes.scale(10) }]}>
                <TouchableOpacity onPress={handleMaximize} style={[styles.iconBtn, { padding: sizes.scale(10) }]}>
-                  <Icon name="Maximize" size={sizes.scale(18)} color={colors.white} />
+                  <Icon name = 'Maximize' size={sizes.scale(18)} color={colors.white}  />
                </TouchableOpacity>
                <TouchableOpacity onPress={handleEndCall} style={[styles.iconBtn, { backgroundColor: colors.error, padding: sizes.scale(10) }]}>
-                  <Icon name="Phone" size={sizes.scale(18)} color={colors.white} />
+                  <Icon name="phone-on" size={sizes.scale(24)} color={colors.white}  />
                </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -167,7 +168,7 @@ export default function CallOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (sizes, colors) => ({
   container: {
     position: 'fixed',
     overflow: 'hidden',
@@ -184,15 +185,15 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: sizes.scale(0),
+    right: sizes.scale(0),
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    paddingHorizontal: 10,
+    paddingHorizontal: sizes.scale(10),
   },
   iconBtn: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 30,
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
+    borderRadius: sizes.scale(30),
     backdropFilter: 'blur(4px)',
   }
 });

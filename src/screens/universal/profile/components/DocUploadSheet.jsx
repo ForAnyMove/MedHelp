@@ -102,7 +102,7 @@ export function DocUploadSheet({ onClose }) {
         key={keyName ? iconName + keyName : iconName}
         style={[styles.docCard, isUploaded && styles.docCardUploaded]}
         onPress={() => isUploaded ? setFile(null) : pickDocument(setFile)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={{ top: sizes.scale(10), bottom: sizes.scale(10), left: sizes.scale(10), right: sizes.scale(10) }}
         activeOpacity={0.8}
       >
         <View style={[styles.docIconContainer, { opacity: isUploaded ? 1 : 0.5 }]}>
@@ -271,8 +271,8 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.m,
     paddingHorizontal: theme.sizes.scale(19),
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
@@ -332,14 +332,14 @@ const themeStyles = (theme) => ({
     marginHorizontal: -theme.sizes.spacing.m,
     paddingTop: theme.sizes.scale(14),
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: -8 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(-8) },
     shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 2,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: /* TODO: color */ 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.sizes.spacing.xl,

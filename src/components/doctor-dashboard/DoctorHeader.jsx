@@ -6,7 +6,7 @@ import { useStyles } from '../../theme/useStyles';
 import { Avatar } from '../common/Avatar';
 import { Icon } from '../ui/Icon';
 
-export function DoctorHeader({ profile }) {
+export function DoctorHeader({ profile, onNotificationPress }) {
   const { colors, sizes } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
@@ -27,7 +27,7 @@ export function DoctorHeader({ profile }) {
           {t('doctor_dashboard.hi_dr', { name: profile.firstName || '' })}
         </Text>
       </View>
-      <TouchableOpacity style={styles.notification}>
+      <TouchableOpacity style={styles.notification} onPress={onNotificationPress}>
         <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} />
       </TouchableOpacity>
     </View>

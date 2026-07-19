@@ -13,6 +13,7 @@ const TOAST_WIDTH_LANDSCAPE = 340;
 const SWIPE_THRESHOLD = 80;
 
 function ToastCard({ notification, index, total, isLandscape, colors, sizes, onDismiss, onPress }) {
+  const styles = getStyles(sizes, colors);
   const slideAnim = useRef(new Animated.Value(isLandscape ? 120 : -120)).current;
   const swipeAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -84,8 +85,8 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
     ? [
         styles.toastLandscape,
         {
-          bottom: 100 + index * 8,
-          right: 20,
+          bottom: sizes.scale(100) + index * 8,
+          right: sizes.scale(20),
           transform: [
             { translateX: Animated.add(slideAnim, swipeAnim) },
             { scale: scaleValue },
@@ -137,7 +138,7 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
         </View>
 
         {/* Close button */}
-        <TouchableOpacity onPress={dismiss} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={dismiss} style={styles.closeBtn} hitSlop={{ top: sizes.scale(8), bottom: sizes.scale(8), left: sizes.scale(8), right: sizes.scale(8) }}>
           <Icon name="x" size={sizes.scale(16)} color={colors.n500} />
         </TouchableOpacity>
       </TouchableOpacity>
@@ -147,6 +148,7 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
 
 export function InAppNotification() {
   const { colors, sizes } = useTheme();
+  const styles = getStyles(sizes, colors);
   const router = useRouter();
   const { notifications, dismissNotification, setPendingChannelId } = useChatNotifications();
   const { } = usePushNotifications(); // Activates native push listener
@@ -198,40 +200,40 @@ export function InAppNotification() {
   return container;
 }
 
-const styles = StyleSheet.create({
+const getStyles = (sizes, colors) => ({
   wrapper: {
     position: 'absolute',
     zIndex: 9999,
     pointerEvents: 'box-none',
   },
   wrapperPortrait: {
-    top: 0,
-    left: 0,
-    right: 0,
+    top: sizes.scale(0),
+    left: sizes.scale(0),
+    right: sizes.scale(0),
   },
   wrapperLandscape: {
-    bottom: 0,
-    right: 0,
+    bottom: sizes.scale(0),
+    right: sizes.scale(0),
     width: TOAST_WIDTH_LANDSCAPE + 40,
   },
   toastPortrait: {
-    marginHorizontal: 16,
-    borderRadius: 16,
+    marginHorizontal: sizes.scale(16),
+    borderRadius: sizes.scale(16),
     borderWidth: 1,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: sizes.scale(0), height: sizes.scale(4) },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 10,
   },
   toastLandscape: {
     position: 'absolute',
-    borderRadius: 16,
+    borderRadius: sizes.scale(16),
     borderWidth: 1,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: sizes.scale(0), height: sizes.scale(4) },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 10,
@@ -239,28 +241,28 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: sizes.scale(12),
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: sizes.scale(40),
+    height: sizes.scale(40),
+    borderRadius: sizes.scale(20),
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: sizes.scale(10),
   },
   textContainer: {
     flex: 1,
   },
   toastTitle: {
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: sizes.scale(2),
   },
   toastBody: {
     fontWeight: '400',
   },
   closeBtn: {
-    marginLeft: 8,
-    padding: 4,
+    marginLeft: sizes.scale(8),
+    padding: sizes.scale(4),
   },
 });

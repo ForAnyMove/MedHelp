@@ -69,8 +69,8 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       const doctorsApi = createDoctorsApi(api);
 
       // Try fetching doctor specific details
-      const response = await doctorsApi.listAll().catch(() => ({ data: [] }));
-      const rawAllDoctors = response.data || [];
+      const response = await doctorsApi.listAll().catch(() => []);
+      const rawAllDoctors = Array.isArray(response) ? response : (response?.data || []);
       const doctorData = rawAllDoctors.find(d => d.profileId === session.userId) || null;
       console.log('[DEBUG] myDoctorProfileManager found doctorData:', doctorData);
 
@@ -99,6 +99,7 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       const upcoming = rawAll.filter(
         c => c.status !== 'completed' && c.status !== 'canceled'
       );
+      console.log(`[myDoctorProfileManager] upcoming length after filter: ${upcoming.length}`);
       setConsultations(upcoming.map(mapConsultationForDoctor).sort((a, b) => new Date(a.date) - new Date(b.date)));
 
       const completedResp = await consultApi.list({ status: 'completed' }).catch(() => []);
@@ -111,10 +112,35 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       setAppLoading(false);
       setIsLoaded(true);
     }
-  }, [session?.userId, session?.firstName, session?.lastName]);
+  }, [session, session?.userId, refreshSessionToken]);
 
   useEffect(() => {
     load();
+
+    const { DeviceEventEmitter } = require('react-native');
+    const sub1 = DeviceEventEmitter.addListener('booking_created', () => {
+       console.log('[myDoctorProfileManager] booking_created event received, waiting 500ms then calling load()');
+       setTimeout(load, 500);
+    });
+    const sub2 = DeviceEventEmitter.addListener('booking_canceled', () => {
+       console.log('[myDoctorProfileManager] booking_canceled event received, waiting 500ms then calling load()');
+       setTimeout(load, 500);
+    });
+    const sub3 = DeviceEventEmitter.addListener('consultation_completed', () => {
+       console.log('[myDoctorProfileManager] consultation_completed event received, waiting 500ms then calling load()');
+       setTimeout(load, 500);
+    });
+    const sub4 = DeviceEventEmitter.addListener('booking_rescheduled', () => {
+       console.log('[myDoctorProfileManager] booking_rescheduled event received, waiting 500ms then calling load()');
+       setTimeout(load, 500);
+    });
+
+    return () => {
+      sub1.remove();
+      sub2.remove();
+      sub3.remove();
+      sub4.remove();
+    };
   }, [load]);
 
   const reloadProfile = useCallback(async () => {
@@ -124,10 +150,16 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
   // ── Derived helpers ───────────────────────────────────────────────────────
 
   const getDashboardData = useCallback(() => {
-    const todayStr = getIsoDateWithOffset(0).split('T')[0];
-    const consultationsToday = consultations.filter(c =>
-      (c.date ?? '').startsWith(todayStr)
-    );
+    const toLocalDateString = (d) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const todayStr = toLocalDateString(new Date());
+    
+    const consultationsToday = consultations.filter(c => {
+      if (!c.date) return false;
+      return toLocalDateString(new Date(c.date)) === todayStr;
+    });
+
     return {
       profile,
       nextConsultation: consultations[0] ?? null,
@@ -136,9 +168,16 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
   }, [profile, consultations]);
 
   const getGroupedConsultations = useCallback(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const toLocalDateString = (d) => {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    const today = new Date();
+    const todayStr = toLocalDateString(today);
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = toLocalDateString(tomorrow);
 
     const groupsMap = {};
 
@@ -147,7 +186,8 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
     groupsMap[tomorrowStr] = [];
 
     consultations.forEach(c => {
-      const datePart = (c.date ?? '').split('T')[0];
+      if (!c.date) return;
+      const datePart = toLocalDateString(new Date(c.date));
       if (!groupsMap[datePart]) groupsMap[datePart] = [];
       groupsMap[datePart].push(c);
     });
@@ -159,8 +199,10 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       if (dateKey === todayStr) title = 'common.today';
       else if (dateKey === tomorrowStr) title = 'common.tomorrow';
       else {
-        const d = new Date(dateKey);
-        title = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+        // Parse dateKey as local date
+        const [y, m, d] = dateKey.split('-');
+        const dateObj = new Date(y, m - 1, d);
+        title = dateObj.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
       }
 
       return {

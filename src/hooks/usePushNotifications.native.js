@@ -4,21 +4,13 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useChatNotifications } from '../context/ChatNotificationContext';
+import i18n from '../locales/i18n';
 
-// Configure how notifications are shown when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: false, // We handle foreground ourselves with toasts
-    shouldPlaySound: false,
-    shouldSetBadge: true,
-  }),
-});
+// Removed local setNotificationHandler, now handled centrally in NotificationContext.jsx
 
 export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
-  const notificationListener = useRef(null);
-  const responseListener = useRef(null);
   const router = useRouter();
   const { setPendingChannelId } = useChatNotifications();
 
@@ -30,24 +22,8 @@ export function usePushNotifications() {
       }
     });
 
-    // Fired when a notification is received while app is in foreground (we show our own toast)
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
-      // Intentionally empty: foreground notifications are handled via Stream events + our toasts
-    });
-
-    // Fired when user taps a notification (app in background/closed)
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data;
-      if (data?.channelId) {
-        setPendingChannelId(data.channelId);
-        router.push('/(chat)/list');
-      }
-    });
-
-    return () => {
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
-    };
+    // Fired when a notification is received while app is in foreground (handled via NotificationContext)
+    // Fired when user taps a notification (app in background/closed) handled via NotificationContext
   }, []);
 
   return { expoPushToken, permissionGranted };
@@ -61,10 +37,10 @@ async function registerForPushNotificationsAsync() {
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('chat-messages', {
-      name: 'Сообщения',
+      name: i18n.t('actions.messages', 'Сообщения'),
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#23D3C2',
+      lightColor: colors.p500,
     });
   }
 

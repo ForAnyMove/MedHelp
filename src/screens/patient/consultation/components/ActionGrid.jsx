@@ -5,7 +5,7 @@ import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 
-export function ActionGrid({ onActionPress }) {
+export function ActionGrid({ onActionPress, isOtherUserInCall }) {
   const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
@@ -28,6 +28,7 @@ export function ActionGrid({ onActionPress }) {
         >
           <Icon name={action.icon} size={sizes.scale(24)} color={action.color} wrapperStyle={styles.iconBox} wrapped />
           <Text style={styles.label}>{action.label}</Text>
+          {action.id === 'video' && isOtherUserInCall && <View style={styles.redDot} />}
         </TouchableOpacity>
       ))}
     </View>
@@ -50,8 +51,8 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
@@ -67,5 +68,14 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.bodyLarge,
     fontFamily: 'Manrope_600SemiBold',
     color: theme.colors.n700,
+  },
+  redDot: {
+    position: 'absolute',
+    top: theme.sizes.spacing.s,
+    right: theme.sizes.spacing.s,
+    width: theme.sizes.scale(12),
+    height: theme.sizes.scale(12),
+    borderRadius: theme.sizes.scale(6),
+    backgroundColor: theme.colors.danger,
   }
 });

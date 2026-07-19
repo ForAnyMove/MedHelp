@@ -13,6 +13,7 @@ export default function ChatRoomScreen() {
   const router = useRouter();
   const { chatClient } = useStreamContext();
   const { colors, sizes } = useTheme();
+  const styles = getStyles(sizes, colors);
   const { t } = useTranslation();
   const [channel, setChannel] = useState(null);
 
@@ -50,7 +51,7 @@ export default function ChatRoomScreen() {
         height: sizes.scale(68),
       }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Icon name="arrow-left" size={sizes.scale(24)} color={colors.n900} />
+          <Icon name="arrow-back" size={sizes.scale(24)} color={colors.n900} />
         </TouchableOpacity>
         <Text style={[{ color: colors.n900 }, sizes.typography.h3]}>
           {channel.data?.name || t('actions.chat')}
@@ -60,17 +61,17 @@ export default function ChatRoomScreen() {
 
       <div className="str-chat str-chat--theme-light" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: `calc(100vh - ${sizes.scale(68)}px)` }}>
         <Channel channel={channel}>
-           <Window>
-             <MessageList />
-             <MessageInput />
-           </Window>
+          <Window>
+            <MessageList />
+            <MessageInput />
+          </Window>
         </Channel>
       </div>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (sizes, colors) => ({
   container: {
     flex: 1,
   },
@@ -81,6 +82,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backButton: {
-    padding: 4,
+    padding: sizes.scale(4),
   },
 });

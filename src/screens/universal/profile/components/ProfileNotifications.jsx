@@ -5,12 +5,13 @@ import { useStyles } from '../../../../theme/useStyles';
 import { formatRelativeTime } from '../../../../utils/dateUtils';
 import { useComponentContext } from '../../../../context/GlobalContext';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { Icon } from '../../../../components/ui/Icon';
 import { useTheme } from '../../../../theme/ThemeContext';
 
 
 
-export function ProfileNotifications({ user }) {
+export function ProfileNotifications({ user, onClose }) {
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
   const { notificationController } = useComponentContext();
@@ -27,9 +28,54 @@ export function ProfileNotifications({ user }) {
       markAsRead(item.id);
     }
 
-    if (item.type === 'confirmed_appointment' || item.type === 'new_appointment' || item.type === 'canceled_appointment') {
-      if (item.reference_id) {
-        router.push(`/(app)/appointment-confirmed?id=${item.reference_id}`);
+    if (item.data?.url) {
+      const url = item.data.url;
+      const isConsultation = url.includes('completed-consultation') || url.includes('consultation/');
+      
+      if (isConsultation && user?.role === 'doctor') {
+        const idMatch = url.match(/id=([^&]+)/) || url.match(/consultation\/([^&/?]+)/);
+        const id = idMatch ? idMatch[1] : item.reference_id;
+        if (id) {
+          if (onClose) onClose();
+          router.push(`/(doctor)?tab=history&openHistoryId=${id}`);
+          return;
+        }
+      }
+
+      if (url.includes('completed-consultation') && user?.role === 'patient') {
+        const idMatch = url.match(/id=([^&]+)/);
+        const id = idMatch ? idMatch[1] : item.reference_id;
+        if (id) {
+          if (onClose) onClose();
+          router.push(`/(patient)?tab=history&openHistoryId=${id}`);
+          return;
+        }
+      }
+
+      try {
+        const parsed = Linking.parse(url);
+        if (onClose) onClose();
+        if (parsed.hostname) {
+          const routePath = parsed.path ? `/${parsed.path}` : '';
+          router.push(`/${parsed.hostname}${routePath}`);
+        } else if (parsed.path) {
+          router.push('/' + parsed.path);
+        } else {
+          router.push(url);
+        }
+      } catch (e) {
+        if (onClose) onClose();
+        router.push(url);
+      }
+      return;
+    }
+
+    if (item.reference_id) {
+      if (onClose) onClose();
+      if (user?.role === 'doctor') {
+        router.push(`/(doctor)?tab=history&openHistoryId=${item.reference_id}`);
+      } else {
+        router.push(`/consultation/${item.reference_id}`);
       }
     }
     // Handle other types here
@@ -72,7 +118,7 @@ export function ProfileNotifications({ user }) {
 const NotificationItem = ({ item, onPress }) => {
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
-  const { colors } = useTheme();
+  const { colors, sizes } = useTheme();
 
   const getIconConfig = (type) => {
     switch (type) {
@@ -97,8 +143,8 @@ const NotificationItem = ({ item, onPress }) => {
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.itemTitle}>{item.title || t(`notifications.${item.type}`, item.type)}</Text>
-        <Text style={styles.itemDesc} numberOfLines={1}>{item.description}</Text>
+        <Text style={styles.itemTitle}>{t(`notifications.${item.type}`, item.title || item.type)}</Text>
+        <Text style={styles.itemDesc} numberOfLines={1}>{t(`notifications.${item.type}_desc`, item.description)}</Text>
         <Text style={styles.timeText}>{formatRelativeTime(item.created_at, t)}</Text>
       </View>
 
@@ -147,8 +193,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.03,
     shadowRadius: 10,
     elevation: 2,

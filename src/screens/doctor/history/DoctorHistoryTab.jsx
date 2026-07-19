@@ -8,96 +8,102 @@ import { ErrorState } from '../../../components/common/ErrorState';
 import { SkeletonCard } from '../../../components/common/SkeletonCard';
 import { Icon } from '../../../components/ui/Icon';
 import { formatIsoDate } from '../../../utils/dateUtils';
+import { HistorySummaryCard } from './components/HistorySummaryCard';
+import { ConsultationTypesList } from './components/ConsultationTypesList';
+import { useDoctorDashboard } from '../../../context/DoctorDashboardContext';
+import { AllConsultations } from './extra-screens/AllConsultations';
+import { CompletedConsultation } from './extra-screens/CompletedConsultation';
+import { DoctorRatings } from './extra-screens/DoctorRatings';
+import { PatientProfileSubView } from './extra-screens/PatientProfileSubView';
+
 
 export function DoctorHistoryTab() {
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
   const { historyController } = useComponentContext();
-  const { doctorPastConsultations = [] } = historyController;
+  const { doctorPastConsultations = [], isLoaded } = historyController;
+  const [activeSegment, setActiveSegment] = useState(true);
+  const { historyView, historySelectedId, historyPatientProfileId, navigateToHistoryAll, navigateBack } = useDoctorDashboard();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [consultations, setConsultations] = useState([]);
+  const currentSummary = React.useMemo(() => {
+    let data = doctorPastConsultations || [];
+    if (!activeSegment) {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      data = data.filter(c => new Date(c.date) >= weekAgo);
+    }
+    const uniquePatients = new Set(data.map(c => c.patientName)).size;
+    const upcomingCount = data.filter(c => c.status === 'scheduled').length;
+    // Sort to get the latest date for lastOverview
+    const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Simulate async fetch (swap for Supabase later)
-        await new Promise(resolve => setTimeout(resolve, 600));
-        if (!cancelled) setConsultations(doctorPastConsultations);
-      } catch (e) {
-        if (!cancelled) setError(e.message || 'Failed to load history');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    return {
+      lastOverview: sortedData.length > 0 ? sortedData[0].date : null,
+      consultationsCount: data.length,
+      patientsCount: uniquePatients,
+      upcomingConsultations: upcomingCount,
+      comments: activeSegment ? 25 : 4,
     };
-    loadData();
-    return () => { cancelled = true; };
-  }, []);
+  }, [doctorPastConsultations, activeSegment]);
+
+  if (historyView === 'all') {
+    return <AllConsultations activeSegment={activeSegment} />;
+  }
+
+  if (historyView === 'detail' && historySelectedId) {
+    return <CompletedConsultation id={historySelectedId} />;
+  }
+
+  if (historyView === 'patient-profile' && historyPatientProfileId) {
+    return <PatientProfileSubView patientId={historyPatientProfileId} onBack={navigateBack} />;
+  }
+
+  if (historyView === 'ratings') {
+    return <DoctorRatings />;
+  }
 
   const renderContent = () => {
-    if (loading) {
+    if (!isLoaded) {
       return Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} lines={3} />);
     }
-    if (error) {
-      return (
-        <ErrorState
-          message={error}
-          onRetry={() => setLoading(true)}
-        />
-      );
-    }
-    if (consultations.length === 0) {
+    const dataToUse = doctorPastConsultations;
+
+    if (dataToUse.length === 0) {
       return (
         <EmptyState
           icon="ClipboardList"
           title={t('doctor_history.empty_title') || 'No consultations yet'}
-          description={t('doctor_history.empty_desc') || 'Your completed consultations will appear here.'}
+          description={t('doctor_history.empty_desc') || 'Your consultations will appear here.'}
         />
       );
     }
 
-    return consultations.map((c) => (
-      <ConsultationHistoryCard key={c.id} consultation={c} styles={styles} t={t} />
-    ));
+    const upcoming = dataToUse.filter(c => c.status === 'scheduled');
+    const completed = dataToUse.filter(c => c.status === 'completed');
+    const canceled = dataToUse.filter(c => c.status === 'canceled');
+
+    return (
+      <View>
+        {upcoming.length > 0 && <ConsultationTypesList title={t('doctor_history.upcoming')} list={upcoming} type="upcoming" />}
+        {completed.length > 0 && <ConsultationTypesList title={t('doctor_history.completed')} list={completed} type="completed" />}
+        {canceled.length > 0 && <ConsultationTypesList title={t('doctor_history.canceled')} list={canceled} type="canceled" />}
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>{t('doctor_history.title') || 'Consultation History'}</Text>
+        <HistorySummaryCard
+          activeSegment={activeSegment}
+          onSegmentChange={(v) => setActiveSegment(v)}
+          summary={currentSummary}
+          onConsultationsPress={() => navigateToHistoryAll(activeSegment ? 'all' : 'latest')}
+        />
         {renderContent()}
       </ScrollView>
     </View>
-  );
-}
-
-function ConsultationHistoryCard({ consultation: c, styles, t }) {
-  const date = formatIsoDate(c.date, 'medium', t);
-
-  return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85}>
-      <Image source={{ uri: c.avatarUrl }} style={styles.avatar} />
-      <View style={styles.cardBody}>
-        <View style={styles.cardRow}>
-          <Text style={styles.patientName}>{c.patientName}</Text>
-          <View style={styles.earningBadge}>
-            <Text style={styles.earningText}>+${c.earnings}</Text>
-          </View>
-        </View>
-        <Text style={styles.diagnosis} numberOfLines={1}>{c.diagnosis}</Text>
-        <View style={styles.meta}>
-          <Icon name="Calendar" size={12} color={styles.metaIcon.color} />
-          <Text style={styles.metaText}>{date}</Text>
-          <Icon name="Clock" size={12} color={styles.metaIcon.color} />
-          <Text style={styles.metaText}>{c.duration} min</Text>
-        </View>
-      </View>
-      <Icon name="ChevronRight" size={20} color={styles.chevron.color} />
-    </TouchableOpacity>
   );
 }
 
@@ -107,7 +113,7 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.xl * 2,
   },
@@ -124,16 +130,16 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.l,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: theme.sizes.scale(48),
+    height: theme.sizes.scale(48),
+    borderRadius: theme.sizes.scale(24),
     marginRight: theme.sizes.spacing.m,
   },
   cardBody: {
@@ -143,7 +149,7 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    marginBottom: theme.sizes.scale(2),
   },
   patientName: {
     ...theme.sizes.typography.bodyMedium,
@@ -151,14 +157,14 @@ const themeStyles = (theme) => ({
     fontFamily: 'Manrope_700Bold',
   },
   earningBadge: {
-    backgroundColor: '#E0F9F6',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    backgroundColor: /* TODO: color */ '#E0F9F6',
+    paddingHorizontal: theme.sizes.scale(8),
+    paddingVertical: theme.sizes.scale(2),
+    borderRadius: theme.sizes.scale(10),
   },
   earningText: {
     ...theme.sizes.typography.caption,
-    color: '#1A9C8E',
+    color: /* TODO: color */ '#1A9C8E',
     fontFamily: 'Manrope_700Bold',
   },
   diagnosis: {
@@ -169,7 +175,7 @@ const themeStyles = (theme) => ({
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: theme.sizes.scale(4),
   },
   metaIcon: {
     color: theme.colors.n400,

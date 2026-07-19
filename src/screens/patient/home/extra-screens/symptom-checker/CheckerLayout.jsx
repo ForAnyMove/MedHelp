@@ -15,7 +15,7 @@ export function CheckerLayout({ children, onBack, title, style, hideLogo }) {
           style={styles(sizes, colors).backBtn} 
           onPress={onBack}
           activeOpacity={0.7}
-          hitSlop={{top: 15, bottom:15, left:15, right:15}}
+          hitSlop={{top: sizes.scale(15), bottom: sizes.scale(15), left: sizes.scale(15), right: sizes.scale(15)}}
         >
           <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
         </TouchableOpacity>

@@ -6,12 +6,14 @@ import { Icon } from '../ui/Icon';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { ConsultationReminderCard } from './components/ConsultationReminderCard';
+import { usePatientDashboard } from '../../context/PatientDashboardContext';
 
 export function Reminders() {
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const { consultationController } = useComponentContext();
+  const { navigateToConsultationDetail } = usePatientDashboard();
   const styles = useStyles(themeStyles);
 
   const bookings = consultationController.upcomingBookings;
@@ -36,6 +38,7 @@ export function Reminders() {
             key={booking.id} 
             booking={booking} 
             cardWidth={cardWidth} 
+            onPress={() => navigateToConsultationDetail(booking)}
           />
         ))}
       </ScrollView>
@@ -65,7 +68,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -7,21 +7,73 @@ import { Icon } from '../../../../components/ui/Icon';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
 import { Button } from '../../../../components/ui/Button';
+import { useSession } from '../../../../context/SessionContext';
+import { createApiClient } from '../../../../api/apiClient';
+import { createConsultationsApi } from '../../../../api/consultationsApi';
 
 export function DoctorConsultationSummary({ consultation }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
-  const { saveSummary, closeSummary, isSummarySaved, setTabIndex, handleTabSwitchRequest } = useDoctorDashboard();
+  const { closeSummary, backFromForm, goToForm, setTabIndex, handleTabSwitchRequest } = useDoctorDashboard();
+  const { session, refreshSessionToken } = useSession();
 
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  const [resultData, setResultData] = useState(null);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    await saveSummary();
-    setIsSaving(false);
-    setShowSuccessModal(true);
+  useEffect(() => {
+    const fetchExistingResult = async () => {
+      try {
+        const api = createApiClient(session, refreshSessionToken);
+        const consultApi = createConsultationsApi(api);
+        const response = await consultApi.getResults(consultation.id);
+        
+        if (response) {
+          const resData = response;
+          // Parse JSON lists
+          const parseList = (field) => {
+            if (!field) return [];
+            return typeof field === 'string' ? JSON.parse(field) : field;
+          };
+          
+          setResultData({
+             ...resData,
+             patient_has: parseList(resData.patient_has),
+             next_steps: parseList(resData.next_steps),
+             recommendations: parseList(resData.recommendations)
+          });
+        }
+      } catch (error) {
+        console.error('[DoctorConsultationSummary] Error fetching results:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (consultation?.id) {
+      fetchExistingResult();
+    } else {
+      setIsLoading(false);
+    }
+  }, [consultation?.id, session]);
+
+  const handleSendToPatient = async () => {
+    setIsSending(true);
+    try {
+      const api = createApiClient(session, refreshSessionToken);
+      const consultApi = createConsultationsApi(api);
+      
+      await consultApi.updateResult(consultation.id, { is_draft: false });
+      
+      setIsSending(false);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('[DoctorConsultationSummary] Error sending to patient:', error);
+      setIsSending(false);
+    }
   };
 
   const handleClosePopup = () => {
@@ -34,92 +86,152 @@ export function DoctorConsultationSummary({ consultation }) {
     setTabIndex(0); // Explicitly route to Home Tab
   };
 
+  if (isLoading) {
+     return (
+       <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.p500} />
+       </View>
+     );
+  }
+
+  if (!resultData) {
+     return (
+       <SubViewScreen title="Consultation summary" onBack={backFromForm}>
+          <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+             <Text style={styles.subtitle}>{t('doctor_consultation.no_result_data', 'No result data found.')}</Text>
+             <Button title={t('doctor_consultation.fill_results', 'Fill results')} onPress={goToForm} style={{marginTop: sizes.scale(20)}} />
+          </View>
+       </SubViewScreen>
+     );
+  }
+
   const getIconColor = (idx) => {
     const colorsArr = [colors.sPink, colors.p500, colors.sCoral, colors.sYell];
     return colorsArr[idx % colorsArr.length];
   };
 
-  const mockPoints = [
-    "Low ferritin (iron stores) — this may indicate iron deficiency.",
-    "Elevated cholesterol level — which increases cardiovascular risk over time.",
-    "The condition is not critical, but requires correction and monitoring."
-  ];
-
-  const mockRecs = [
-    "Consider taking iron supplements",
-    "Assess the possible causes of the deficiency",
-    "Repeat tests in 4-6 weeks",
-    "See a doctor as soon as possible"
-  ];
+  const isDraft = resultData.is_draft;
 
   return (
     <SubViewScreen
       title={t('doctor_consultation.summary_title') || 'Consultation summary'}
-      onBack={() => handleTabSwitchRequest(2)}
-      confirmBeforeExit={!isSummarySaved}
-      confirmTitle={t('doctor_consultation.exit_title')}
-      confirmMessage={t('doctor_consultation.exit_desc')}
-      confirmLabel={t('doctor_consultation.exit_confirm')}
-      cancelLabel={t('common.cancel')}
+      onBack={backFromForm}
+      confirmBeforeExit={isDraft}
+      confirmTitle={t('doctor_consultation.exit_title') || 'Exit'}
+      confirmMessage={t('doctor_consultation.exit_desc') || 'Are you sure you want to leave?'}
+      confirmLabel={t('doctor_consultation.exit_confirm') || 'Yes'}
+      cancelLabel={t('common.cancel') || 'Cancel'}
     >
-      {/* Subtitle row */}
       <View style={styles.subHeader}>
         <Text style={styles.subtitle}>
-          {t('doctor_consultation.completed_time') || 'Completed'}: <Text style={{ fontFamily: 'Manrope_600SemiBold', color: styles.subtitleBold?.color }}>45 min</Text>
+          {t('doctor_consultation.completed_time') || 'Completed'}: <Text style={{ fontFamily: 'Manrope_600SemiBold', color: styles.subtitleBold?.color }}>{consultation?.duration || '45'} min</Text>
         </Text>
-        <TouchableOpacity>
-          <Icon name="edit" size={sizes.scale(24)} color={styles.editIcon?.color} />
-        </TouchableOpacity>
+        {isDraft && (
+          <TouchableOpacity onPress={goToForm}>
+            <Icon name="edit" size={sizes.scale(24)} color={styles.editIcon?.color} />
+          </TouchableOpacity>
+        )}
       </View>
+      
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        
+        {/* Header Progress indicator */}
+        <View style={styles.progressContainer}>
+           <Text style={styles.progressInactive}>{t('doctor_consultation.notes', 'Notes')}</Text>
+           <View style={styles.progressLine} />
+           <Text style={styles.progressInactive}>{t('doctor_consultation.summary', 'Summary')}</Text>
+           <View style={styles.progressLine} />
+           <Text style={isDraft ? styles.progressActive : styles.progressInactive}>{t('doctor_consultation.sent', 'Sent')}</Text>
+        </View>
+        
+        {/* Patient has / Overview */}
         <View style={styles.mainNoteCard}>
-          <Text style={styles.mainNoteText}>During the consultation we discussed your test results.</Text>
-          <Text style={styles.mainNoteText}>You have:</Text>
-          {mockPoints.map((p, idx) => (
-            <View key={idx} style={[styles.bulletRow, { marginBottom: idx !== mockPoints.length - 1 ? sizes.spacing.s : 0 }]}>
-              <View style={[styles.bullet, { backgroundColor: colors.p500 }]} />
-              <Text style={styles.bulletText}>{p}</Text>
-            </View>
-          ))}
+          {resultData.overview ? (
+            <Text style={styles.mainNoteText}>{resultData.overview}</Text>
+          ) : null}
+          
+          {resultData.patient_has && resultData.patient_has.length > 0 && (
+            <>
+              <Text style={styles.mainNoteText}>{t('doctor_consultation.you_have', 'You have:')}</Text>
+              {resultData.patient_has.map((p, idx) => (
+                <View key={idx} style={[styles.bulletRow, { marginBottom: idx !== resultData.patient_has.length - 1 ? sizes.spacing.s : 0 }]}>
+                  <View style={[styles.bullet, { backgroundColor: colors.p500 }]} />
+                  <Text style={styles.bulletText}>{p}</Text>
+                </View>
+              ))}
+            </>
+          )}
         </View>
 
-        <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
-        <View style={styles.listCard}>
-          {mockRecs.map((rec, idx) => (
-            <View key={idx} style={styles.listItem} borderBottomWidth={idx !== mockRecs.length - 1 ? 1 : 0}>
-              <Icon name="anemia" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
-              <Text style={styles.listText}>{rec}</Text>
-            </View>
-          ))}
-        </View>
+        {/* Diagnosis */}
+        {(resultData.diagnosis_icd10 || resultData.diagnosis_name) && (
+          <View style={styles.listCard}>
+            <Text style={styles.sectionTitle}>{t('doctor_consultation.diagnosis', 'Diagnosis')}</Text>
+            <Text style={styles.listText}>
+               {resultData.diagnosis_icd10 ? `[${resultData.diagnosis_icd10}] ` : ''}
+               {resultData.diagnosis_name || ''}
+            </Text>
+          </View>
+        )}
 
-        <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
-        <View style={styles.listCard}>
-          {mockRecs.map((rec, idx) => (
-            <View key={idx} style={styles.listItem} borderBottomWidth={idx !== mockRecs.length - 1 ? 1 : 0}>
-              <Icon name="anemia" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
-              <Text style={styles.listText}>{rec}</Text>
+        {/* Recommendations */}
+        {resultData.recommendations && resultData.recommendations.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
+            <View style={styles.listCard}>
+              {resultData.recommendations.map((rec, idx) => (
+                <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.recommendations.length - 1 ? 1 : 0}>
+                  <Icon name="file-text" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
+                  <Text style={styles.listText}>{rec}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          </>
+        )}
+
+        {/* Next Steps */}
+        {resultData.next_steps && resultData.next_steps.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
+            <View style={styles.listCard}>
+              {resultData.next_steps.map((rec, idx) => (
+                <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.next_steps.length - 1 ? 1 : 0}>
+                  <Icon name="check-circle" size={sizes.scale(24)} color={getIconColor(idx + 1)} wrapperStyle={styles.iconBox} wrapped />
+                  <Text style={styles.listText}>{rec}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+        
+        {/* Prescriptions */}
+        {resultData.prescriptions ? (
+          <>
+            <Text style={styles.sectionTitle}>{t('doctor_consultation.prescriptions', 'Prescriptions')}</Text>
+            <View style={styles.listCard}>
+              <Text style={styles.listText}>{resultData.prescriptions}</Text>
+            </View>
+          </>
+        ) : null}
       </ScrollView>
 
-      {!isSummarySaved && (
+      {isDraft && (
         <View style={styles.footer}>
           <Button
-            title={t('doctor_consultation.save_send') || 'Save & send'}
-            onPress={handleSave}
+            title={t('doctor_consultation.send_to_patient') || 'Sent to patient'}
+            onPress={handleSendToPatient}
             variant="primary"
             size="medium"
             style={styles.saveBtn}
-            loading={isSaving}
+            loading={isSending}
           />
-        </View>
-      )}
-
-      {isSaving && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.p500} />
+          <Button
+            title={t('common.skip') || 'Skip for now'}
+            onPress={closeSummary}
+            variant="outlined"
+            size="medium"
+            style={styles.skipBtn}
+          />
         </View>
       )}
 
@@ -135,7 +247,7 @@ export function DoctorConsultationSummary({ consultation }) {
             </View>
             <Text style={styles.modalTitle}>{t('doctor_consultation.saved_to_history') || 'Saved to patient history'}</Text>
             <Text style={styles.modalDesc}>
-              {consultation?.patient?.firstName || 'Patient'} can now access this summary in her app
+              {t('doctor_consultation.patient_access_desc', '{{name}} can now access this summary in their app', { name: consultation?.patient?.firstName || t('doctor_consultation.patient_fallback', 'Patient') })}
             </Text>
             <Button
               title={t('doctor_consultation.back_to_home') || 'Back to home'}
@@ -152,6 +264,10 @@ export function DoctorConsultationSummary({ consultation }) {
 }
 
 const themeStyles = (theme) => ({
+  screen: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
   subHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -172,13 +288,35 @@ const themeStyles = (theme) => ({
   scroll: {
     paddingBottom: theme.sizes.scale(100), // space for fixed footer
   },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.sizes.spacing.l,
+    marginTop: theme.sizes.spacing.s,
+  },
+  progressActive: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n900,
+    fontFamily: 'Manrope_700Bold',
+  },
+  progressInactive: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n400,
+  },
+  progressLine: {
+    width: theme.sizes.scale(20),
+    height: theme.sizes.scale(2),
+    backgroundColor: theme.colors.n300,
+    marginHorizontal: theme.sizes.spacing.s,
+  },
   mainNoteCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -206,7 +344,7 @@ const themeStyles = (theme) => ({
     flex: 1,
   },
   sectionTitle: {
-    ...theme.sizes.typography.h3,
+    ...theme.sizes.typography.h4,
     color: theme.colors.n700,
     marginBottom: theme.sizes.spacing.xs,
     fontFamily: 'Manrope_700Bold',
@@ -217,8 +355,8 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.m,
     paddingHorizontal: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -240,9 +378,9 @@ const themeStyles = (theme) => ({
   },
   footer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: theme.sizes.scale(0),
+    left: theme.sizes.scale(0),
+    right: theme.sizes.scale(0),
     paddingHorizontal: theme.sizes.spacing.l,
     paddingVertical: theme.sizes.spacing.l,
     backgroundColor: theme.colors.bg,
@@ -250,20 +388,19 @@ const themeStyles = (theme) => ({
   saveBtn: {
     height: theme.sizes.scale(58),
   },
-  saveBtnText: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n700,
-    fontFamily: 'Manrope_700Bold',
+  skipBtn: {
+    marginTop: theme.sizes.spacing.m,
+    height: theme.sizes.scale(58),
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: /* TODO: color */ 'rgba(255,255,255,0.7)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },

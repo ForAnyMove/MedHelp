@@ -11,16 +11,18 @@ import { mapConsultationsToBookings, mapConsultationToBooking } from '../utils/c
 export default function consultationManager(setAppLoading, session, refreshSessionToken) {
   const [bookings, setBookings] = useState([]);
   const [results,  setResults]  = useState([]);
+  const [allConsultations, setAllConsultations] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeSession, setActiveSession] = useState({
     bookingId: null,
     status: 'idle',
     startTime: null,
     elapsedSeconds: 0,
+    localNotes: [],
   });
 
-  const api        = createApiClient(session, refreshSessionToken);
-  const consultApi = createConsultationsApi(api);
+  const api = useMemo(() => createApiClient(session, refreshSessionToken), [session, refreshSessionToken]);
+  const consultApi = useMemo(() => createConsultationsApi(api), [api]);
 
   // ── Load consultations on mount / session change ──────────────────────────
 
@@ -28,10 +30,11 @@ export default function consultationManager(setAppLoading, session, refreshSessi
     if (!session?.userId) return;
     try {
       const raw = await consultApi.list();
-      const active   = mapConsultationsToBookings(raw ?? [], true);
-      const completed = (raw ?? [])
-        .filter(c => c.status === 'completed' || c.status === 'canceled');
+      const rawData = raw ?? [];
+      const active   = mapConsultationsToBookings(rawData, true);
+      const completed = rawData.filter(c => c.status === 'completed' || c.status === 'canceled');
 
+      setAllConsultations(rawData);
       setBookings(active);
       setResults(completed.map(c => ({
         id:          c.id,
@@ -52,10 +55,25 @@ export default function consultationManager(setAppLoading, session, refreshSessi
     } finally {
       setIsLoaded(true);
     }
-  }, [session?.userId]);
+  }, [session?.userId, consultApi]);
 
   useEffect(() => {
     loadConsultations();
+    
+    const { DeviceEventEmitter } = require('react-native');
+    const sub1 = DeviceEventEmitter.addListener('booking_canceled', loadConsultations);
+    const sub2 = DeviceEventEmitter.addListener('booking_created', loadConsultations);
+    const sub3 = DeviceEventEmitter.addListener('consultation_updated', loadConsultations);
+    const sub4 = DeviceEventEmitter.addListener('consultation_completed', loadConsultations);
+    const sub5 = DeviceEventEmitter.addListener('booking_rescheduled', loadConsultations);
+
+    return () => {
+      sub1.remove();
+      sub2.remove();
+      sub3.remove();
+      sub4.remove();
+      sub5.remove();
+    };
   }, [loadConsultations]);
 
   // ── Timer for ongoing session ─────────────────────────────────────────────
@@ -73,7 +91,7 @@ export default function consultationManager(setAppLoading, session, refreshSessi
   // ── Local-only session actions (timer management) ─────────────────────────
 
   const startConsultation = useCallback((bookingId) => {
-    setActiveSession({ bookingId, status: 'ongoing', startTime: new Date().toISOString(), elapsedSeconds: 0 });
+    setActiveSession({ bookingId, status: 'ongoing', startTime: new Date().toISOString(), elapsedSeconds: 0, localNotes: [] });
   }, []);
 
   const endConsultation = useCallback(() => {
@@ -81,7 +99,14 @@ export default function consultationManager(setAppLoading, session, refreshSessi
   }, []);
 
   const resetSession = useCallback(() => {
-    setActiveSession({ bookingId: null, status: 'idle', startTime: null, elapsedSeconds: 0 });
+    setActiveSession({ bookingId: null, status: 'idle', startTime: null, elapsedSeconds: 0, localNotes: [] });
+  }, []);
+
+  const addNote = useCallback((noteText) => {
+    setActiveSession(prev => ({
+      ...prev,
+      localNotes: [...(prev.localNotes || []), { text: noteText, timestamp: new Date().toISOString() }]
+    }));
   }, []);
 
   // ── API-backed actions ────────────────────────────────────────────────────
@@ -97,6 +122,8 @@ export default function consultationManager(setAppLoading, session, refreshSessi
     try {
       await consultApi.cancel(bookingId);
       setBookings(prev => prev.filter(b => b.id !== bookingId));
+      const { DeviceEventEmitter } = require('react-native');
+      DeviceEventEmitter.emit('booking_canceled', { bookingId });
     } catch (err) {
       console.error('[consultationManager] cancelBooking error:', err.message);
       throw err;
@@ -123,7 +150,42 @@ export default function consultationManager(setAppLoading, session, refreshSessi
   const getPreviousResult = useCallback((doctorId) =>
     results.find(r => r.doctorId === doctorId), [results]);
 
+  const getGroupedConsultations = useCallback(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const groupsMap = {};
+    groupsMap[todayStr] = [];
+    groupsMap[tomorrowStr] = [];
+
+    bookings.forEach(c => {
+      const datePart = (c.slot?.date ?? c.date ?? '').split('T')[0];
+      if (!datePart) return;
+      if (!groupsMap[datePart]) groupsMap[datePart] = [];
+      groupsMap[datePart].push(c);
+    });
+
+    const sortedDates = Object.keys(groupsMap).sort();
+
+    return sortedDates.map(dateKey => {
+      let title = '';
+      if (dateKey === todayStr) title = 'common.today';
+      else if (dateKey === tomorrowStr) title = 'common.tomorrow';
+      else {
+        const d = new Date(dateKey);
+        title = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+      }
+
+      return {
+        title,
+        data: groupsMap[dateKey].sort((a, b) => new Date(a.slot?.date) - new Date(b.slot?.date))
+      };
+    });
+  }, [bookings]);
+
   return {
+    allConsultations,
     bookings,
     results,
     isLoaded,
@@ -136,7 +198,9 @@ export default function consultationManager(setAppLoading, session, refreshSessi
     startConsultation,
     endConsultation,
     resetSession,
+    addNote,
     getPreviousResult,
     setActiveSession,
+    getGroupedConsultations,
   };
 }

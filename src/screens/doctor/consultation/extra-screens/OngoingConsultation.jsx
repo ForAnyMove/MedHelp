@@ -7,6 +7,9 @@ import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
 import { useRouter } from 'expo-router';
+import { useSession } from '../../../../context/SessionContext';
+
+import { useConsultationTimer } from '../../../../hooks/useConsultationTimer';
 
 export function OngoingConsultation({ consultation, onEndConsultation }) {
   const { colors, sizes } = useTheme();
@@ -14,14 +17,40 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
   const styles = useStyles(themeStyles);
   const router = useRouter();
   const [notes, setNotes] = React.useState('');
-  const [timer, setTimer] = React.useState(70); // 00:01:10
+  
+  const { session, refreshSessionToken } = useSession();
 
+  const {
+    timerSeconds,
+    isDoctorJoined,
+    isPatientJoined
+  } = useConsultationTimer(
+    consultation?.id,
+    'doctor',
+    consultation?.elapsed_seconds || 0,
+    consultation?.timer_last_started_at || null,
+    consultation?.is_doctor_joined,
+    consultation?.is_patient_joined
+  );
+      
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    const duration = consultation.slot?.duration || consultation.duration;
+    if (duration && timerSeconds >= duration * 60) {
+      const endAutomatically = async () => {
+        try {
+          const { createApiClient } = require('../../../../api/apiClient');
+          const { createConsultationsApi } = require('../../../../api/consultationsApi');
+          const api = createApiClient(session, refreshSessionToken);
+          const consultApi = createConsultationsApi(api);
+          await consultApi.update(consultation.id, { status: 'completed' });
+        } catch (e) {
+          console.error('Failed to update consultation status:', e);
+        }
+        onEndConsultation();
+      };
+      endAutomatically();
+    }
+  }, [timerSeconds, consultation, session, refreshSessionToken, onEndConsultation]);
 
   const formatTimer = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -37,10 +66,44 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
     ];
   };
 
-  const digits = formatTimer(timer);
-
-  const { session, refreshSessionToken } = require('../../../../context/SessionContext').useSession();
+  const digits = formatTimer(timerSeconds);
   const [isStartingCall, setIsStartingCall] = React.useState(false);
+  const [isNotifying, setIsNotifying] = React.useState(false);
+  const [isOtherUserInCall, setIsOtherUserInCall] = React.useState(!!consultation.is_other_user_in_video);
+
+  React.useEffect(() => {
+    let interval;
+    if (consultation?.id) {
+      interval = setInterval(async () => {
+        try {
+          const res = await consultApi.getVideoStatus(consultation.id);
+          setIsOtherUserInCall(res.is_other_user_in_video);
+        } catch (e) {
+          // Silent catch to prevent spamming logs on transient errors
+        }
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [consultation?.id]);
+
+
+  const handleNotifyPress = async () => {
+    try {
+      setIsNotifying(true);
+      const { createApiClient } = require('../../../../api/apiClient');
+      const { createConsultationsApi } = require('../../../../api/consultationsApi');
+      const api = createApiClient(session, refreshSessionToken);
+      const consultApi = createConsultationsApi(api);
+      
+      await consultApi.notify(consultation.id);
+      
+      // Could show a success toast here
+    } catch (err) {
+      console.error('Failed to notify patient:', err);
+    } finally {
+      setIsNotifying(false);
+    }
+  };
 
   const handleActionPress = async (actionId) => {
     if (actionId === 'video') {
@@ -61,6 +124,20 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
     }
   };
 
+  const handleEndConsultation = async () => {
+    try {
+      const { createApiClient } = require('../../../../api/apiClient');
+      const { createConsultationsApi } = require('../../../../api/consultationsApi');
+      const api = createApiClient(session, refreshSessionToken);
+      const consultApi = createConsultationsApi(api);
+      
+      await consultApi.update(consultation.id, { status: 'completed' });
+    } catch (e) {
+      console.error('Failed to update consultation status:', e);
+    }
+    onEndConsultation();
+  };
+
   return (
     <SubViewScreen title={t('consultation.title')}>
       <View style={styles.container}>
@@ -77,7 +154,32 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
             </View>
           </View>
 
+
           <View style={styles.actionGrid}>
+            {!isPatientJoined && (
+              <View style={styles.notifyBlock}>
+                <View style={styles.notifyInfo}>
+                  <View style={styles.notifyIconBox}>
+                    <Icon name="bell" size={sizes.scale(24)} color={colors.white} />
+                  </View>
+                  <View style={styles.notifyTexts}>
+                    <Text style={styles.notifyTitle}>{t('consultation.notify_patient')}</Text>
+                    <Text style={styles.notifySubtitle}>
+                      {t('consultation.notify_patient_subtitle', { name: consultation.patient.firstName })}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  title={t('consultation.send')}
+                  variant="primary"
+                  onPress={handleNotifyPress}
+                  disabled={isNotifying}
+                  style={styles.notifyBtn}
+                  textStyle={styles.notifyBtnText}
+                />
+              </View>
+            )}
+
             <View style={styles.row}>
               <TouchableOpacity style={styles.actionCard} onPress={() => handleActionPress('chat')}>
                 <Icon name="chat" size={sizes.scale(24)} color={colors.sCoral} wrapperStyle={[styles.actionIcon]} wrapped />
@@ -96,6 +198,7 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
                   <Icon name="video" size={sizes.scale(24)} color={colors.p500} wrapperStyle={[styles.actionIcon]} wrapped />
                 )}
                 <Text style={styles.actionText}>{isStartingCall ? t('common.loading') : t('actions.video')}</Text>
+                {isOtherUserInCall && <View style={styles.redDot} />}
               </TouchableOpacity>
             </View>
             <View style={styles.row}>
@@ -116,16 +219,23 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
               <Text style={styles.timerTitle}>{t('consultation.timer')}</Text>
             </View>
             <View style={styles.timerDivider} />
-            <View style={styles.timerGrid}>
-              <View style={styles.digitBox}><Text style={styles.digit}>{digits[0]}</Text></View>
-              <View style={styles.digitBox}><Text style={styles.digit}>{digits[1]}</Text></View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.digitBox}><Text style={styles.digit}>{digits[2]}</Text></View>
-              <View style={styles.digitBox}><Text style={styles.digit}>{digits[3]}</Text></View>
-              <Text style={styles.colon}>:</Text>
-              <View style={styles.digitBox}><Text style={styles.digit}>{digits[4]}</Text></View>
-              <View style={styles.digitBox}><Text style={styles.digit}>{digits[5]}</Text></View>
-            </View>
+            {(isDoctorJoined && isPatientJoined) || timerSeconds > 0 ? (
+              <View style={styles.timerGrid}>
+                <View style={styles.digitBox}><Text style={styles.digit}>{digits[0]}</Text></View>
+                <View style={styles.digitBox}><Text style={styles.digit}>{digits[1]}</Text></View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.digitBox}><Text style={styles.digit}>{digits[2]}</Text></View>
+                <View style={styles.digitBox}><Text style={styles.digit}>{digits[3]}</Text></View>
+                <Text style={styles.colon}>:</Text>
+                <View style={styles.digitBox}><Text style={styles.digit}>{digits[4]}</Text></View>
+                <View style={styles.digitBox}><Text style={styles.digit}>{digits[5]}</Text></View>
+              </View>
+            ) : (
+              <View style={styles.waitingContainer}>
+                <ActivityIndicator size="small" color={colors.p500} style={{ marginRight: sizes.scale(8) }} />
+                <Text style={styles.waitingText}>{t('consultation.waiting_for_connection', 'Waiting for connection...')}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.notesBlock}>
@@ -153,8 +263,8 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
 
         <View style={styles.footer}>
           <TouchableOpacity
-            onPress={onEndConsultation}
-            hitSlop={{ top: 20, bottom: 20, left: 50, right: 50 }}
+            onPress={handleEndConsultation}
+            hitSlop={{ top: sizes.scale(20), bottom: sizes.scale(20), left: sizes.scale(50), right: sizes.scale(50) }}
             style={styles.endButton}
             activeOpacity={0.7}
           >
@@ -182,8 +292,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     paddingHorizontal: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -197,7 +307,7 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.l,
   },
   unifiedDivider: {
-    width: 1,
+    width: theme.sizes.scale(1),
     height: '80%',
     backgroundColor: theme.colors.n200,
     marginHorizontal: theme.sizes.spacing.m,
@@ -231,8 +341,8 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -247,6 +357,15 @@ const themeStyles = (theme) => ({
     color: theme.colors.n700,
     fontFamily: 'Manrope_600SemiBold',
   },
+  redDot: {
+    position: 'absolute',
+    top: theme.sizes.spacing.s,
+    right: theme.sizes.spacing.s,
+    width: theme.sizes.scale(12),
+    height: theme.sizes.scale(12),
+    borderRadius: theme.sizes.scale(6),
+    backgroundColor: theme.colors.danger,
+  },
   timerBlock: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
@@ -254,11 +373,54 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.s,
     alignItems: 'stretch',
     marginBottom: theme.sizes.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
+  },
+  notifyBlock: {
+    backgroundColor: theme.colors.opacityP100,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.l,
+    borderWidth: 1,
+    borderColor: theme.colors.p200,
+  },
+  notifyInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.sizes.spacing.m,
+  },
+  notifyIconBox: {
+    width: theme.sizes.scale(40),
+    height: theme.sizes.scale(40),
+    borderRadius: theme.sizes.scale(20),
+    backgroundColor: theme.colors.p500,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.sizes.spacing.m,
+  },
+  notifyTexts: {
+    flex: 1,
+  },
+  notifyTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n900,
+    marginBottom: theme.sizes.scale(2),
+  },
+  notifySubtitle: {
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.p500,
+  },
+  notifyBtn: {
+    width: '100%',
+    backgroundColor: theme.colors.white,
+    borderWidth: 1,
+    borderColor: theme.colors.p500,
+  },
+  notifyBtnText: {
+    color: theme.colors.p500,
   },
   timerHeader: {
     flexDirection: 'row',
@@ -277,7 +439,7 @@ const themeStyles = (theme) => ({
     marginLeft: theme.sizes.spacing.s,
   },
   timerDivider: {
-    height: 1,
+    height: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
     marginBottom: theme.sizes.spacing.m,
   },
@@ -305,6 +467,17 @@ const themeStyles = (theme) => ({
   colon: {
     ...theme.sizes.typography.h4,
     color: theme.colors.n700,
+  },
+  waitingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.sizes.spacing.m,
+  },
+  waitingText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n500,
+    fontFamily: 'Manrope_600SemiBold',
   },
   notesBlock: {
     marginBottom: theme.sizes.spacing.xs,

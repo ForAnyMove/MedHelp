@@ -61,6 +61,8 @@ export function createApiClient(session, refreshSessionToken = null) {
   const get = (path, params = {}) => {
     const url = new URL(`${BASE_URL}${path}`);
     Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
+    // Cache buster for web
+    url.searchParams.set('_t', Date.now().toString());
     return executeRequest(url.toString(), { method: 'GET', headers: buildHeaders() });
   };
 

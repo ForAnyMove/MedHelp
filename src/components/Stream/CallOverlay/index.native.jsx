@@ -10,6 +10,7 @@ export default function CallOverlay() {
   const { activeCall, isMinimized, setIsMinimized, setActiveCall } = useStreamContext();
   const router = useRouter();
   const { colors, sizes } = useTheme();
+  const styles = getStyles(sizes, colors);
 
   // Dynamic theme-based dimensions
   const WIDGET_SIZE = useMemo(() => sizes.scale(140), [sizes]);
@@ -141,10 +142,10 @@ export default function CallOverlay() {
           
           <View style={[styles.controls, { bottom: sizes.scale(8) }]}>
              <TouchableOpacity onPress={handleMaximize} style={[styles.iconBtn, { padding: sizes.scale(10) }]}>
-                <Icon name="Maximize" size={sizes.scale(20)} color={colors.white} />
+                <Icon name = 'Maximize' size={sizes.scale(20)} color={colors.white}  />
              </TouchableOpacity>
              <TouchableOpacity onPress={handleEndCall} style={[styles.iconBtn, { backgroundColor: colors.error, padding: sizes.scale(10) }]}>
-                <Icon name="Phone" size={sizes.scale(20)} color={colors.white} />
+                <Icon name="phone-on" size={sizes.scale(24)} color={colors.white}  />
              </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -153,14 +154,14 @@ export default function CallOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (sizes, colors) => ({
   container: {
     position: 'absolute',
     overflow: 'hidden',
     zIndex: 9999,
     elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: sizes.scale(0), height: sizes.scale(10) },
     shadowOpacity: 0.5,
     shadowRadius: 15,
   },
@@ -172,13 +173,13 @@ const styles = StyleSheet.create({
   },
   controls: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: sizes.scale(0),
+    right: sizes.scale(0),
     flexDirection: 'row',
     justifyContent: 'space-evenly',
   },
   iconBtn: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 30,
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
+    borderRadius: sizes.scale(30),
   }
 });

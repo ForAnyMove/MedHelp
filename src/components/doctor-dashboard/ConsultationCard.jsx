@@ -11,9 +11,9 @@ export function ConsultationCard({ consultation, onPress }) {
   const { patient, time } = consultation;
 
   const STATUS_COLORS = {
-    scheduled: { bg: '#FFF0F0', icon: colors.sCoral },
-    pending: { bg: '#FFF9F0', icon: colors.sYell },
-    confirmed: { bg: '#F0F9FF', icon: colors.sBlue },
+    scheduled: { bg: /* TODO: color */ '#FFF0F0', icon: colors.sCoral },
+    pending: { bg: /* TODO: color */ '#FFF9F0', icon: colors.sYell },
+    confirmed: { bg: /* TODO: color */ '#F0F9FF', icon: colors.sBlue },
   };
 
   // For demo, assign colors based on patient name or id
@@ -42,8 +42,8 @@ const themeStyles = (theme) => ({
     width: theme.sizes.scale(100),
     marginRight: theme.sizes.spacing.m,
     alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,

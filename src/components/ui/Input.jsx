@@ -3,13 +3,13 @@ import { View, TextInput, Text, Platform } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 
-export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style, rounded, rightElement, ...props }) {
+export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style, containerStyle, inputContainerStyle, rounded, rightElement, ...props }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, containerStyle]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <View 
         style={[
@@ -17,10 +17,11 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
           rounded ? { borderRadius: sizes.scale(50) } : null,
           isFocused ? styles.inputFocused : null,
           error ? styles.inputError : null,
+          inputContainerStyle,
         ].filter(Boolean)}
       >
         <TextInput
-          style={[styles.input, sizes.typography.bodyMedium]}
+          style={[styles.input, sizes.typography.bodyMedium, style]}
           placeholder={placeholder}
           placeholderTextColor={colors.n500}
           value={value}

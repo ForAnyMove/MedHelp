@@ -14,6 +14,8 @@ import { ComponentProvider } from '../src/context/GlobalContext';
 import { SessionProvider } from '../src/context/SessionContext';
 import { StreamProvider } from '../src/context/Stream';
 import { ChatNotificationProvider } from '../src/context/ChatNotificationContext';
+import { NotificationProvider } from '../src/context/NotificationContext';
+import { SocketProvider } from '../src/context/SocketContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,15 +60,19 @@ export default function RootLayout() {
       <ComponentProvider>
         <StreamProvider>
           <ChatNotificationProvider>
-            <NavigationManager>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-              </Stack>
-              <CallOverlay />
-              <InAppNotification />
-              <ChatFloatingButton />
-              <StreamEventHandler />
-            </NavigationManager>
+            <NotificationProvider>
+              <SocketProvider>
+                <NavigationManager>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="index" />
+                  </Stack>
+                <CallOverlay />
+                <InAppNotification />
+                <ChatFloatingButton />
+                  <StreamEventHandler />
+                </NavigationManager>
+              </SocketProvider>
+            </NotificationProvider>
           </ChatNotificationProvider>
         </StreamProvider>
       </ComponentProvider>

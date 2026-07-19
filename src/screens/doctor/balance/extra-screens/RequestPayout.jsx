@@ -69,7 +69,7 @@ export function RequestPayout() {
               <Icon name="balance" size={sizes.scale(24)} color={colors.p400} />
               <Text style={styles.rowLabel}>{t('doctor_balance.method') || 'Method'}:</Text>
             </View>
-            <Text style={styles.rowValue}>Privat Bank</Text>
+            <Text style={styles.rowValue}>{t('doctor_dashboard.privat_bank', 'Privat Bank')}</Text>
           </View>
           <Button
             title={t('common.confirm') || 'Confirm'}
@@ -89,8 +89,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,

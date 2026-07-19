@@ -31,7 +31,10 @@ export function NextPatientCard({ consultation, onOpenConsultation }) {
             />
           </View>
           <View style={styles.infoCol}>
-            <Text style={styles.name}>{patient?.firstName || ''} {patient?.lastName || ''}, {patient?.age || '??'} y</Text>
+            <Text style={styles.name}>
+              {patient?.firstName || ''} {patient?.lastName || ''}
+              {patient?.age ? `, ${patient.age} y` : ''}
+            </Text>
             <Text style={styles.subtitle}>{t('doctor_dashboard.new_symptoms')}</Text>
           </View>
         </View>
@@ -43,7 +46,7 @@ export function NextPatientCard({ consultation, onOpenConsultation }) {
           </View>
           <View style={styles.badge}>
             <Icon name="format" size={sizes.scale(24)} color={colors.p500} />
-            <Text style={styles.badgeText}>{type}</Text>
+            <Text style={styles.badgeText}>{type === 'Online' ? t('doctor_history.format_online', 'Online') : type === 'Offline' ? t('doctor_history.format_offline', 'Offline') : type}</Text>
           </View>
         </View>
 
@@ -71,8 +74,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -122,14 +125,17 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.p100,
     borderRadius: theme.sizes.borderRadius.full,
     paddingVertical: theme.sizes.scale(12),
+    paddingHorizontal: theme.sizes.spacing.s,
     borderWidth: 2,
     borderColor: theme.colors.p500,
   },
   badgeText: {
     ...theme.sizes.typography.bodyLarge,
     color: theme.colors.p500,
-    marginLeft: theme.sizes.spacing.s,
     fontFamily: 'Manrope_600SemiBold',
+    marginLeft: theme.sizes.spacing.s,
+    textAlign: 'center',
+    maxWidth: '45%',
   },
   button: {
     height: theme.sizes.scale(48),

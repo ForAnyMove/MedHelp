@@ -32,6 +32,8 @@ export function mapDoctor(d) {
     description:  d.about       ?? d.description ?? '',
     avatarUrl:    d.profile?.avatar_url ?? d.avatarUrl ?? null,
     isVip:        d.is_vip ?? d.isVip ?? false,
+    gender:       d.profile?.gender ?? d.gender ?? null,
+    dateOfBirth:  d.profile?.date_of_birth ?? d.dateOfBirth ?? null,
   };
 }
 
@@ -75,6 +77,10 @@ export function mapConsultationToBooking(c) {
     status:    c.status,   // 'scheduled' | 'occupied' | 'completed' | 'canceled'
     callId:    c.call_id ?? null,
     purpose:   c.purpose ?? null,
+    elapsed_seconds: c.elapsed_seconds ?? 0,
+    timer_last_started_at: c.timer_last_started_at ?? null,
+    is_doctor_joined: c.is_doctor_joined ?? false,
+    is_patient_joined: c.is_patient_joined ?? false,
   };
 }
 
@@ -92,20 +98,46 @@ export function mapConsultationsToBookings(consultations = [], filterActive = tr
 // ── Past consultation (patient history) ───────────────────────────────────────
 
 export function mapConsultationToHistory(c) {
-  const doc     = mapDoctor(c.doctor);
-  const results = c.results ?? [];
-  const diagnosis = results[0]?.notes ?? null;
+  const doc = mapDoctor(c.doctor);
+  const resultsData = c.results;
+  const isArray = Array.isArray(resultsData);
+  const resultObj = isArray ? (resultsData.length > 0 ? resultsData[0] : null) : (resultsData || null);
+  
+  const hasResult = !!resultObj;
+  const is_draft = hasResult ? resultObj.is_draft : true;
+  const resultId  = resultObj?.id ?? null;
+  const diagnosis = hasResult ? (resultObj.diagnosis_name || resultObj.diagnosis || resultObj.overview || resultObj.notes) : null;
+
+  const age = doc?.dateOfBirth
+    ? Math.floor((Date.now() - new Date(doc.dateOfBirth).getTime()) / 3.156e10)
+    : null;
+
+  const genderMap = { male: 'Male', female: 'Female' };
+  const gender = doc?.gender ? (genderMap[doc.gender] || doc.gender) : null;
+  const specialty = doc?.specialization ?? '';
+
+  const doctorMeta = [
+    age ? `${age} y.o.` : null,
+    gender,
+    specialty
+  ].filter(Boolean).join(' · ');
 
   return {
     id:          c.id,
+    doctorId:    doc?.id ?? null,
     doctorName:  doc ? `Dr. ${doc.firstName} ${doc.lastName}`.trim() : 'Unknown Doctor',
-    specialty:   doc?.specialization ?? '',
+    specialty,
+    doctorMeta,
     avatarUrl:   doc?.avatarUrl ?? null,
     date:        c.slot?.start_at ?? c.created_at,
     duration:    slotDurationMinutes(c.slot),
     diagnosis,
     status:      c.status,
     callId:      c.call_id ?? null,
+    hasResult,
+    is_draft,
+    resultId,
+    result:      resultObj,
   };
 }
 
@@ -117,6 +149,16 @@ export function mapConsultationForDoctor(c) {
     ? new Date(c.slot.start_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '--:--';
 
+  const settings = patient.user_profile_settings?.data_visibility ?? {};
+  // data_visibility flags represent "hide" toggles. If true, it means hidden.
+  const showDob = !settings.date_of_birth;
+  const showPhone = !settings.phone;
+  const showEmail = !settings.email;
+
+  const age = (showDob && patient.date_of_birth)
+    ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / 3.156e10)
+    : null;
+
   return {
     id:     c.id,
     patient: {
@@ -124,7 +166,9 @@ export function mapConsultationForDoctor(c) {
       firstName: patient.first_name ?? '',
       lastName:  patient.last_name ?? '',
       avatarUrl: patient.avatar_url ?? null,
-      age:       null, // requires separate profile query
+      age:       age,
+      email:     showEmail ? (patient.email ?? null) : null,
+      phone:     showPhone ? (patient.phone ?? null) : null,
       symptoms:  null,
       analyses:  [],
       keyPoints: [],
@@ -135,6 +179,10 @@ export function mapConsultationForDoctor(c) {
     status:  c.status,
     callId:  c.call_id ?? null,
     purpose: c.purpose ?? null,
+    elapsed_seconds: c.elapsed_seconds ?? 0,
+    timer_last_started_at: c.timer_last_started_at ?? null,
+    is_doctor_joined: c.is_doctor_joined ?? false,
+    is_patient_joined: c.is_patient_joined ?? false,
   };
 }
 
@@ -142,18 +190,62 @@ export function mapConsultationForDoctor(c) {
 
 export function mapConsultationToDoctorHistory(c) {
   const patient  = c.patient ?? {};
-  const results  = c.results ?? [];
-  const diagnosis = results[0]?.notes ?? null;
+  
+  const resultsData = c.results;
+  const isArray = Array.isArray(resultsData);
+  const resultObj = isArray ? (resultsData.length > 0 ? resultsData[0] : null) : (resultsData || null);
+  
+  const hasResult = !!resultObj;
+  const is_draft = hasResult ? resultObj.is_draft : true;
+  const resultId  = resultObj?.id ?? null;
+  const diagnosis = hasResult ? (resultObj.diagnosis_name || resultObj.diagnosis || resultObj.overview) : null;
+
+  const settings = patient.user_profile_settings?.data_visibility ?? {};
+  const showDob = !settings.date_of_birth;
+
+  // Patient meta: "38 y.o. · Male · B+"
+  const age = (showDob && patient.date_of_birth)
+    ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / 3.156e10)
+    : null;
+  
+  const genderMap = { male: 'Male', female: 'Female' }; // Basic mapping
+  const gender = patient.gender ? (genderMap[patient.gender] || patient.gender) : null;
+  
+  const bloodType = patient.patient_profiles?.[0]?.blood_type || patient.patient_profiles?.blood_type || null;
+
+  const patientMeta = [
+    age ? `${age} y.o.` : null,
+    gender,
+    bloodType
+  ].filter(Boolean).join(' · ');
 
   return {
     id:          c.id,
-    patientName: patient.first_name + ' ' + patient.last_name ?? 'Unknown Patient',
+    patientId:   c.patient_profile_id,
+    doctorId:    c.doctor_id,
+    patientName: `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Unknown Patient',
+    patientMeta,
     avatarUrl:   patient.avatar_url ?? null,
     date:        c.slot?.start_at ?? c.created_at,
     duration:    slotDurationMinutes(c.slot),
+    serverNow:   c.server_now ?? null,
+    
+    // Result info
     diagnosis,
+    hasResult,
+    is_draft,
+    resultId,
+    result: resultObj,
+    
+    // Cancellation info
+    canceledBy:   c.canceled_by ?? null,
+    canceledAt:   c.canceled_at ?? null,
+    cancelReason: c.cancel_reason ?? null,
+    
+    purpose:     c.purpose ?? null,
     earnings:    null, // derived from doctor_profiles.price * duration/60 if needed
     status:      c.status,
+    format:      'online', // Assuming online default, can be derived if added to DB
   };
 }
 
@@ -180,12 +272,14 @@ export function groupSlotsForCalendar(slots = []) {
         slots:    [],
       };
     }
+    const bookingStatus = Array.isArray(slot.booking) ? slot.booking[0]?.status : slot.booking?.status;
+    
     dateMap[key].slots.push({ 
       id: slot.id, 
       time, 
       start_at: slot.start_at, 
       duration: slot.duration,
-      isFree: slot.booking_id === null
+      isFree: slot.booking_id === null || bookingStatus === 'canceled'
     });
   });
 

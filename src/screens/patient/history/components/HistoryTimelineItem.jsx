@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { formatIsoDate } from '../../../../utils/dateUtils';
+import { useTheme } from '../../../../theme/ThemeContext';
 
 export function HistoryTimelineItem({ item }) {
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
@@ -18,7 +20,7 @@ export function HistoryTimelineItem({ item }) {
       <Text style={styles.date}>{localizedDate}</Text>
       <View style={styles.content}>
         <View style={[styles.iconContainer, { backgroundColor: item.statusColor + '10' }]}>
-          <Icon name={item.icon} size={22} color={item.statusColor} />
+          <Icon name={item.icon} size={sizes.scale(22)} color={item.statusColor} />
         </View>
         <View style={styles.textContainer}>
           <View style={styles.row}>
@@ -27,7 +29,7 @@ export function HistoryTimelineItem({ item }) {
           </View>
           <Text style={styles.category}>{localizedCategory}</Text>
         </View>
-        <Icon name="ChevronRight" size={20} color="#54DACC" />
+        <Icon name="arrow-right" size={sizes.scale(20)} color=/* TODO: color */ "#54DACC"  />
       </View>
     </TouchableOpacity>
   );
@@ -36,11 +38,11 @@ export function HistoryTimelineItem({ item }) {
 const themeStyles = (theme) => ({
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: 32,
+    borderRadius: theme.sizes.scale(32),
     padding: theme.sizes.spacing.l,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 3,
@@ -48,7 +50,7 @@ const themeStyles = (theme) => ({
   date: {
     ...theme.sizes.typography.body,
     fontWeight: '800',
-    color: '#2D4A4A',
+    color: /* TODO: color */ '#2D4A4A',
     marginBottom: theme.sizes.spacing.s,
   },
   content: {
@@ -56,9 +58,9 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: theme.sizes.scale(44),
+    height: theme.sizes.scale(44),
+    borderRadius: theme.sizes.scale(14),
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.sizes.spacing.m,
@@ -69,22 +71,22 @@ const themeStyles = (theme) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: theme.sizes.scale(2),
   },
   type: {
     ...theme.sizes.typography.body,
     fontWeight: '800',
-    color: '#2D4A4A',
-    marginRight: 6,
+    color: /* TODO: color */ '#2D4A4A',
+    marginRight: theme.sizes.scale(6),
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: theme.sizes.scale(10),
+    height: theme.sizes.scale(10),
+    borderRadius: theme.sizes.scale(5),
   },
   category: {
     ...theme.sizes.typography.caption,
     fontWeight: '500',
-    color: '#8A9999',
+    color: /* TODO: color */ '#8A9999',
   },
 });

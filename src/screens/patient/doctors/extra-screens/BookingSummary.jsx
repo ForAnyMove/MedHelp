@@ -18,7 +18,12 @@ export function BookingSummary() {
     goBack
   } = doctorController;
 
-  const { navigateToConsultation } = usePatientDashboard();
+  const { navigateToConsultation, updateUrlParams } = usePatientDashboard();
+
+  const handleBack = () => {
+    goBack();
+    if (updateUrlParams) updateUrlParams('doctors', 'profile', selectedDoctor?.id);
+  };
 
   const [isProcessing, setIsProcessing] = React.useState(false);
   const styles = useStyles(themeStyles);
@@ -46,7 +51,7 @@ export function BookingSummary() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={goBack} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
         </TouchableOpacity>
       </View>
@@ -105,7 +110,7 @@ export function BookingSummary() {
           <Button
             title={t('doctors.edit_datetime') || 'Edit date & time'}
             variant="outlined"
-            onPress={goBack}
+            onPress={handleBack}
             style={styles.editButton}
             textStyle={styles.editButtonText}
           />
@@ -149,8 +154,8 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 2,
@@ -178,7 +183,7 @@ const themeStyles = (theme) => ({
     color: theme.colors.n700,
   },
   divider: {
-    height: 1,
+    height: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
     marginVertical: theme.sizes.spacing.xs,
   },

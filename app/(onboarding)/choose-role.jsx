@@ -168,7 +168,7 @@ const themeStyles = (theme) => ({
     width: '100%',
     borderWidth: 1,
     borderColor: theme.colors.n200,
-    shadowColor: '#000',
+    shadowColor: /* TODO: color */ '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,

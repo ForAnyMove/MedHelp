@@ -9,8 +9,8 @@ import { RegularDoctorCard } from '../../../../components/doctor/RegularDoctorCa
 import { formatIsoDate } from '../../../../utils/dateUtils';
 
 export function BookingDetails({ visible, booking, onClose, onCancel }) {
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
-  const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
 
   if (!booking) return null;
@@ -22,7 +22,7 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t('consultation.booking_details')}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Icon name="X" size={24} color={colors.n900} />
+              <Icon name="close" size={sizes.scale(24)} color={colors.n900}  />
             </TouchableOpacity>
           </View>
 
@@ -34,7 +34,7 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
 
           <View style={styles.detailCard}>
             <View style={styles.detailRow}>
-              <Icon name="Calendar" size={20} color={colors.p500} />
+              <Icon name="calendar" size={sizes.scale(24)} color={colors.p500}  />
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>{t('doctors.date')}</Text>
                 <Text style={styles.detailValue}>
@@ -43,14 +43,14 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
               </View>
             </View>
             <View style={styles.detailRow}>
-              <Icon name="Clock" size={20} color={colors.p500} />
+              <Icon name="time" size={sizes.scale(24)} color={colors.p500}  />
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>{t('doctors.time')}</Text>
                 <Text style={styles.detailValue}>{booking.slot?.time || booking.duration || '--:--'}</Text>
               </View>
             </View>
             <View style={styles.detailRow}>
-              <Icon name="CreditCard" size={20} color={colors.p500} />
+              <Icon name="price" size={sizes.scale(24)} color={colors.p500}  />
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>{t('consultation.price_label')}</Text>
                 <Text style={styles.detailValue}>${booking.doctor?.price || 0}</Text>
@@ -82,13 +82,13 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
 const themeStyles = (theme) => ({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     padding: theme.sizes.spacing.l,
   },
   modalContent: {
     backgroundColor: theme.colors.white,
-    borderRadius: 32,
+    borderRadius: theme.sizes.scale(32),
     padding: theme.sizes.spacing.l,
   },
   modalHeader: {
@@ -102,8 +102,8 @@ const themeStyles = (theme) => ({
     color: theme.colors.n900,
   },
   detailCard: {
-    backgroundColor: '#F8FBFB',
-    borderRadius: 24,
+    backgroundColor: /* TODO: color */ '#F8FBFB',
+    borderRadius: theme.sizes.scale(24),
     padding: theme.sizes.spacing.m,
     marginTop: theme.sizes.spacing.m,
   },
@@ -131,7 +131,7 @@ const themeStyles = (theme) => ({
   },
   cancelBtn: {
     flex: 1,
-    borderColor: '#FF7D7D',
+    borderColor: /* TODO: color */ '#FF7D7D',
   },
   closeBtn: {
     flex: 1,

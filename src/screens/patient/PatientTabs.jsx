@@ -2,7 +2,7 @@ import React, { useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Screen } from '../../components/ui/Screen';
 import { Icon } from '../../components/ui/Icon';
 import { useStyles } from '../../theme/useStyles';
@@ -36,7 +36,7 @@ const indexToTab = ['home', 'doctors', 'consultation', 'history', 'profile'];
 function PatientTabsInner({ currentTab }) {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const {
     currentView,
@@ -45,34 +45,81 @@ function PatientTabsInner({ currentTab }) {
     scrollToTop,
     tabIndex: index,
     setTabIndex: setIndex,
-    navigateToConsultationMain
+    navigateToConsultationMain,
+    navigateToHistoryDetail,
+    navigateToHistorySummary,
+    navigateToHistoryDoctorProfile,
+    syncStateFromUrl
   } = usePatientDashboard();
 
-  const { doctorController } = useComponentContext();
-  const isSwipeEnabled = baseSwipeEnabled && doctorController.currentDoctorView === 'list';
+  const { tab, openHistoryId, openDoctorProfileId, id, view } = useLocalSearchParams();
+  const router = require('expo-router').useRouter();
+  const [initialDeepLinkProcessed, setInitialDeepLinkProcessed] = React.useState(false);
 
-  // Sync index from URL
+  const { doctorController, consultationController, setChatButtonConfig } = useComponentContext();
+  const isSwipeEnabled = baseSwipeEnabled && doctorController.currentDoctorView === 'list';
+  const isProfileTab = index === 4;
+
+  const prevIsProfileTab = React.useRef(isProfileTab);
+
+  React.useLayoutEffect(() => {
+    const profileChanged = isProfileTab !== prevIsProfileTab.current;
+    setChatButtonConfig({ visible: isSwipeEnabled && !isProfileTab, animated: profileChanged });
+    prevIsProfileTab.current = isProfileTab;
+    return () => setChatButtonConfig({ visible: true, animated: false });
+  }, [isSwipeEnabled, isProfileTab, setChatButtonConfig]);
+
+  React.useEffect(() => {
+    const activeTab = typeof tab === 'string' ? tab : tab?.[0];
+    if (activeTab === 'history') {
+      if (openDoctorProfileId) {
+        navigateToHistoryDoctorProfile(openDoctorProfileId);
+      } else if (openHistoryId) {
+        navigateToHistoryDetail(openHistoryId);
+      }
+      if (openDoctorProfileId || openHistoryId) {
+        router.setParams({ openHistoryId: undefined, openDoctorProfileId: undefined });
+      }
+    }
+  }, [tab, openHistoryId, openDoctorProfileId]);
+
+  // Sync index from URL natively
   useEffect(() => {
     if (currentTab && tabIndexMap[currentTab] !== undefined && tabIndexMap[currentTab] !== index) {
+      if (currentView !== 'dashboard') {
+        navigateToDashboard();
+      }
       setIndex(tabIndexMap[currentTab]);
     }
   }, [currentTab]);
 
-  // Removed faulty pushState on index listener.
+  // Handle deep linking for sub-screens on initial load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !initialDeepLinkProcessed) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabName = window.location.pathname.replace('/', '');
+      if (tabIndexMap[tabName] !== undefined) {
+        syncStateFromUrl(searchParams, tabName);
+      }
+      setInitialDeepLinkProcessed(true);
+    }
+  }, [initialDeepLinkProcessed, syncStateFromUrl]);
 
   // Sync from Browser Back/Forward buttons perfectly without remounting Expo routes
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handlePopState = () => {
+    const handlePopState = (e) => {
       const path = window.location.pathname.replace('/', '');
       if (tabIndexMap[path] !== undefined) {
         setIndex(tabIndexMap[path]);
-        router.setParams({ tab: path });
+        // Also sync sub-view state
+        const searchParams = new URLSearchParams(window.location.search);
+        syncStateFromUrl(searchParams, path);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setIndex]);
+  }, [setIndex, syncStateFromUrl]);
 
   const handleIndexChange = (i) => {
     if (currentView !== 'dashboard') {
@@ -82,11 +129,10 @@ function PatientTabsInner({ currentTab }) {
 
     // Explicit URL push ONLY on manual user swipe / tab press
     const newTab = indexToTab[i];
-    if (newTab !== currentTab) {
-      if (typeof window !== 'undefined' && window.history) {
-        window.history.pushState({}, '', `/${newTab}`);
-      } else {
-        router.setParams({ tab: newTab });
+    if (typeof window !== 'undefined' && window.history) {
+      const currentUrlTab = window.location.pathname.replace('/', '');
+      if (newTab !== currentUrlTab) {
+        window.history.pushState(window.history.state, '', `/${newTab}`);
       }
     }
   };
@@ -173,7 +219,7 @@ export default function PatientTabs({ currentTab }) {
 }
 
 const tabStyles = (theme) => ({
-  container: { paddingHorizontal: 0 },
+  container: { paddingHorizontal: theme.sizes.scale(0) },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: theme.colors.white,

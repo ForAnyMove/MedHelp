@@ -353,7 +353,7 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.m,
     paddingHorizontal: theme.sizes.scale(19),
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
+    shadowColor: /* TODO: color */ '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,

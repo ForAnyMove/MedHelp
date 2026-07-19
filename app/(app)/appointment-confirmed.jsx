@@ -70,7 +70,7 @@ export default function AppointmentConfirmedScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Icon name="arrow-left" size={sizes.scale(24)} color={colors.n700} />
+          <Icon name="arrow-back" size={sizes.scale(24)} color={colors.n700} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('notifications.confirmed_appointment', 'Appointment confirmed')}</Text>
         <View style={styles.placeholder} />

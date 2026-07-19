@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../../theme/ThemeContext';
 import { useComponentContext } from '../../../context/GlobalContext';
 import { useStyles } from '../../../theme/useStyles';
 import { ProfileHeader } from './components/ProfileHeader';
@@ -16,12 +17,19 @@ import { Alert } from 'react-native';
 import { useSession } from '../../../context/SessionContext';
 import { useRouter } from 'expo-router';
 import { ProfileNotifications } from './components/ProfileNotifications';
+import { MedicalProfileEdit } from './components/MedicalProfileEdit';
+import { SettingsNotificationsScreen } from './SettingsNotificationsScreen';
+import { SettingsLanguageScreen } from './SettingsLanguageScreen';
+import { SettingsVisibilityScreen } from './SettingsVisibilityScreen';
+import { ProfileFaqScreen } from './ProfileFaqScreen';
+import { ProfileLegalScreen } from './ProfileLegalScreen';
 
 export function ProfileTab({ role = 'patient' }) {
   const { t } = useTranslation();
   const context = useComponentContext();
   const styles = useStyles(themeStyles);
-  const { doctorProfileController } = context;
+  const { sizes, colors } = useTheme();
+  const { doctorProfileController, settingsController } = context;
 
   const isDoctor = role === 'doctor';
   const user = isDoctor ? doctorProfileController?.profile : context.user;
@@ -35,6 +43,63 @@ export function ProfileTab({ role = 'patient' }) {
   const [isAboutSaving, setIsAboutSaving] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isNotificationSheetOpen, setIsNotificationSheetOpen] = useState(false);
+  const [medicalProfileType, setMedicalProfileType] = useState(null); // 'conditions', 'allergies', 'medications'
+  const [activeScreen, setActiveScreen] = useState('main'); // 'main' | 'notifications' | 'language' | 'visibility'
+
+  const handleSetScreen = (screen, type) => {
+    setActiveScreen(screen);
+    if (typeof window !== 'undefined' && window.history) {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (screen === 'main') {
+        searchParams.delete('view');
+        searchParams.delete('type');
+      } else {
+        searchParams.set('view', screen);
+        if (type) {
+          searchParams.set('type', type);
+        } else if (screen !== 'privacy' && screen !== 'terms') {
+          searchParams.delete('type');
+        }
+      }
+      const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
+      window.history.pushState(window.history.state, '', `${window.location.pathname}${queryString}`);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const syncFromUrl = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const view = searchParams.get('view');
+      const type = searchParams.get('type');
+      if (view && ['notifications', 'language', 'visibility', 'faq', 'privacy', 'terms'].includes(view)) {
+        setActiveScreen(view);
+      } else {
+        setActiveScreen('main');
+      }
+    };
+
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, []);
+
+  const patientDashboard = role === 'patient' ? require('../../../context/PatientDashboardContext').usePatientDashboard() : null;
+  const doctorDashboard = role === 'doctor' ? require('../../../context/DoctorDashboardContext').useDoctorDashboard() : null;
+  const currentTab = role === 'patient' ? patientDashboard?.tabIndex : doctorDashboard?.tabIndex;
+
+  useEffect(() => {
+    if (currentTab === 4 && typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const view = searchParams.get('view');
+      if (view && ['notifications', 'language', 'visibility', 'faq', 'privacy', 'terms'].includes(view)) {
+        setActiveScreen(view);
+      } else {
+        setActiveScreen('main');
+      }
+    }
+  }, [currentTab]);
 
   const handleLogout = async () => {
     await logout();
@@ -71,7 +136,7 @@ export function ProfileTab({ role = 'patient' }) {
       setIsFormDirty(false);
       setIsEditSheetOpen(false);
     } else {
-      Alert.alert('Error', res?.error || 'Failed to save profile');
+      Alert.alert(t('common.error', 'Error'), res?.error || t('profile.failed_to_save', 'Failed to save profile'));
     }
   };
 
@@ -82,9 +147,28 @@ export function ProfileTab({ role = 'patient' }) {
     if (res?.success) {
       setIsAboutSheetOpen(false);
     } else {
-      Alert.alert('Error', res?.error || 'Failed to save profile');
+      Alert.alert(t('common.error', 'Error'), res?.error || t('profile.failed_to_save', 'Failed to save profile'));
     }
   };
+
+  if (activeScreen === 'notifications') {
+    return <SettingsNotificationsScreen onBack={() => handleSetScreen('main')} />;
+  }
+  if (activeScreen === 'language') {
+    return <SettingsLanguageScreen onBack={() => handleSetScreen('main')} />;
+  }
+  if (activeScreen === 'visibility') {
+    return <SettingsVisibilityScreen onBack={() => handleSetScreen('main')} />;
+  }
+  if (activeScreen === 'faq') {
+    return <ProfileFaqScreen onBack={() => handleSetScreen('main')} />;
+  }
+  if (activeScreen === 'privacy') {
+    return <ProfileLegalScreen type="privacy" onBack={() => handleSetScreen('main')} />;
+  }
+  if (activeScreen === 'terms') {
+    return <ProfileLegalScreen type="terms" onBack={() => handleSetScreen('main')} />;
+  }
 
   return (
     <View style={styles.container}>
@@ -103,6 +187,8 @@ export function ProfileTab({ role = 'patient' }) {
               setIsAboutSheetOpen(false);
             } else if (isNotificationSheetOpen) {
               setIsNotificationSheetOpen(false);
+            } else if (medicalProfileType) {
+              setMedicalProfileType(null);
             }
           }}
         />
@@ -138,7 +224,7 @@ export function ProfileTab({ role = 'patient' }) {
                 case 'pending':
                   val = t('profile.license_pending', 'Under review');
                   icon = 'time';
-                  color = colors.warning || '#FFB547';
+                  color = colors.warning || colors.warning;
                   break;
                 case 'canceled':
                   val = t('profile.license_canceled', 'Please re-upload documents');
@@ -186,24 +272,19 @@ export function ProfileTab({ role = 'patient' }) {
         {!isDoctor && (
           <ProfileSection title={t('profile.medical_data')}>
             <ProfileItem
-              label={t('profile.height_weight')}
-              value={user.height || user.weight ? `${user.height || '--'} ${t('dashboard.cm')} / ${user.weight || '--'} ${t('dashboard.kg')}` : '--'}
-            />
-            <ProfileItem
-              label={t('profile.blood_type')}
-              value={user.bloodType || '--'}
-            />
-            <ProfileItem
               label={t('profile.chronic_conditions')}
-              value={user.medicalData?.chronicConditions}
+              value={user.medicalData?.chronicConditions || t('profile.tap_to_manage', 'Tap to manage')}
+              onPress={() => setMedicalProfileType('conditions')}
             />
             <ProfileItem
               label={t('profile.allergies')}
-              value={user.medicalData?.allergies}
+              value={user.medicalData?.allergies || t('profile.tap_to_manage', 'Tap to manage')}
+              onPress={() => setMedicalProfileType('allergies')}
             />
             <ProfileItem
               label={t('profile.medications')}
-              value={user.medicalData?.medications}
+              value={user.medicalData?.medications || t('profile.tap_to_manage', 'Tap to manage')}
+              onPress={() => setMedicalProfileType('medications')}
             />
             <ProfileItem
               label={t('profile.pregnancy')}
@@ -216,10 +297,6 @@ export function ProfileTab({ role = 'patient' }) {
         )}
 
         <ProfileSection title={t('profile.preferences')}>
-          <ProfileItem
-            label={t('profile.language')}
-            value={user.preferences?.language}
-          />
           <ProfileItem
             label={t('profile.consultation_format')}
             value={user.preferences?.consultationFormat}
@@ -241,7 +318,10 @@ export function ProfileTab({ role = 'patient' }) {
         </ProfileSection>
 
         <ProfileSection title={t('profile.security_privacy')}>
-          <ProfileItem label={t('profile.change_password')} />
+          <ProfileItem 
+            label={t('profile.change_password')} 
+            onPress={() => router.push('/(app)/change-password')}
+          />
           <ProfileItem
             label={t('profile.face_id')}
             type="toggle"
@@ -256,10 +336,34 @@ export function ProfileTab({ role = 'patient' }) {
           />
         </ProfileSection>
 
+        <ProfileSection title={t('profile.settings', 'Settings')}>
+          <ProfileItem 
+            label={t('profile.notifications', 'Notifications')} 
+            value={settingsController?.settings?.notification_types?.all !== false ? t('common.on', 'On') : t('common.off', 'Off')}
+            onPress={() => handleSetScreen('notifications')}
+          />
+          <ProfileItem 
+            label={t('profile.application_language', 'Application language')} 
+            value={settingsController?.settings?.app_languages?.name || 'English'}
+            onPress={() => handleSetScreen('language')}
+          />
+          <ProfileItem 
+            label={t('profile.profile_visibility', 'Profile visibility')} 
+            value={
+              (() => {
+                const hiddenCount = Object.values(settingsController?.settings?.data_visibility || {}).filter(v => v === true).length;
+                return hiddenCount > 0 ? t('profile.hidden_count', { count: hiddenCount, defaultValue: `${hiddenCount} hidden` }) : t('profile.all_visible', 'All visible');
+              })()
+            }
+            isLast
+            onPress={() => handleSetScreen('visibility')}
+          />
+        </ProfileSection>
+
         <ProfileSection title={t('profile.support')}>
-          <ProfileItem label={t('profile.faq')} />
-          <ProfileItem label={t('profile.privacy_policy')} />
-          <ProfileItem label={t('profile.terms_of_use')} isLast />
+          <ProfileItem label={t('profile.faq')} onPress={() => handleSetScreen('faq')} />
+          <ProfileItem label={t('profile.privacy_policy')} onPress={() => handleSetScreen('privacy', 'privacy')} />
+          <ProfileItem label={t('profile.terms_of_use')} isLast onPress={() => handleSetScreen('terms', 'terms')} />
         </ProfileSection>
 
         <View style={styles.footerSpacer} />
@@ -309,8 +413,22 @@ export function ProfileTab({ role = 'patient' }) {
       >
         <ProfileNotifications
           user={user}
-          onSave={handleSaveAbout}
+          onClose={() => setIsNotificationSheetOpen(false)}
         />
+      </BottomSheet>
+
+      <BottomSheet
+        visible={!!medicalProfileType}
+        onClose={() => setMedicalProfileType(null)}
+        initialHeight={sizes.height}
+      >
+        {medicalProfileType && (
+          <MedicalProfileEdit
+            user={user}
+            type={medicalProfileType}
+            onClose={() => setMedicalProfileType(null)}
+          />
+        )}
       </BottomSheet>
     </View>
   );

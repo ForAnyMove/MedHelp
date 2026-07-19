@@ -14,9 +14,9 @@ const SimpleCalendar = ({ onSelectDate, colors, sizes }) => {
   const month = `${t('common.months.march')} 2026`;
 
   return (
-    <View style={{ padding: 16 }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' }}>{month}</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 8 }}>
+    <View style={{ padding: sizes.scale(16) }}>
+      <Text style={{ fontSize: sizes.scale(18), fontWeight: '700', marginBottom: sizes.scale(16), textAlign: 'center' }}>{month}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: sizes.scale(8) }}>
         {days.map(day => (
           <TouchableOpacity
             key={day}
@@ -26,7 +26,7 @@ const SimpleCalendar = ({ onSelectDate, colors, sizes }) => {
               justifyContent: 'center',
               alignItems: 'center',
               backgroundColor: day === 26 ? colors.p500 : colors.p100,
-              borderRadius: 8
+              borderRadius: sizes.scale(8)
             }}
             onPress={() => onSelectDate(`2026-03-${day.toString().padStart(2, '0')}T10:00:00Z`)}
           >
@@ -172,10 +172,10 @@ export function SlotPicker({ availableSlots, selectedSlot, onSelectSlot }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setIsFullCalendarVisible(false)}>
-              <Icon name="X" size={24} color={colors.n900} />
+              <Icon name="close" size={sizes.scale(24)} color={colors.n900}  />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>{t('doctors.select_date_modal')}</Text>
-            <View style={{ width: 24 }} />
+            <View style={{ width: sizes.scale(24) }} />
           </View>
           <SimpleCalendar
             onSelectDate={(date) => {
@@ -263,7 +263,7 @@ const themeStyles = (theme) => ({
   timesScrollContainer: {
     maxHeight: theme.sizes.scale(144),
     marginBottom: theme.sizes.spacing.m,
-    paddingVertical: 2,
+    paddingVertical: theme.sizes.scale(2),
   },
   timesGrid: {
     flexDirection: 'row',

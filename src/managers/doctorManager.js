@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { createApiClient } from '../api/apiClient';
 import { createDoctorsApi } from '../api/doctorsApi';
 import { createSlotsApi } from '../api/slotsApi';
@@ -15,11 +15,12 @@ export default function doctorManager(consultationController, setAppLoading, ses
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [availableSlots, setAvailableSlots] = useState({ dates: [], times: [] });
   const [selectedSlot, setSelectedSlot] = useState({ slotId: null, date: null, time: null });
+  const [rescheduleBooking, setRescheduleBooking] = useState(null);
 
-  const api      = createApiClient(session, refreshSessionToken);
-  const doctorsApi = createDoctorsApi(api);
-  const slotsApi   = createSlotsApi(api);
-  const consultApi = createConsultationsApi(api);
+  const api = useMemo(() => createApiClient(session, refreshSessionToken), [session, refreshSessionToken]);
+  const doctorsApi = useMemo(() => createDoctorsApi(api), [api]);
+  const slotsApi   = useMemo(() => createSlotsApi(api), [api]);
+  const consultApi = useMemo(() => createConsultationsApi(api), [api]);
 
   // ── Fetch all doctors ──────────────────────────────────────────────────────
 
@@ -45,7 +46,11 @@ export default function doctorManager(consultationController, setAppLoading, ses
     } finally {
       setAppLoading(false);
     }
-  }, [session]);
+  }, [session?.userId, doctorsApi]);
+
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
 
   // ── Fetch available slots for a doctor ────────────────────────────────────
 
@@ -103,6 +108,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
     } else if (currentDoctorView === 'profile') {
       setCurrentDoctorView('list');
       setSelectedDoctor(null);
+      setRescheduleBooking(null);
     }
   };
 
@@ -141,6 +147,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
     recommendedDoctors: doctors.filter(d => d.isVip),
     regularDoctors:     doctors.filter(d => !d.isVip),
     currentDoctorView,
+    setCurrentDoctorView,
     selectedDoctor,
     availableSlots,
     selectedSlot,
@@ -150,5 +157,8 @@ export default function doctorManager(consultationController, setAppLoading, ses
     navigateToSummary,
     confirmBooking,
     goBack,
+    doctorsApi,
+    rescheduleBooking,
+    setRescheduleBooking,
   };
 }

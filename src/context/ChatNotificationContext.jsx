@@ -25,9 +25,9 @@ export function ChatNotificationProvider({ children }) {
   const totalUnreadConversations = Object.values(unreadMap).filter(count => count > 0).length;
 
   // Add a new toast notification
-  const addNotification = useCallback(({ title, body, channelId, senderId }) => {
+  const addNotification = useCallback(({ title, body, channelId, senderId, targetRoute, type }) => {
     const id = ++notificationIdCounter;
-    const newNotif = { id, title, body, channelId, senderId };
+    const newNotif = { id, title, body, channelId, senderId, targetRoute, type };
 
     setNotifications(prev => [...prev, newNotif]);
 
@@ -84,6 +84,7 @@ export function ChatNotificationProvider({ children }) {
         const isOwnMessage = senderId === session.userId;
         if (isOwnMessage) return;
 
+        // Regular chat message
         const senderName = event.message?.user?.name || t('notifications.new_message');
         const text = event.message?.text || '';
         const channelId = event.channel_id || event.cid?.split(':')[1];
@@ -99,41 +100,58 @@ export function ChatNotificationProvider({ children }) {
         const creatorName = event.user?.name || (session?.role === 'doctor' ? t('notifications.patient') : t('notifications.doctor'));
         let title, body, targetRoute;
 
+        const channelId = event.channel?.id || event.channel_id;
         if (isSelf) {
           title = t('notifications.success');
           body = t('notifications.booking_created_self');
-          targetRoute = session?.role === 'doctor' ? '/home' : '/history';
+          targetRoute = `/${session?.role === 'doctor' ? '(doctor)' : '(patient)'}?tab=history&openHistoryId=${channelId}`;
         } else {
           title = t('notifications.new_booking');
           body = session?.role === 'doctor' 
             ? t('notifications.booking_created_patient', { name: creatorName }) 
             : t('notifications.booking_created_doctor', { name: creatorName });
-          targetRoute = '/home';
+          targetRoute = `/${session?.role === 'doctor' ? '(doctor)' : '(patient)'}?tab=history&openHistoryId=${channelId}`;
         }
         addNotification({ title, body, targetRoute, type: 'system' });
         refreshUnreadCounts();
+        
+        const { DeviceEventEmitter } = require('react-native');
+        DeviceEventEmitter.emit('reload_notifications');
+        // We do not rely solely on added_to_channel to emit booking_created anymore since we send custom messages
+        // But we still emit it here just in case.
+        if (!isSelf) {
+          DeviceEventEmitter.emit('booking_created');
+        }
       }
 
-      if (event.type === 'consultation_started') {
-        addNotification({ 
-          title: t('notifications.consultation_started'), 
-          body: t('notifications.doctor_waiting'), 
-          targetRoute: '/consultation', 
-          type: 'system' 
+      if (event.type === 'consultation_notify') {
+        const title = t('notifications.consultation_started'); // Or a generic title
+        const body = event.message_type === 'started' 
+          ? t('notifications.consultation_notify_started') 
+          : t('notifications.consultation_notify_remind');
+        const role = session?.role === 'doctor' ? '(doctor)' : '(patient)';
+        addNotification({
+          title,
+          body,
+          targetRoute: `/${role}?tab=history&openHistoryId=${event.consultation_id}`,
+          type: 'system'
         });
       }
 
-      if (event.type === 'booking_canceled') {
-        const isSelf = event.canceled_by === session?.userId;
-        let title, body;
-        if (isSelf) {
-          title = t('notifications.canceled');
-          body = t('notifications.booking_canceled_self');
-        } else {
-          title = t('notifications.booking_canceled');
-          body = session?.role === 'doctor' ? t('notifications.booking_canceled_patient') : t('notifications.booking_canceled_doctor');
+      if (event.type === 'consultation_completed') {
+        const { DeviceEventEmitter } = require('react-native');
+        DeviceEventEmitter.emit('reload_notifications');
+        DeviceEventEmitter.emit('consultation_updated');
+        
+        // Optionally show toast for patient
+        if (session?.role !== 'doctor') {
+           addNotification({
+             title: t('notifications.consultation_completed', 'Консультация завершена'),
+             body: t('notifications.consultation_completed_body', 'Доктор завершил консультацию'),
+             targetRoute: `/(patient)?tab=history&openHistoryId=${event.consultation_id || event.channel_id}`,
+             type: 'system'
+           });
         }
-        addNotification({ title, body, targetRoute: '/home', type: 'system' });
       }
 
       // Mark read event

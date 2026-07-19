@@ -7,5 +7,7 @@ export function createDoctorsApi(apiClient) {
     listAll: () => apiClient.get('/doctors'),
     /** Returns a single doctor by id */
     getById: (id) => apiClient.get(`/doctors/${id}`),
+    /** Returns doctor ratings (reviews) */
+    getRatings: (id, params) => apiClient.get(`/doctors/${id}/ratings`, params),
   };
 }

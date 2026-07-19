@@ -10,6 +10,7 @@ import { PatientCard } from './extra-screens/PatientCard';
 import { PatientDetails } from './extra-screens/PatientDetails';
 import { OngoingConsultation } from './extra-screens/OngoingConsultation';
 import { DoctorConsultationSummary } from './extra-screens/DoctorConsultationSummary';
+import { DoctorConsultationForm } from './extra-screens/DoctorConsultationForm';
 import { AvailabilityModal } from './components/AvailabilityModal';
 import { useDoctorDashboard } from '../../../context/DoctorDashboardContext';
 import { useComponentContext } from '../../../context/GlobalContext';
@@ -24,7 +25,7 @@ export function DoctorConsultationTab() {
     consultationStatus,
     selectedConsultation,
     navigateToPatientCard,
-    navigateToPatientDetails,
+    navigateToHistoryDetail,
     navigateBack,
     startConsultation,
     endConsultation,
@@ -33,6 +34,12 @@ export function DoctorConsultationTab() {
   } = useDoctorDashboard();
 
   const groupedConsultations = doctorProfileController.getGroupedConsultations();
+  
+  console.log(`[DoctorConsultationTab] Rendering! groupedConsultations groups: ${groupedConsultations.length}, total items: ${groupedConsultations.reduce((acc, g) => acc + g.data.length, 0)}`);
+
+  if (consultationStatus === 'form') {
+    return <DoctorConsultationForm consultation={selectedConsultation} />;
+  }
 
   if (consultationStatus === 'summary') {
     return <DoctorConsultationSummary consultation={selectedConsultation} />;
@@ -43,11 +50,22 @@ export function DoctorConsultationTab() {
   }
 
   if (currentView === 'patient-card') {
+    let fullConsultation = selectedConsultation;
+    if (selectedConsultation?.id && !selectedConsultation.patient) {
+      // Find the full consultation object from the global store
+      for (const group of groupedConsultations) {
+        const found = group.data.find(c => c.id === selectedConsultation.id);
+        if (found) {
+          fullConsultation = found;
+          break;
+        }
+      }
+    }
     return (
       <PatientCard
-        consultation={selectedConsultation}
+        consultation={fullConsultation}
         onBack={navigateBack}
-        onViewDetails={navigateToPatientDetails}
+        onViewDetails={() => navigateToHistoryDetail(selectedConsultation.id)}
         onStartConsultation={startConsultation}
       />
     );

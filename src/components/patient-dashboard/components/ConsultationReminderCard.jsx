@@ -7,7 +7,7 @@ import { useStyles } from '../../../theme/useStyles';
 import { formatIsoDate } from '../../../utils/dateUtils';
 import { getEstimatedServerDate } from '../../../hooks/useServerTime';
 
-export function ConsultationReminderCard({ booking, cardWidth }) {
+export function ConsultationReminderCard({ booking, cardWidth, onPress }) {
   const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
@@ -53,7 +53,11 @@ export function ConsultationReminderCard({ booking, cardWidth }) {
   const localizedMonth = formatIsoDate(slot.date, 'month', t);
 
   return (
-    <TouchableOpacity style={[styles.card, { width: cardWidth }]} activeOpacity={0.7}>
+    <TouchableOpacity 
+      style={[styles.card, { width: cardWidth }]} 
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
       <View style={styles.leftContent}>
         <View style={styles.dateBox}>
           <Text style={styles.dateTop}>{day}</Text>
@@ -78,7 +82,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,

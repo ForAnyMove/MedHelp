@@ -3,13 +3,16 @@ import { View, ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useSession } from '../src/context/SessionContext';
 
+import { useTheme } from '../src/theme/ThemeContext';
+
 export default function Index() {
   const { session, isLoading } = useSession();
+  const { colors } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
-        <ActivityIndicator size="large" color="#23D3C2" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.white }}>
+        <ActivityIndicator size="large" color={colors.p500} />
       </View>
     );
   }

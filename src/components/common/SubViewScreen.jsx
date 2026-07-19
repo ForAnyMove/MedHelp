@@ -31,6 +31,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
  *   confirmLabel     {string}   — confirm button label (default: 'Leave')
  *   cancelLabel      {string}   — cancel button label (default: 'Stay')
  *   children         {node}     — the screen content
+ *   headerRight      {node}     — component to render on the right side of the header
  */
 export function SubViewScreen({
   title,
@@ -40,10 +41,11 @@ export function SubViewScreen({
   confirmMessage = 'Your unsaved changes will be lost.',
   confirmLabel = 'Leave',
   cancelLabel = 'Stay',
+  headerRight,
   children,
 }) {
   const styles = useStyles(themeStyles);
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const [showConfirm, setShowConfirm] = React.useState(false);
 
   // Animate in on mount
@@ -68,12 +70,13 @@ export function SubViewScreen({
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={handleBack} style={styles.backBtn} hitSlop={{ top: sizes.scale(8), bottom: sizes.scale(8), left: sizes.scale(8), right: sizes.scale(8) }}>
           <Icon name="arrow-back" size={sizes.scale(24)} color={styles.backIcon.color} />
         </TouchableOpacity>
+        {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
+        {headerRight && <View style={styles.headerRightContainer}>{headerRight}</View>}
       </View>
 
-      {title ? <Text style={styles.title}>{title}</Text> : null}
       {/* Content */}
       {children}
 
@@ -113,23 +116,31 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.s,
+    marginBottom: theme.sizes.spacing.m,
+    justifyContent: 'space-between',
   },
   backBtn: {
-    marginRight: theme.sizes.spacing.m,
+    padding: theme.sizes.spacing.xs,
+    marginLeft: -theme.sizes.spacing.xs,
+    width: theme.sizes.scale(40),
   },
   backIcon: {
     color: theme.colors.p500,
   },
   title: {
+    flex: 1,
     ...theme.sizes.typography.h3,
     color: theme.colors.n700,
-    marginBottom: theme.sizes.spacing.s,
+    fontFamily: 'Manrope_700Bold',
+  },
+  headerRightContainer: {
+    alignItems: 'flex-end',
+    minWidth: theme.sizes.scale(40),
   },
   // Modal
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(23, 43, 46, 0.5)',
+    backgroundColor: /* TODO: color */ 'rgba(23, 43, 46, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: theme.sizes.spacing.m,

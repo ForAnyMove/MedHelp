@@ -6,7 +6,7 @@ import { Button } from '../../../../../components/ui/Button';
 import { Checkbox } from '../../../../../components/ui/Checkbox';
 import { CheckerLayout } from './CheckerLayout';
 
-export function Step5RedFlags({ data, updateData, onNext, onBack }) {
+export function Step5RedFlags({ data, updateData, onNext, onBack, isLoading }) {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
   
@@ -50,6 +50,7 @@ export function Step5RedFlags({ data, updateData, onNext, onBack }) {
             title={t('symptoms.next')} 
             variant="primary" 
             onPress={onNext} 
+            loading={isLoading}
           />
         </View>
       </View>

@@ -3,19 +3,21 @@ import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useSession } from '../context/SessionContext';
 import { useTheme } from '../theme/ThemeContext';
+import { useNotification } from '../context/NotificationContext';
 
 // Screens within the onboarding group
 const ONBOARDING_SCREENS = ['choose-role', 'onboarding', 'profile-setup', 'doc-upload', 'profile-created'];
 
 export function NavigationManager({ children }) {
   const { session, isLoading, docUploadHandledThisSession } = useSession();
+  const { isHandlingNotification } = useNotification();
   const segments = useSegments();
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, sizes } = useTheme();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || isHandlingNotification) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
@@ -137,12 +139,12 @@ export function NavigationManager({ children }) {
     }
 
     setIsReady(true);
-  }, [session, isLoading, segments, docUploadHandledThisSession]);
+  }, [session, isLoading, segments, docUploadHandledThisSession, isHandlingNotification]);
 
-  if (!isReady || isLoading) {
+  if (!isReady || isLoading || isHandlingNotification) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors?.bg || '#FFFFFF' }}>
-        <ActivityIndicator size="large" color={colors?.p500 || '#23D3C2'} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors?.bg || colors.white }}>
+        <ActivityIndicator size="large" color={colors?.p500 || colors.p500} />
       </View>
     );
   }

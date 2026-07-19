@@ -5,7 +5,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 
 export function HealthNotes() {
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
@@ -50,7 +50,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.medium,
     padding: theme.sizes.spacing.s,
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,

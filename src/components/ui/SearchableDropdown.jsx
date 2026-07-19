@@ -12,6 +12,7 @@ import {
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from './Icon';
+import { useTranslation } from 'react-i18next';
 
 export function SearchableDropdown({ 
   label, 
@@ -21,6 +22,7 @@ export function SearchableDropdown({
   value = '', 
   error = '' 
 }) {
+  const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   
@@ -98,7 +100,7 @@ export function SearchableDropdown({
             )}
             ListEmptyComponent={
               <View style={styles.emptyItem}>
-                <Text style={styles.emptyText}>Нет результатов</Text>
+                <Text style={styles.emptyText}>{t('common.no_results', 'Нет результатов')}</Text>
               </View>
             }
           />
@@ -116,8 +118,8 @@ const themeStyles = (theme) => ({
   label: {
     ...theme.sizes.typography.caption,
     color: theme.colors.n600,
-    marginBottom: 6,
-    marginLeft: 4,
+    marginBottom: theme.sizes.scale(6),
+    marginLeft: theme.sizes.scale(4),
   },
   inputContainer: {
     flexDirection: 'row',
@@ -131,8 +133,8 @@ const themeStyles = (theme) => ({
   },
   inputContainerActive: {
     borderColor: theme.colors.p500,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    borderBottomLeftRadius: theme.sizes.scale(0),
+    borderBottomRightRadius: theme.sizes.scale(0),
   },
   inputContainerError: {
     borderColor: theme.colors.d500,
@@ -141,13 +143,13 @@ const themeStyles = (theme) => ({
     flex: 1,
     ...theme.sizes.typography.bodyLarge,
     color: theme.colors.n900,
-    padding: 0,
+    padding: theme.sizes.scale(0),
   },
   dropdown: {
     position: 'absolute',
     top: theme.sizes.scale(48 + (!!theme.label ? 24 : 18)),
-    left: 0,
-    right: 0,
+    left: theme.sizes.scale(0),
+    right: theme.sizes.scale(0),
     backgroundColor: theme.colors.white,
     borderWidth: 1,
     borderColor: theme.colors.n300,
@@ -156,8 +158,8 @@ const themeStyles = (theme) => ({
     borderBottomRightRadius: theme.sizes.borderRadius.medium,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowColor: /* TODO: color */ "#000",
+        shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
         shadowOpacity: 0.1,
         shadowRadius: 4,
       },
@@ -191,7 +193,7 @@ const themeStyles = (theme) => ({
   errorText: {
     ...theme.sizes.typography.caption,
     color: theme.colors.d500,
-    marginTop: 4,
-    marginLeft: 4,
+    marginTop: theme.sizes.scale(4),
+    marginLeft: theme.sizes.scale(4),
   }
 });

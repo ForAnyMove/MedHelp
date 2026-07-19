@@ -5,11 +5,44 @@ import { Screen } from '../../src/components/ui/Screen';
 import { Icon } from '../../src/components/ui/Icon';
 import { useStyles } from '../../src/theme/useStyles';
 import { useTranslation } from 'react-i18next';
+import { useSession } from '../../src/context/SessionContext';
+import { createApiClient } from '../../src/api/apiClient';
+import { createConsultationsApi } from '../../src/api/consultationsApi';
 
 export default function ConsultationDeepLink() {
   const { id } = useLocalSearchParams();
   const styles = useStyles(localStyles);
   const { t } = useTranslation();
+  const { session } = useSession();
+
+  React.useEffect(() => {
+    if (!session?.role || !id) return;
+
+    const routeToConsultation = async () => {
+      try {
+        const api = createApiClient(session);
+        const consultApi = createConsultationsApi(api);
+        const consultation = await consultApi.getById(id);
+
+        if (consultation?.status === 'canceled' || consultation?.status === 'completed') {
+          if (session.role === 'patient') {
+            router.replace({ pathname: '/(patient)', params: { tab: 'history', openHistoryId: id } });
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch consultation for deep link, routing to default', err);
+      }
+
+      if (session.role === 'doctor') {
+        router.replace({ pathname: '/(doctor)', params: { tab: 'history', openHistoryId: id } });
+      } else {
+        router.replace({ pathname: '/(patient)', params: { tab: 'consultation', id: id, view: 'detail' } });
+      }
+    };
+
+    routeToConsultation();
+  }, [session, id]);
 
   return (
     <Screen style={styles.container}>

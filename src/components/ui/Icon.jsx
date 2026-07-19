@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, TouchableOpacity, Animated, Easing } from 'react-native';
 import * as LucideIcons from 'lucide-react-native';
 import { CustomIcons } from '../../assets/icons';
 
@@ -11,7 +11,7 @@ function hexToRgba(hex, opacity) {
   const r = parseInt(cleaned.substring(0, 2), 16);
   const g = parseInt(cleaned.substring(2, 4), 16);
   const b = parseInt(cleaned.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  return /* TODO: color */ `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
 /**
@@ -22,7 +22,7 @@ function hexToRgba(hex, opacity) {
  * @param {number}   wrapperRadius  - Wrapper border radius (default: wrapperSize * 0.25)
  * @param {object}   wrapperStyle   - Additional wrapper styles
  */
-export function Icon({ name, size = 24, color = "black", style, onPress, wrapped, wrapperColor, wrapperOpacity = 0.2, wrapperSize, wrapperRadius, wrapperStyle }) {
+export function Icon({ name, size = 24, color = "black", style, onPress, wrapped, wrapperColor, wrapperOpacity = 0.2, wrapperSize, wrapperRadius, wrapperStyle, spin, ...rest }) {
   // Resolve the icon component
   let iconNode = null;
   const CustomIconCmp = CustomIcons[name];
@@ -35,12 +35,43 @@ export function Icon({ name, size = 24, color = "black", style, onPress, wrapped
         height={size}
         color={color}
         style={[{ color: color }, style]}
+        {...rest}
       />
     );
   } else if (LucideCmp) {
-    iconNode = <LucideCmp size={size} color={color} style={style} />;
+    iconNode = <LucideCmp size={size} color={color} style={style} {...rest} />;
   } else {
     return null;
+  }
+
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (spin) {
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinValue.stopAnimation();
+      spinValue.setValue(0);
+    }
+  }, [spin]);
+
+  if (spin) {
+    const spinInterpolate = spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    });
+    iconNode = (
+      <Animated.View style={{ transform: [{ rotate: spinInterpolate }] }}>
+        {iconNode}
+      </Animated.View>
+    );
   }
 
   // Wrap in container if requested

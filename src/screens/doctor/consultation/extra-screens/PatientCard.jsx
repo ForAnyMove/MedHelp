@@ -6,11 +6,15 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Button } from '../../../../components/ui/Button';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
 import { Avatar } from '../../../../components/common/Avatar';
+import { useSession } from '../../../../context/SessionContext';
+import { createApiClient } from '../../../../api/apiClient';
+import { createConsultationsApi } from '../../../../api/consultationsApi';
 
 export function PatientCard({ consultation, onBack, onViewDetails, onStartConsultation }) {
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
+  const { session, refreshSessionToken } = useSession();
 
   if (!consultation) return null;
   const { patient } = consultation;
@@ -28,7 +32,10 @@ export function PatientCard({ consultation, onBack, onViewDetails, onStartConsul
               style={styles.avatar}
             />
             <View style={styles.infoCol}>
-              <Text style={styles.name}>{patient?.firstName || ''} {patient?.lastName || ''}, {patient?.age || '??'} y.o.</Text>
+              <Text style={styles.name}>
+                {patient?.firstName || ''} {patient?.lastName || ''}
+                {patient?.age ? `, ${patient.age} y.o.` : ''}
+              </Text>
               <Text style={styles.subtitle}>{t('doctor_dashboard.new_symptoms')}</Text>
             </View>
           </View>
@@ -48,7 +55,7 @@ export function PatientCard({ consultation, onBack, onViewDetails, onStartConsul
             <View style={styles.statDivider} />
             <View style={styles.statCol}>
               <Text style={styles.statLabel}>{t('doctor_consultation.key_points')}</Text>
-              {patient.keyPoints?.map((point, idx) => (
+              {patient?.keyPoints?.map((point, idx) => (
                 <View key={idx} style={styles.bulletRow}>
                   <View style={[styles.bullet]} />
                   <Text style={[styles.bulletText, { textDecorationLine: 'underline', }]} numberOfLines={1}>{point}</Text>
@@ -64,7 +71,16 @@ export function PatientCard({ consultation, onBack, onViewDetails, onStartConsul
           <Button
             title={t('doctor_consultation.start_consultation')}
             variant="primary"
-            onPress={onStartConsultation}
+            onPress={async () => {
+              try {
+                const api = createApiClient(session, refreshSessionToken);
+                const consultApi = createConsultationsApi(api);
+                await consultApi.update(consultation.id, { status: 'occupied' });
+                onStartConsultation(); // optimistic update locally
+              } catch (e) {
+                console.error(e);
+              }
+            }}
             style={styles.startButton}
           />
         </View>
@@ -81,8 +97,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(10) },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 1,
@@ -113,7 +129,7 @@ const themeStyles = (theme) => ({
     color: theme.colors.n500,
   },
   divider: {
-    height: 1,
+    height: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
     marginBottom: theme.sizes.spacing.s,
   },
@@ -130,7 +146,7 @@ const themeStyles = (theme) => ({
     flex: 1,
   },
   statDivider: {
-    width: 1,
+    width: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
     marginHorizontal: theme.sizes.spacing.l,
   },

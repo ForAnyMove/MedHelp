@@ -92,8 +92,8 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
@@ -101,7 +101,7 @@ const themeStyles = (theme) => ({
   compactContainer: {
     padding: theme.sizes.spacing.m,
     marginTop: theme.sizes.spacing.m,
-    marginBottom: 0,
+    marginBottom: theme.sizes.scale(0),
     elevation: 0,
     shadowOpacity: 0,
     borderWidth: 1,
@@ -173,7 +173,7 @@ const themeStyles = (theme) => ({
     marginLeft: theme.sizes.spacing.xs,
   },
   divider: {
-    width: 1,
+    width: theme.sizes.scale(1),
     height: '90%',
     backgroundColor: theme.colors.n300,
   },

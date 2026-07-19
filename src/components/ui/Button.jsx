@@ -53,7 +53,7 @@ export function Button({
               style={{ marginRight: title ? sizes.spacing.s : 0 }}
             />
           )}
-          {title && <Text style={labelStyle}>{title}</Text>}
+          {title && <Text style={[labelStyle, { textAlign: 'center' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{title}</Text>}
           {iconSide === 'right' && icon && (
             <Icon
               name={icon}

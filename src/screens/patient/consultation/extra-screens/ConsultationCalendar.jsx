@@ -7,8 +7,8 @@ import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 
 export function ConsultationCalendar({ visible, bookings, onClose, onSelectBooking }) {
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
-  const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -47,7 +47,7 @@ export function ConsultationCalendar({ visible, bookings, onClose, onSelectBooki
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t('consultation.calendar_title')}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Icon name="X" size={24} color={colors.n900} />
+              <Icon name="close" size={sizes.scale(24)} color={colors.n900}  />
             </TouchableOpacity>
           </View>
 
@@ -81,7 +81,7 @@ export function ConsultationCalendar({ visible, bookings, onClose, onSelectBooki
                       <Text style={styles.bookingDoctor}>{t('doctors.dr_prefix')}{b.doctor?.firstName || ''} {b.doctor?.lastName || ''}</Text>
                       <Text style={styles.bookingSpec}>{b.doctor?.specialization || ''}</Text>
                     </View>
-                    <Icon name="ChevronRight" size={20} color={colors.n400} />
+                    <Icon name="arrow-right" size={sizes.scale(20)} color={colors.n400}  />
                   </TouchableOpacity>
                 ))
               ) : (
@@ -98,13 +98,13 @@ export function ConsultationCalendar({ visible, bookings, onClose, onSelectBooki
 const themeStyles = (theme) => ({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: theme.colors.white,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: theme.sizes.scale(32),
+    borderTopRightRadius: theme.sizes.scale(32),
     height: '80%',
     padding: theme.sizes.spacing.l,
   },
@@ -119,8 +119,8 @@ const themeStyles = (theme) => ({
     color: theme.colors.n900,
   },
   calendarGrid: {
-    backgroundColor: '#F8FBFB',
-    borderRadius: 24,
+    backgroundColor: /* TODO: color */ '#F8FBFB',
+    borderRadius: theme.sizes.scale(24),
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.l,
   },
@@ -141,11 +141,11 @@ const themeStyles = (theme) => ({
   },
   dayCell: {
     width: '14.28%',
-    height: 40,
+    height: theme.sizes.scale(40),
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 4,
-    borderRadius: 10,
+    marginVertical: theme.sizes.scale(4),
+    borderRadius: theme.sizes.scale(10),
   },
   selectedDay: {
     backgroundColor: theme.colors.p500,
@@ -159,12 +159,12 @@ const themeStyles = (theme) => ({
     fontWeight: '700',
   },
   dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: theme.sizes.scale(4),
+    height: theme.sizes.scale(4),
+    borderRadius: theme.sizes.scale(2),
     backgroundColor: theme.colors.p500,
     position: 'absolute',
-    bottom: 4,
+    bottom: theme.sizes.scale(4),
   },
   bookingsSection: {
     flex: 1,
@@ -182,17 +182,17 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.white,
-    borderRadius: 16,
+    borderRadius: theme.sizes.scale(16),
     padding: theme.sizes.spacing.s,
     marginBottom: theme.sizes.spacing.s,
     borderWidth: 1,
-    borderColor: '#F0F3F3',
+    borderColor: /* TODO: color */ '#F0F3F3',
   },
   bookingTimeBox: {
-    backgroundColor: '#F0F8F7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: /* TODO: color */ '#F0F8F7',
+    paddingHorizontal: theme.sizes.scale(8),
+    paddingVertical: theme.sizes.scale(4),
+    borderRadius: theme.sizes.scale(8),
     marginRight: theme.sizes.spacing.m,
   },
   bookingTime: {

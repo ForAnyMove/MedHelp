@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from '../ui/Icon';
+import { useTheme } from '../../theme/ThemeContext';
 
 /**
  * Universal empty state for any list or section.
@@ -20,12 +21,13 @@ export function EmptyState({
   actionLabel,
   onAction,
 }) {
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
 
   return (
     <View style={styles.container}>
       <View style={styles.iconBox}>
-        <Icon name={icon} size={36} color={styles.iconColor.color} />
+        <Icon name={icon} size={sizes.scale(36)} color={styles.iconColor.color} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {description ? <Text style={styles.description}>{description}</Text> : null}
@@ -46,9 +48,9 @@ const themeStyles = (theme) => ({
     paddingHorizontal: theme.sizes.spacing.xl,
   },
   iconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: theme.sizes.scale(),
+    height: theme.sizes.scale(),
+    borderRadius: theme.sizes.scale(),
     backgroundColor: theme.colors.p100,
     alignItems: 'center',
     justifyContent: 'center',

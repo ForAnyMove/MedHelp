@@ -11,7 +11,11 @@ export function ProfitStatusCard({ profit }) {
     <View style={styles.profitSection}>
       <Text style={styles.sectionTitle}>{t('doctor_dashboard.profit_month')}</Text>
       <View style={styles.profitCard}>
-        <Text style={styles.profitValue}>{profit}$</Text>
+        {profit ? (
+          <Text style={styles.profitValue}>{profit}$</Text>
+        ) : (
+          <Text style={styles.noProfitText}>{t('doctor_dashboard.no_profit_yet', 'No profit this month yet')}</Text>
+        )}
       </View>
     </View>
   );
@@ -37,5 +41,10 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.h3,
     color: theme.colors.n700,
     fontFamily: 'Manrope_600SemiBold',
+  },
+  noProfitText: {
+    ...theme.sizes.typography.body1,
+    color: theme.colors.n500,
+    textAlign: 'center',
   }
 });

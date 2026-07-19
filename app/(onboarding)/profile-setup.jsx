@@ -433,7 +433,7 @@ const themeStyles = (theme) => ({
     borderColor: theme.colors.n200,
     borderRadius: theme.sizes.borderRadius.large,
     paddingVertical: theme.sizes.spacing.s,
-    shadowColor: '#000',
+    shadowColor: /* TODO: color */ '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,

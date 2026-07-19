@@ -5,29 +5,40 @@ import { useTheme } from '../../../../../theme/ThemeContext';
 import { Button } from '../../../../../components/ui/Button';
 import { Icon } from '../../../../../components/ui/Icon';
 import { CheckerLayout } from './CheckerLayout';
+import { usePatientDashboard } from '../../../../../context/PatientDashboardContext';
 
 export function Step6Result({ data, onBack, onClose }) {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
+  const { navigateToDoctors } = usePatientDashboard();
   
-  // Compute priority (mock logic)
-  const isHighPriority = data.redFlags.length > 0 || data.severity >= 7;
+  // Compute priority based on backend recommendations
+  const isHighPriority = data?.recommendations?.priorityLevel === 'high' || (data?.payload?.redFlags?.length > 0);
 
-  const priorities = [
-    { id: 1, label: t('symptoms.res_consult'), desc: isHighPriority ? t('symptoms.res_high_prio') : t('symptoms.res_suggested'), icon: 'User', color: colors.sCoral },
-    { id: 2, label: t('symptoms.res_tested'), desc: isHighPriority ? t('symptoms.res_high_prio') : t('symptoms.res_recommended'), icon: 'Activity', color: colors.primary },
-    { id: 3, label: t('symptoms.res_cause'), desc: isHighPriority ? t('symptoms.res_high_prio') : t('symptoms.res_optional'), icon: 'FileText', color: colors.warning }
-  ];
+  const priorities = isHighPriority 
+    ? [
+        { id: 1, label: t('symptoms.res_consult'), desc: t('symptoms.res_high_prio'), icon: 'profile', color: colors.sCoral },
+        { id: 2, label: t('symptoms.res_tested'), desc: t('symptoms.res_high_prio'), icon: 'loader-circle', color: colors.sCoral }
+      ]
+    : [
+        { id: 1, label: t('symptoms.res_consult'), desc: t('symptoms.res_suggested'), icon: 'profile', color: colors.primary },
+        { id: 2, label: t('symptoms.res_tested'), desc: t('symptoms.res_recommended'), icon: 'loader-circle', color: colors.sBlue },
+        { id: 3, label: t('symptoms.res_cause'), desc: t('symptoms.res_optional'), icon: 'note', color: colors.warning }
+      ];
 
-  const recommendations = [
+  const allRecommendations = [
     { id: 1, label: t('symptoms.rec_1'), icon: 'check', color: colors.sCoral },
     { id: 2, label: t('symptoms.rec_2'), icon: 'list', color: colors.warning },
     { id: 3, label: t('symptoms.rec_3'), icon: 'chemical', color: colors.info },
     { id: 4, label: t('symptoms.rec_4'), icon: 'pil', color: colors.sCoral },
     { id: 5, label: t('symptoms.rec_5'), icon: 'drops', color: colors.primary },
     { id: 6, label: t('symptoms.rec_6'), icon: 'time', color: colors.sCoral },
-    { id: 7, label: t('symptoms.rec_7'), icon: 'doctor', color: colors.warning },
+    { id: 7, label: t('symptoms.rec_7'), icon: 'doctor', color: colors.sCoral },
   ];
+
+  const recommendations = isHighPriority 
+    ? allRecommendations.filter(r => [7, 1, 4].includes(r.id))
+    : allRecommendations.filter(r => [2, 5, 6, 3].includes(r.id));
 
   const st = styles(sizes, colors);
 
@@ -35,7 +46,12 @@ export function Step6Result({ data, onBack, onClose }) {
     <CheckerLayout onBack={onBack} hideLogo={true}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={st.content}>
         
-        <Text style={st.sectionTitle}>{t('symptoms.res_priority')}</Text>
+        <Text style={st.sectionTitle}>{data?.recommendations?.title || t('symptoms.res_priority')}</Text>
+        {data?.recommendations?.message && (
+          <Text style={{ marginBottom: sizes.spacing.m, color: colors.n700 }}>
+            {data.recommendations.message}
+          </Text>
+        )}
         <View style={st.priorityRow}>
           {priorities.map(p => (
             <View key={p.id} style={st.priorityCard}>
@@ -65,7 +81,7 @@ export function Step6Result({ data, onBack, onClose }) {
           <Button 
             title={t('symptoms.btn_find_doctor')} 
             variant="primary" 
-            onPress={() => console.log('Find Doctor')} 
+            onPress={navigateToDoctors} 
             style={{ marginBottom: sizes.spacing.m }}
           />
           <Button 
@@ -102,7 +118,7 @@ const styles = (sizes, colors) => StyleSheet.create({
     padding: sizes.spacing.m,
     alignItems: 'center',
     shadowColor: colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: sizes.scale(0), height: sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
@@ -120,7 +136,7 @@ const styles = (sizes, colors) => StyleSheet.create({
     fontWeight: '600',
     color: colors.n900,
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: sizes.scale(4),
   },
   prioDesc: {
     fontSize: sizes.scale(10),
@@ -132,7 +148,7 @@ const styles = (sizes, colors) => StyleSheet.create({
     borderRadius: sizes.borderRadius.large,
     padding: sizes.spacing.m,
     shadowColor: colors.n900,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: sizes.scale(0), height: sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,

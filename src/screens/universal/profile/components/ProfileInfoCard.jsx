@@ -19,7 +19,7 @@ export function ProfileInfoCard({ user }) {
         </>
         :
         <>
-          <InfoRow label={t('profile.specializations')} value={user.professionCodes.map(code => t(`professions.${code}`)).join(', ')} />
+          <InfoRow label={t('profile.specializations')} value={user.professionNames?.length > 0 ? user.professionNames.join(', ') : user.professionCodes.map(code => t(`specializations.${code}`)).join(', ')} />
         </>
       }
     </View>
@@ -46,8 +46,8 @@ const themeStyles = (theme) => ({
     padding: theme.sizes.spacing.m,
     marginHorizontal: theme.sizes.spacing.m,
     marginTop: -theme.sizes.scale(40), // Overlap with header as per mockup
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 5,
@@ -57,7 +57,7 @@ const themeStyles = (theme) => ({
     width: '100%',
   },
   divider: {
-    height: 1,
+    height: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
     marginVertical: theme.sizes.scale(10),
   },

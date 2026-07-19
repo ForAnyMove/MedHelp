@@ -2,11 +2,12 @@ import React, { useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions, StyleSheet } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Screen } from '../../components/ui/Screen';
 import { Icon } from '../../components/ui/Icon';
 import { useStyles } from '../../theme/useStyles';
 import { NotificationBadge } from '../../components/common/NotificationBadge';
+import { useComponentContext } from '../../context/GlobalContext';
 
 import { DoctorDashboardProvider, useDoctorDashboard } from '../../context/DoctorDashboardContext';
 import { DoctorHomeTab } from './home/DoctorHomeTab';
@@ -36,7 +37,7 @@ const indexToTab = ['home', 'balance', 'consultation', 'history', 'profile'];
 function DoctorTabsInner({ currentTab }) {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const { t } = useTranslation();
   const {
     tabIndex,
@@ -45,46 +46,97 @@ function DoctorTabsInner({ currentTab }) {
     handleTabSwitchRequest,
     showExitConfirmation,
     confirmExitSummary,
-    cancelExitSummary
+    cancelExitSummary,
+    navigateToHistoryDetail,
+    navigateToHistoryPatientProfile,
+    openConsultationById,
+    syncStateFromUrl
   } = useDoctorDashboard();
+  const { setChatButtonConfig } = useComponentContext();
+  const { openConsultationId, consultationAction, action, ts, returnTab, tab, openHistoryId, openPatientProfileId } = useLocalSearchParams();
+  const router = require('expo-router').useRouter();
 
-  // Sync index from URL
+  const [initialDeepLinkProcessed, setInitialDeepLinkProcessed] = React.useState(false);
+
+  const isProfileTab = tabIndex === 4;
+  const prevIsProfileTab = React.useRef(isProfileTab);
+
+  React.useLayoutEffect(() => {
+    const profileChanged = isProfileTab !== prevIsProfileTab.current;
+    setChatButtonConfig({ visible: isSwipeEnabled && !isProfileTab, animated: profileChanged });
+    prevIsProfileTab.current = isProfileTab;
+    return () => setChatButtonConfig({ visible: true, animated: false });
+  }, [isSwipeEnabled, isProfileTab, setChatButtonConfig]);
+
+  React.useEffect(() => {
+    const activeTab = typeof tab === 'string' ? tab : tab?.[0];
+    if (activeTab === 'history') {
+      if (openPatientProfileId) {
+        navigateToHistoryPatientProfile(openPatientProfileId);
+      } else if (openHistoryId) {
+        navigateToHistoryDetail(openHistoryId);
+      }
+      if (openPatientProfileId || openHistoryId) {
+        router.setParams({ openPatientProfileId: undefined, openHistoryId: undefined });
+      }
+    }
+  }, [tab, openHistoryId, openPatientProfileId]);
+
+  React.useEffect(() => {
+    const resolvedAction = consultationAction || action;
+    if (openConsultationId && resolvedAction) {
+       openConsultationById(openConsultationId, resolvedAction, returnTab);
+       router.setParams({ openConsultationId: undefined, action: undefined, consultationAction: undefined, returnTab: undefined });
+    }
+  }, [openConsultationId, consultationAction, action, ts, returnTab]);
+
+  // Sync index from URL natively
   useEffect(() => {
     if (currentTab && tabIndexMap[currentTab] !== undefined && tabIndexMap[currentTab] !== tabIndex) {
       handleTabSwitchRequest(tabIndexMap[currentTab]);
     }
   }, [currentTab]);
 
+  // Handle deep linking for sub-screens on initial load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !initialDeepLinkProcessed) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabName = window.location.pathname.replace('/', '');
+      if (tabIndexMap[tabName] !== undefined) {
+        syncStateFromUrl(searchParams, tabName);
+      }
+      setInitialDeepLinkProcessed(true);
+    }
+  }, [initialDeepLinkProcessed, syncStateFromUrl]);
+
   const onIndexChangeWithSync = (i) => {
     handleTabSwitchRequest(i);
-    // Explicit sync logic mapping to swipe / button press ONLY
+    // Explicit URL push ONLY on manual user swipe / tab press
     const newTab = indexToTab[i];
-    if (newTab !== currentTab) {
-      if (typeof window !== 'undefined' && window.history) {
-        window.history.pushState({}, '', `/${newTab}`);
-      } else {
-        router.setParams({ tab: newTab });
+    if (typeof window !== 'undefined' && window.history) {
+      const currentUrlTab = window.location.pathname.replace('/', '');
+      if (newTab !== currentUrlTab) {
+        // Pass existing history state so Expo Router doesn't crash on Back button
+        window.history.pushState(window.history.state, '', `/${newTab}`);
       }
     }
   };
 
-  // Removed faulty pushState useEffect.
-  // Instead, router.setParams and pushState are strictly kept inside the 
-  // explicitly manual tab switches, or through the handlePopState sync logic.
-
-  // Sync from Browser Back/Forward buttons perfectly
+  // Sync from Browser Back/Forward buttons perfectly without remounting Expo routes
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handlePopState = () => {
+    const handlePopState = (e) => {
       const path = window.location.pathname.replace('/', '');
       if (tabIndexMap[path] !== undefined) {
         handleTabSwitchRequest(tabIndexMap[path]);
-        router.setParams({ tab: path });
+        // Also sync sub-view state
+        const searchParams = new URLSearchParams(window.location.search);
+        syncStateFromUrl(searchParams, path);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [handleTabSwitchRequest]);
+  }, [handleTabSwitchRequest, syncStateFromUrl]);
 
   const routes = useMemo(() => [
     { key: 'home', title: t('doctor_tabs.home'), icon: 'home' },
@@ -137,7 +189,7 @@ function DoctorTabsInner({ currentTab }) {
       />
       {showExitConfirmation && (
         <View style={StyleSheet.absoluteFillObject}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ flex: 1, backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
             <View style={styles.exitModalBody}>
               <Text style={styles.exitModalTitle}>{t('doctor_consultation.exit_title')}</Text>
               <Text style={styles.exitModalText}>{t('doctor_consultation.exit_desc')}</Text>
@@ -188,7 +240,7 @@ const tabStyles = (theme) => ({
   exitModalBody: {
     backgroundColor: theme.colors.white,
     padding: theme.sizes.spacing.xl,
-    borderRadius: 24,
+    borderRadius: theme.sizes.scale(24),
     width: '85%',
     alignItems: 'center',
   },
@@ -209,7 +261,7 @@ const tabStyles = (theme) => ({
   btnCancel: {
     flex: 1,
     paddingVertical: theme.sizes.spacing.m,
-    borderRadius: 20,
+    borderRadius: theme.sizes.scale(20),
     backgroundColor: theme.colors.n100,
     alignItems: 'center',
   },
@@ -221,7 +273,7 @@ const tabStyles = (theme) => ({
   btnConfirm: {
     flex: 1,
     paddingVertical: theme.sizes.spacing.m,
-    borderRadius: 20,
+    borderRadius: theme.sizes.scale(20),
     backgroundColor: theme.colors.p500,
     alignItems: 'center',
   },

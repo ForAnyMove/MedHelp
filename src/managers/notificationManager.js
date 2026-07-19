@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { createApiClient } from '../api/apiClient';
 
 /** 
@@ -13,16 +15,28 @@ export default function notificationManager(setAppLoading, session, refreshSessi
 
     const api = useMemo(() => createApiClient(session, refreshSessionToken), [session, refreshSessionToken]);
 
+    const prevIdsRef = useRef(new Set());
+
     const getNotifications = useCallback(async () => {
         if (!session?.accessToken) return;
         try {
-            // setAppLoading(true); // Notifications can load silently in the background
             const response = await api.get('/notifications');
-            setNotifications(response || []);
+            const data = response || [];
+            
+            // Trigger local notifications for web if there are new unread ones
+            if (Platform.OS === 'web' && prevIdsRef.current.size > 0) {
+                const newUnread = data.filter(n => !prevIdsRef.current.has(n.id) && !n.is_read);
+                newUnread.forEach(n => {
+                    if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === 'granted') {
+                        new window.Notification(n.title, { body: n.body || n.description });
+                    }
+                });
+            }
+            
+            prevIdsRef.current = new Set(data.map(n => n.id));
+            setNotifications(data);
         } catch (error) {
             console.error('Error fetching notifications:', error);
-        } finally {
-            // setAppLoading(false);
         }
     }, [api, session?.accessToken]);
 
@@ -46,7 +60,23 @@ export default function notificationManager(setAppLoading, session, refreshSessi
 
     useEffect(() => {
         getNotifications();
-    }, [session]);
+
+        // Poll every 30 seconds so the list refreshes automatically
+        const pollInterval = setInterval(() => {
+            getNotifications();
+        }, 30000);
+
+        // Also listen for explicit reload signals (from Stream Chat events, cancellations, etc.)
+        const { DeviceEventEmitter } = require('react-native');
+        const sub = DeviceEventEmitter.addListener('reload_notifications', () => {
+            getNotifications();
+        });
+
+        return () => {
+            clearInterval(pollInterval);
+            sub.remove();
+        };
+    }, [getNotifications]);
 
     return {
         notifications,

@@ -18,12 +18,12 @@ export function UploadAnalysis() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Icon 
-          name="ArrowLeft" 
+          name="arrow-back" 
           size={sizes.scale(24)} 
           color={colors.p500} 
           onPress={navigateToDashboard}
           style={styles.backButton}
-        />
+         />
       </View>
       
       <View style={styles.content}>
@@ -32,7 +32,7 @@ export function UploadAnalysis() {
 
         <TouchableOpacity style={styles.uploadArea} activeOpacity={0.7}>
           <View style={styles.iconWrapper}>
-            <Icon name="Upload" size={sizes.scale(24)} color={colors.p500} />
+            <Icon name="upload" size={sizes.scale(24)} color={colors.p500}  />
           </View>
         </TouchableOpacity>
       </View>
@@ -87,7 +87,7 @@ const themeStyles = (theme) => ({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: theme.colors.n900,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 4,

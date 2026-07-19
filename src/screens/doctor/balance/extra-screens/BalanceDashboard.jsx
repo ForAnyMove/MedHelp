@@ -12,6 +12,7 @@ import { EmptyState } from '../../../../components/common/EmptyState';
 import { Button } from '../../../../components/ui/Button';
 
 function CurvedLineChart({ data, labels, maxValue, width, height, chartPadding, colors }) {
+  const { sizes } = useTheme();
   if (!data || data.length === 0) return null;
 
   const actualWidth = width - chartPadding.left - chartPadding.right;
@@ -49,16 +50,16 @@ function CurvedLineChart({ data, labels, maxValue, width, height, chartPadding, 
         const val = Math.round((idx / 6) * maxValue);
         const yPos = chartPadding.top + actualHeight - (idx / 6) * actualHeight;
         return (
-          <Text key={`y-${idx}`} style={{ position: 'absolute', left: 0, top: yPos - 8, fontSize: 10, color: '#98A2B3' }}>
+          <Text key={`y-${idx}`} style={{ position: 'absolute', left: sizes.scale(0), top: yPos - 8, fontSize: sizes.scale(10), color: /* TODO: color */ '#98A2B3' }}>
             ${val}
           </Text>
         )
       })}
 
       {/* X Axis Labels */}
-      <View style={{ position: 'absolute', bottom: 0, left: chartPadding.left, right: chartPadding.right, flexDirection: 'row', justifyContent: 'space-between' }}>
+      <View style={{ position: 'absolute', bottom: sizes.scale(0), left: chartPadding.left, right: chartPadding.right, flexDirection: 'row', justifyContent: 'space-between' }}>
         {labels.map((lbl, idx) => (
-          <Text key={`x-${idx}`} style={{ fontSize: 10, color: '#98A2B3' }}>{lbl}</Text>
+          <Text key={`x-${idx}`} style={{ fontSize: sizes.scale(10), color: /* TODO: color */ '#98A2B3' }}>{lbl}</Text>
         ))}
       </View>
 
@@ -72,7 +73,7 @@ function CurvedLineChart({ data, labels, maxValue, width, height, chartPadding, 
 
         {yTicks.map(idx => {
           const y = chartPadding.top + actualHeight - (idx / 6) * actualHeight;
-          return <Line key={`hl-${idx}`} x1={chartPadding.left + 10} y1={y} x2={width} y2={y} stroke="#F2F4F7" strokeWidth="1" />;
+          return <Line key={`hl-${idx}`} x1={chartPadding.left + 10} y1={y} x2={width} y2={y} stroke=/* TODO: color */ "#F2F4F7" strokeWidth="1" />;
         })}
 
         <Path d={areaPath} fill="url(#chartGradient)" />
@@ -84,25 +85,25 @@ function CurvedLineChart({ data, labels, maxValue, width, height, chartPadding, 
         position: 'absolute',
         top: chartPadding.top + actualHeight - (data[12] / maxValue) * actualHeight - 60,
         left: chartPadding.left + (12 / (data.length - 1)) * actualWidth - 30,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        backgroundColor: colors.white,
+        borderRadius: sizes.scale(16),
+        paddingHorizontal: sizes.scale(16),
+        paddingVertical: sizes.scale(8),
+        shadowColor: /* TODO: color */ '#000',
+        shadowOffset: { width: sizes.scale(0), height: sizes.scale(4) },
         shadowOpacity: 0.1,
         shadowRadius: 10,
         elevation: 5,
         alignItems: 'center'
       }}>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#101828' }}>${data[12]}</Text>
-        <Text style={{ fontSize: 12, color: '#98A2B3' }}>{labels[12]} Apr</Text>
+        <Text style={{ fontSize: sizes.scale(16), fontWeight: '700', color: /* TODO: color */ '#101828' }}>${data[12]}</Text>
+        <Text style={{ fontSize: sizes.scale(12), color: /* TODO: color */ '#98A2B3' }}>{labels[12]} Apr</Text>
         <View style={{
           position: 'absolute',
-          bottom: -5,
-          width: 10,
-          height: 10,
-          backgroundColor: '#FFFFFF',
+          bottom: sizes.scale(-5),
+          width: sizes.scale(10),
+          height: sizes.scale(10),
+          backgroundColor: colors.white,
           transform: [{ rotate: '45deg' }]
         }} />
       </View>
@@ -110,7 +111,7 @@ function CurvedLineChart({ data, labels, maxValue, width, height, chartPadding, 
         position: 'absolute',
         top: chartPadding.top + actualHeight - (data[12] / maxValue) * actualHeight - 6,
         left: chartPadding.left + (12 / (data.length - 1)) * actualWidth - 6,
-        width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFFFFF',
+        width: sizes.scale(12), height: sizes.scale(12), borderRadius: sizes.scale(6), backgroundColor: colors.white,
         borderWidth: 3, borderColor: colors.p400
       }} />
     </View>
@@ -186,11 +187,14 @@ export function BalanceDashboard() {
         ) : (
           <CurvedLineChart
             data={chartData.data}
-            labels={chartData.labels}
+            labels={chartData.labels.map(l => {
+              const dMap = { Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat', Sun: 'sun' };
+              return dMap[l] ? t(`days.${dMap[l]}`, l) : l;
+            })}
             maxValue={chartData.maxValue}
             width={screenWidth - sizes.scale(64)}
             height={sizes.scale(220)}
-            chartPadding={{ top: sizes.scale(30), bottom: sizes.scale(20), left: sizes.scale(30), right: 0 }}
+            chartPadding={{ top: sizes.scale(30), bottom: sizes.scale(20), left: sizes.scale(30), right: sizes.scale(0) }}
             colors={colors}
           />
         )}
@@ -237,7 +241,7 @@ export function BalanceDashboard() {
       <Text style={styles.sectionTitle}>{t('doctor_balance.total_balance') || 'Total balance'}</Text>
       <View style={styles.balanceCard}>
         {loading || !balanceData ? (
-          <ActivityIndicator color={colors.p500} style={{ paddingVertical: 20 }} />
+          <ActivityIndicator color={colors.p500} style={{ paddingVertical: sizes.scale(20) }} />
         ) : (
           <>
             <View style={styles.balanceInfo}>
@@ -255,7 +259,7 @@ export function BalanceDashboard() {
         )}
       </View>
 
-      <View style={{ height: 100 }} />
+      <View style={{ height: sizes.scale(100) }} />
     </ScrollView>
   );
 }
@@ -306,8 +310,8 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.spacing.l,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -345,8 +349,8 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.m,
     paddingHorizontal: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.l,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,
@@ -389,8 +393,8 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 3,

@@ -11,13 +11,20 @@ import { Reminders } from '../../../components/patient-dashboard/Reminders';
 import { NextSteps } from '../../../components/patient-dashboard/NextSteps';
 import { HealthIndications } from '../../../components/patient-dashboard/HealthIndications';
 import { HealthNotes } from '../../../components/patient-dashboard/HealthNotes';
+import { LabResultsBanner } from '../../../components/patient-dashboard/LabResultsBanner';
 import { UploadAnalysis } from './extra-screens/UploadAnalysis';
 import { SymptomChecker } from './extra-screens/SymptomChecker';
 import { usePatientDashboard } from '../../../context/PatientDashboardContext';
+import { BottomSheet } from '../../../components/ui/BottomSheet';
+import { ProfileNotifications } from '../../universal/profile/components/ProfileNotifications';
+import { useComponentContext } from '../../../context/GlobalContext';
 
 export function HomeTab() {
   const styles = useStyles(themeStyles);
   const { currentView, navigateToUpload, navigateToSymptomChecker, scrollViewRef } = usePatientDashboard();
+  const { sizes, colors } = useTheme();
+  const { user } = useComponentContext();
+  const [isNotificationSheetOpen, setIsNotificationSheetOpen] = React.useState(false);
 
   const handleAction = (id) => {
     if (id === 'upload') {
@@ -44,7 +51,8 @@ export function HomeTab() {
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
       >
-        <Header />
+        <Header onNotificationPress={() => setIsNotificationSheetOpen(true)} />
+        <LabResultsBanner />
         <HealthOverview />
         <QuickActions onAction={handleAction} />
         <Reminders />
@@ -52,6 +60,14 @@ export function HomeTab() {
         <HealthIndications />
         <HealthNotes />
       </ScrollView>
+
+      <BottomSheet
+        visible={isNotificationSheetOpen}
+        onClose={() => setIsNotificationSheetOpen(false)}
+        initialHeight={sizes.height}
+      >
+        <ProfileNotifications user={user} />
+      </BottomSheet>
     </View>
   );
 }
@@ -59,7 +75,7 @@ export function HomeTab() {
 const themeStyles = (theme) => ({
   screen: {
     flex: 1,
-    paddingHorizontal: 0,
+    paddingHorizontal: theme.sizes.scale(0),
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {

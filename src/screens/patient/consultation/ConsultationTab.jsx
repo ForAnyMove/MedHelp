@@ -14,6 +14,11 @@ import { TimerBlock } from './components/TimerBlock';
 import { ConsultationSummary } from './extra-screens/ConsultationSummary';
 import { ConsultationCalendar } from './extra-screens/ConsultationCalendar';
 import { BookingDetails } from './extra-screens/BookingDetails';
+import { PatientConsultationMiniCard } from './components/PatientConsultationMiniCard';
+import * as importPatientConsultationCard from './extra-screens/PatientConsultationCard';
+import * as importPatientActiveConsultation from './extra-screens/PatientActiveConsultation';
+import { PatientConsultationRate } from './extra-screens/PatientConsultationRate';
+import { PatientConsultationCompleted } from './extra-screens/PatientConsultationCompleted';
 import { useRouter } from 'expo-router';
 import { useSession } from '../../../context/SessionContext';
 import { getEstimatedServerDate } from '../../../hooks/useServerTime';
@@ -21,7 +26,7 @@ import { getEstimatedServerDate } from '../../../hooks/useServerTime';
 export function ConsultationTab() {
   const { t } = useTranslation();
   const { session, refreshSessionToken } = useSession();
-  const { consultationController, themeController: { colors, sizes } } = useComponentContext();
+  const { consultationController, doctorController, themeController: { colors, sizes } } = useComponentContext();
   const {
     bookings,
     results,
@@ -94,6 +99,11 @@ export function ConsultationTab() {
     selectedSummaryBooking,
     navigateToConsultationSummary,
     navigateToConsultationMain,
+    navigateToConsultationDetail,
+    navigateToActiveConsultation,
+    navigateToConsultationRate,
+    navigateToConsultationCompleted,
+    navigateToDashboard,
     setIsConsultationDetailsVisible
   } = usePatientDashboard();
 
@@ -116,7 +126,7 @@ export function ConsultationTab() {
     endConsultation();
     setIsConfirmVisible(false);
     if (currentBooking) {
-      navigateToConsultationSummary(currentBooking);
+      navigateToConsultationRate(currentBooking);
     }
   };
 
@@ -165,55 +175,78 @@ export function ConsultationTab() {
   }
 
   const isOngoing = activeSession.status === 'ongoing';
-  const currentBooking = isOngoing
-    ? bookings.find(b => b.id === activeSession.bookingId)
-    : upcomingBooking;
+
 
   if (consultationView === 'summary') {
     return <ConsultationSummary booking={selectedSummaryBooking} onClose={navigateToConsultationMain} />;
   }
 
-  // If we have bookings but none are active or upcoming in the next 30 days
-  if (!currentBooking) {
+  if (consultationView === 'detail' && selectedSummaryBooking) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('consultation.title')}</Text>
-          <TouchableOpacity style={styles.calendarIcon} onPress={() => setIsCalendarVisible(true)}>
-            <Icon name="calendar" size={sizes.scale(24)} color={colors.p500} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.emptyContainer}>
-          <Icon name="calendar" size={sizes.scale(64)} color={colors.n300} />
-          <Text style={styles.emptyText}>{t('consultation.empty_text')}</Text>
-          <Button
-            title={t('consultation.go_to_doctors')}
-            onPress={navigateToDoctors}
-            style={styles.emptyButton}
-          />
-        </View>
-        <ConsultationCalendar
-          visible={isCalendarVisible}
-          bookings={bookings}
-          onClose={() => setIsCalendarVisible(false)}
-          onSelectBooking={(b) => {
-            setSelectedBooking(b);
-            setIsCalendarVisible(false);
-            setIsDetailsVisible(true);
-          }}
-        />
-        <BookingDetails
-          visible={isDetailsVisible}
-          booking={selectedBooking}
-          onClose={() => setIsDetailsVisible(false)}
-          onCancel={(id) => {
-            cancelBooking(id);
-            setIsDetailsVisible(false);
-          }}
-        />
-      </View>
+      <importPatientConsultationCard.PatientConsultationCard
+        booking={selectedSummaryBooking}
+        onBack={navigateToConsultationMain}
+        onConnect={(booking) => navigateToActiveConsultation(booking)}
+        onCancel={(booking) => {
+          cancelBooking(booking.id);
+          navigateToConsultationMain();
+        }}
+        onReschedule={(booking) => {
+          doctorController.setRescheduleBooking(booking);
+          doctorController.selectDoctor(booking.doctor);
+          navigateToDoctors();
+        }}
+      />
     );
   }
+
+  if (consultationView === 'active' && selectedSummaryBooking) {
+    return (
+      <importPatientActiveConsultation.PatientActiveConsultation
+        booking={selectedSummaryBooking}
+        onBack={navigateToConsultationMain}
+        onEnd={async (booking) => {
+          try {
+            const { createApiClient } = require('../../../api/apiClient');
+            const { createConsultationsApi } = require('../../../api/consultationsApi');
+            const api = createApiClient(session, refreshSessionToken);
+            const consultApi = createConsultationsApi(api);
+            const existingRating = await consultApi.getRating(booking.id);
+            if (existingRating) {
+              navigateToConsultationCompleted(booking);
+            } else {
+              navigateToConsultationRate(booking);
+            }
+          } catch (e) {
+            navigateToConsultationRate(booking);
+          }
+        }}
+      />
+    );
+  }
+
+  if (consultationView === 'rate' && selectedSummaryBooking) {
+    return (
+      <PatientConsultationRate
+        booking={selectedSummaryBooking}
+        onSkip={() => navigateToConsultationCompleted(selectedSummaryBooking)}
+        onSubmit={() => navigateToConsultationCompleted(selectedSummaryBooking)}
+      />
+    );
+  }
+
+  if (consultationView === 'completed' && selectedSummaryBooking) {
+    return (
+      <PatientConsultationCompleted
+        booking={selectedSummaryBooking}
+        onBackToHome={() => {
+          navigateToDashboard();
+        }}
+      />
+    );
+  }
+
+  const groupedConsultations = consultationController.getGroupedConsultations();
 
   return (
     <View style={styles.container}>
@@ -225,53 +258,37 @@ export function ConsultationTab() {
           </TouchableOpacity>
         </View>
 
-        {isOngoing ? (
-          <RegularDoctorCard
-            doctor={currentBooking.doctor || {}}
-            variant="compact"
-            onProfilePress={() => currentBooking.doctor && handleDoctorPress(currentBooking.doctor.id)}
-          />
-        ) : (
-          <StatusCard
-            doctor={currentBooking.doctor || {}}
-            statusText={statusInfo.text}
-            label={statusInfo.label}
-            onPress={() => currentBooking.doctor && handleDoctorPress(currentBooking.doctor.id)}
-          />
-        )}
+        {groupedConsultations.map((group, idx) => {
+          const displayTitle = group.title.startsWith('common.') ? t(group.title) : group.title;
+          const hasData = group.data.length > 0;
 
-        <ActionGrid onActionPress={handleActionPress} />
-
-        <TimerBlock seconds={activeSession.elapsedSeconds} />
-
-        {isOngoing && (
-          <View style={styles.recordingTextContainer}>
-            <Text style={styles.recordingText}>{t('consultation.recording')}</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      <View style={styles.footer}>
-        {isOngoing ? (
-          <TouchableOpacity
-            onPress={handleEndPress}
-            hitSlop={{ top: 20, bottom: 20, left: 50, right: 50 }}
-            style={styles.endButton}
-            activeOpacity={0.7}
-          >
-            <View style={styles.endTextContainer}>
-              <Text style={styles.endText}>{t('consultation.end_btn')}</Text>
+          return (
+            <View key={idx} style={styles.group}>
+              <Text style={styles.groupTitle}>{displayTitle}</Text>
+              {hasData ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalScroll}
+                  nestedScrollEnabled
+                >
+                  {group.data.map(consultation => (
+                    <PatientConsultationMiniCard
+                      key={consultation.id}
+                      consultation={consultation}
+                      onPress={navigateToConsultationDetail}
+                    />
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.emptyGroup}>
+                  <Text style={styles.emptyGroupText}>{t('consultation.no_consultations_day')}</Text>
+                </View>
+              )}
             </View>
-          </TouchableOpacity>
-        ) : (
-          <Button
-            title={t('consultation.start_btn')}
-            onPress={handleStart}
-            style={styles.startButton}
-            textStyle={styles.startText}
-          />
-        )}
-      </View>
+          );
+        })}
+      </ScrollView>
 
       <ConsultationCalendar
         visible={isCalendarVisible}
@@ -280,51 +297,9 @@ export function ConsultationTab() {
         onSelectBooking={(b) => {
           setSelectedBooking(b);
           setIsCalendarVisible(false);
-          setIsDetailsVisible(true);
+          navigateToConsultationDetail(b);
         }}
       />
-
-      <BookingDetails
-        visible={isDetailsVisible}
-        booking={selectedBooking}
-        onClose={() => setIsDetailsVisible(false)}
-        onCancel={(id) => {
-          cancelBooking(id);
-          setIsDetailsVisible(false);
-        }}
-      />
-
-      <Modal visible={isConfirmVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmBox}>
-            <Text style={styles.confirmTitle}>{t('consultation.confirm_end_title')}</Text>
-            <Text style={styles.confirmText}>{t('consultation.confirm_end_text')}</Text>
-            <View style={styles.confirmButtons}>
-              <Button
-                title={t('consultation.cancel')}
-                variant="outlined"
-                onPress={() => setIsConfirmVisible(false)}
-                style={styles.confirmBtn}
-              />
-              <Button
-                title={t('consultation.confirm')}
-                variant="primary"
-                onPress={handleConfirmEnd}
-                style={styles.confirmBtn}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {consultationView === 'summary' && selectedSummaryBooking && (
-        <View style={StyleSheet.absoluteFill}>
-          <ConsultationSummary
-            booking={selectedSummaryBooking}
-            onClose={navigateToConsultationMain}
-          />
-        </View>
-      )}
     </View>
   );
 }
@@ -335,15 +310,35 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingTop: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl,
+  },
+  group: {
+    marginBottom: theme.sizes.spacing.m,
+  },
+  groupTitle: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
+    paddingHorizontal: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.xs,
+  },
+  horizontalScroll: {
+    paddingLeft: theme.sizes.spacing.m,
+    paddingRight: theme.sizes.spacing.s,
+  },
+  emptyGroup: {
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.spacing.s,
+  },
+  emptyGroupText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n400,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.sizes.spacing.l,
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.spacing.m,
   },
   title: {
     ...theme.sizes.typography.h3,
@@ -408,7 +403,7 @@ const themeStyles = (theme) => ({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.sizes.spacing.l,

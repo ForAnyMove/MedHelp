@@ -13,7 +13,7 @@ export function ProfileSection({ title, children, onEdit }) {
       <View style={styles.headerRow}>
         <Text style={styles.title}>{title}</Text>
         {onEdit && (
-          <TouchableOpacity onPress={onEdit} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={onEdit} hitSlop={{ top: sizes.scale(10), bottom: sizes.scale(10), left: sizes.scale(10), right: sizes.scale(10) }}>
             <Icon name="edit" size={sizes.scale(24)} color={colors.p500} />
           </TouchableOpacity>
         )}
@@ -44,8 +44,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     paddingHorizontal: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.03,
     shadowRadius: 10,
     elevation: 2,

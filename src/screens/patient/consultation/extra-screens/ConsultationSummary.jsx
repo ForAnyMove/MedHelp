@@ -19,9 +19,28 @@ export function ConsultationSummary({ booking, onClose }) {
     return null;
   }
 
-  const doctor = booking.doctor;
+  const doctor = booking.doctor || {
+    firstName: booking.doctorName?.split(' ')[0] || '',
+    lastName: booking.doctorName?.split(' ').slice(1).join(' ') || '',
+    avatarUrl: booking.avatarUrl,
+    specialty: booking.specialty
+  };
 
   const timeString = computeConsultationTime(booking, t);
+
+  const res = booking.result || {};
+  const overview = res.overview || booking.summary || timeString;
+  const findingsRaw = res.patient_has ? (typeof res.patient_has === 'string' ? JSON.parse(res.patient_has) : res.patient_has) : booking.findings;
+  
+  const recommendationsRaw = res.recommendations ? (typeof res.recommendations === 'string' ? JSON.parse(res.recommendations) : res.recommendations) : null;
+  const recommendationsList = recommendationsRaw 
+    ? recommendationsRaw.map((text, i) => ({ id: i, text, icon: 'clipboard-list', color: colors.p500 })) 
+    : booking.recommendations;
+
+  const nextStepsRaw = res.next_steps ? (typeof res.next_steps === 'string' ? JSON.parse(res.next_steps) : res.next_steps) : null;
+  const nextStepsList = nextStepsRaw 
+    ? nextStepsRaw.map((text, i) => ({ id: i, text, icon: 'clipboard-list', color: colors.p500 })) 
+    : booking.nextSteps;
 
   const handleHistory = () => {
     onClose(); // Reset session status to idle
@@ -60,12 +79,12 @@ export function ConsultationSummary({ booking, onClose }) {
 
           <View style={styles.section}>
             <Text style={styles.description}>
-              {booking.summary || timeString}
+              {overview}
             </Text>
-            {(booking.findings && booking.findings.length > 0) ? (
+            {(findingsRaw && findingsRaw.length > 0) ? (
               <>
                 <Text style={styles.infoText}>{t('consultation.you_have')}</Text>
-                {booking.findings.map((finding, index) => (
+                {findingsRaw.map((finding, index) => (
                   <View key={index} style={styles.bulletRow}>
                     <View style={styles.bullet} />
                     <Text style={styles.bulletText}>{finding}</Text>
@@ -94,7 +113,7 @@ export function ConsultationSummary({ booking, onClose }) {
 
         <Text style={styles.sectionTitle}>{t('consultation.recommendations')}</Text>
         <View style={styles.card}>
-          {(booking.recommendations || [
+          {(recommendationsList || [
             { id: 1, text: t('symptoms.rec_4'), icon: 'anemia', color: colors.sPink },
             { id: 2, text: t('symptoms.rec_5'), icon: 'anemia', color: colors.p500 },
             { id: 3, text: t('symptoms.rec_6'), icon: 'anemia', color: colors.sCoral },
@@ -109,7 +128,7 @@ export function ConsultationSummary({ booking, onClose }) {
 
         <Text style={styles.sectionTitle}>{t('consultation.next_steps')}</Text>
         <View style={styles.card}>
-          {(booking.nextSteps || [
+          {(nextStepsList || [
             { id: 5, text: t('symptoms.rec_4'), icon: 'anemia', color: colors.sPink },
             { id: 6, text: t('symptoms.rec_5'), icon: 'anemia', color: colors.p500 },
           ]).map(item => (
@@ -176,22 +195,22 @@ const themeStyles = (theme) => ({
   summaryCardWrapper: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 2,
     marginBottom: theme.sizes.spacing.l,
   },
   cardDivider: {
-    height: 1,
+    height: theme.sizes.scale(1),
     backgroundColor: theme.colors.n200,
     marginHorizontal: theme.sizes.spacing.m,
   },
   doctorCard: {
-    marginVertical: 0,
-    marginBottom: 0,
-    marginTop: 0,
+    marginVertical: theme.sizes.scale(0),
+    marginBottom: theme.sizes.scale(0),
+    marginTop: theme.sizes.scale(0),
     borderWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
@@ -241,8 +260,8 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: /* TODO: color */ '#000',
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
