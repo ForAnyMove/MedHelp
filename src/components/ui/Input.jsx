@@ -7,6 +7,8 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const [isFocused, setIsFocused] = useState(false);
+  const isMultiline = props.multiline;
+  const linesCount = props.numberOfLines || 4;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -14,14 +16,21 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
       <View 
         style={[
           styles.inputContainer,
-          rounded ? { borderRadius: sizes.scale(50) } : null,
+          rounded && !isMultiline ? { borderRadius: sizes.scale(50) } : null,
+          rounded && isMultiline ? { borderRadius: sizes.scale(20) } : null,
+          isMultiline ? { height: 'auto', minHeight: sizes.scale(20 * linesCount + 24), paddingVertical: sizes.scale(12), alignItems: 'flex-start' } : null,
           isFocused ? styles.inputFocused : null,
           error ? styles.inputError : null,
           inputContainerStyle,
         ].filter(Boolean)}
       >
         <TextInput
-          style={[styles.input, sizes.typography.bodyMedium, style]}
+          style={[
+            styles.input, 
+            sizes.typography.bodyMedium, 
+            isMultiline && { textAlignVertical: 'top', paddingTop: 0, paddingBottom: 0, height: '100%' },
+            style
+          ]}
           placeholder={placeholder}
           placeholderTextColor={colors.n500}
           value={value}
@@ -29,6 +38,7 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
           secureTextEntry={secureTextEntry}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          numberOfLines={linesCount}
           {...props}
         />
         {rightElement ? <View style={styles.rightElement}>{rightElement}</View> : null}

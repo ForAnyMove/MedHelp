@@ -1,11 +1,13 @@
 import React from 'react';
-import { usePathname, Redirect, useLocalSearchParams } from 'expo-router';
+import { usePathname, useLocalSearchParams } from 'expo-router';
 import { useSession } from '../src/context/SessionContext';
 import PatientTabs from '../src/screens/patient/PatientTabs';
 import DoctorTabs from '../src/screens/doctor/DoctorTabs';
+import OwnerTabs from '../src/screens/owner/OwnerTabs';
 
 const PATIENT_TABS = ['home', 'doctors', 'consultation', 'history', 'profile'];
 const DOCTOR_TABS = ['home', 'balance', 'consultation', 'history', 'profile'];
+const OWNER_TABS = ['home', 'doctors', 'calendar', 'history', 'profile'];
 
 export default function TabScreen() {
   const { tab } = useLocalSearchParams();
@@ -17,6 +19,7 @@ export default function TabScreen() {
   // Web fallback to synchronous pathname resolution avoiding hydration delay flashing
   const parsedPath = pathname ? pathname.split('/')[1] : null;
   const currentTab = typeof tab === 'string' ? tab : tab?.[0] || parsedPath;
+
   if (session.role === 'patient') {
     if (currentTab && PATIENT_TABS.includes(currentTab)) {
       return <PatientTabs currentTab={currentTab} />;
@@ -27,7 +30,14 @@ export default function TabScreen() {
       return <DoctorTabs currentTab={currentTab} />;
     }
     return null;
+  } else if (session.role === 'owner') {
+    if (currentTab && OWNER_TABS.includes(currentTab)) {
+      return <OwnerTabs currentTab={currentTab} />;
+    }
+    // Default to 'home' tab for owner if no tab param
+    return <OwnerTabs currentTab="home" />;
   }
-  
+
   return null;
 }
+

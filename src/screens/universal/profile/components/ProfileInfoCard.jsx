@@ -12,16 +12,17 @@ export function ProfileInfoCard({ user }) {
       <InfoRow label={t('profile.phone_number')} value={user.phone ? user.phone : '-'} isFirst />
       <InfoRow label={t('profile.dob')} value={user.dob ? user.dob : '-'} />
       <InfoRow label={t('profile.gender')} value={user.gender ? t(`profile.genders.${user.gender}`) : '-'} />
-      {user.role === 'patient' ?
+      {user.role === 'patient' && (
         <>
           <InfoRow label={t('profile.height_weight')} value={user.height || user.weight ? `${user.height || '--'} ${t('dashboard.cm')} / ${user.weight || '--'} ${t('dashboard.kg')}` : '--'} />
           <InfoRow label={t('profile.blood_type')} value={user.bloodType || t('profile.not_specified')} />
         </>
-        :
+      )}
+      {user.role === 'doctor' && (
         <>
-          <InfoRow label={t('profile.specializations')} value={user.professionNames?.length > 0 ? user.professionNames.join(', ') : user.professionCodes.map(code => t(`specializations.${code}`)).join(', ')} />
+          <InfoRow label={t('profile.specializations')} value={user.professionNames?.length > 0 ? user.professionNames.join(', ') : (user.professionCodes ? user.professionCodes.map(code => t(`specializations.${code}`)).join(', ') : '--')} />
         </>
-      }
+      )}
     </View>
   );
 }

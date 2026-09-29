@@ -28,6 +28,12 @@ export function ProfileNotifications({ user, onClose }) {
       markAsRead(item.id);
     }
 
+    if (item.type === 'owner_join_request') {
+      if (onClose) onClose();
+      router.push('/doctors?view=requests');
+      return;
+    }
+
     if (item.data?.url) {
       const url = item.data.url;
       const isConsultation = url.includes('completed-consultation') || url.includes('consultation/');
@@ -52,14 +58,18 @@ export function ProfileNotifications({ user, onClose }) {
         }
       }
 
+      if (url.startsWith('/')) {
+        if (onClose) onClose();
+        router.push(url);
+        return;
+      }
+
       try {
         const parsed = Linking.parse(url);
         if (onClose) onClose();
         if (parsed.hostname) {
           const routePath = parsed.path ? `/${parsed.path}` : '';
           router.push(`/${parsed.hostname}${routePath}`);
-        } else if (parsed.path) {
-          router.push('/' + parsed.path);
         } else {
           router.push(url);
         }
@@ -129,6 +139,14 @@ const NotificationItem = ({ item, onPress }) => {
         return { name: 'flask-conical', bgColor: colors.warning + '33', color: colors.warning };
       case 'new_message':
         return { name: 'stethoscope', bgColor: colors.danger + '33', color: colors.danger };
+      case 'doctor_join_rejected':
+        return { name: 'close', bgColor: colors.danger + '22', color: colors.danger };
+      case 'org_removed':
+        return { name: 'logout', bgColor: colors.warning + '22', color: colors.warning };
+      case 'doctor_join_accepted':
+        return { name: 'check', bgColor: colors.success + '22', color: colors.success };
+      case 'owner_join_request':
+        return { name: 'group', bgColor: colors.info + '22', color: colors.info };
       default:
         return { name: 'bell', bgColor: colors.info + '33', color: colors.sBlue };
     }
@@ -143,8 +161,12 @@ const NotificationItem = ({ item, onPress }) => {
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.itemTitle}>{t(`notifications.${item.type}`, item.title || item.type)}</Text>
-        <Text style={styles.itemDesc} numberOfLines={1}>{t(`notifications.${item.type}_desc`, item.description)}</Text>
+        <Text style={styles.itemTitle}>
+          {t(`notifications.${item.type}`, { defaultValue: item.title || item.type, ...(item.data || {}) })}
+        </Text>
+        <Text style={styles.itemDesc} numberOfLines={1}>
+          {t(`notifications.${item.type}_desc`, { defaultValue: item.description, ...(item.data || {}) })}
+        </Text>
         <Text style={styles.timeText}>{formatRelativeTime(item.created_at, t)}</Text>
       </View>
 

@@ -8,10 +8,13 @@ import Constants from 'expo-constants';
 
 const getSocketUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL.replace('/api', '');
-  if (Platform.OS === 'web') return 'http://localhost:3000';
-  const hostUri = Constants.expoConfig?.hostUri;
-  if (hostUri) return `http://${hostUri.split(':')[0]}:3000`;
-  return 'http://10.0.2.2:3000';
+  if (__DEV__) {
+    if (Platform.OS === 'web') return 'http://localhost:3000';
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (hostUri) return `http://${hostUri.split(':')[0]}:3000`;
+    return 'http://10.0.2.2:3000';
+  }
+  return ''; // fallback for production web
 };
 
 const SocketContext = createContext(null);
@@ -21,7 +24,7 @@ export function useSocket() {
 }
 
 export function SocketProvider({ children }) {
-  const { session, refreshSessionToken } = useSession();
+  const { session, refreshSessionToken, updateSession } = useSession();
   const [socket, setSocket] = useState(null);
   const { addNotification } = useChatNotifications();
   const { t } = useTranslation();
@@ -146,6 +149,68 @@ export function SocketProvider({ children }) {
     newSocket.on('patient_joined', (data) => {
       console.log('[Socket.io] patient_joined', data);
       DeviceEventEmitter.emit('patient_joined', { consultationId: data.consultation_id });
+    });
+
+    newSocket.on('join_request_cancelled', (data) => {
+      console.log('[Socket.io] join_request_cancelled', data);
+      addNotification({
+        title: t('notifications.join_request_cancelled', 'Request cancelled'),
+        body: t('notifications.join_request_cancelled_desc', 'A doctor has cancelled their join request.'),
+        targetRoute: '/home',
+        type: 'system'
+      });
+      DeviceEventEmitter.emit('reload_notifications');
+      DeviceEventEmitter.emit('join_request_cancelled', data);
+    });
+
+    newSocket.on('join_request_accepted', (data) => {
+      console.log('[Socket.io] join_request_accepted', data);
+      if (updateSession) updateSession({ workplaceConfirmed: true, workplace: data.orgName });
+      addNotification({
+        title: t('notifications.doctor_join_accepted', 'Request accepted'),
+        body: t('notifications.doctor_join_accepted_desc', 'Your request to join "{{orgName}}" has been accepted.', { orgName: data.orgName }),
+        targetRoute: '/profile',
+        type: 'system'
+      });
+      DeviceEventEmitter.emit('reload_notifications');
+      DeviceEventEmitter.emit('join_request_accepted', data);
+    });
+
+    newSocket.on('join_request_rejected', (data) => {
+      console.log('[Socket.io] join_request_rejected', data);
+      addNotification({
+        title: t('notifications.doctor_join_rejected', 'Request rejected'),
+        body: t('notifications.doctor_join_rejected_desc', 'Your request to join "{{orgName}}" has been rejected.', { orgName: data.orgName }),
+        targetRoute: '/profile',
+        type: 'system'
+      });
+      DeviceEventEmitter.emit('reload_notifications');
+      DeviceEventEmitter.emit('join_request_rejected', data);
+    });
+
+    newSocket.on('org_removed', (data) => {
+      console.log('[Socket.io] org_removed', data);
+      if (updateSession) updateSession({ workplaceConfirmed: false });
+      addNotification({
+        title: t('notifications.org_removed', 'Removed from organization'),
+        body: t('notifications.org_removed_desc', 'You have been removed from the organization {{orgName}}.', { orgName: data.orgName || 'organization' }),
+        targetRoute: '/profile',
+        type: 'system'
+      });
+      DeviceEventEmitter.emit('reload_notifications');
+      DeviceEventEmitter.emit('org_removed', data);
+    });
+
+    newSocket.on('new_join_request', (data) => {
+      console.log('[Socket.io] new_join_request', data);
+      addNotification({
+        title: t('notifications.owner_join_request', 'New join request'),
+        body: t('notifications.owner_join_request_desc', 'Dr. {{doctorName}} has requested to join your organization.', { doctorName: data.doctorName }),
+        targetRoute: '/home', // Or '/home/requests' depending on router
+        type: 'system'
+      });
+      DeviceEventEmitter.emit('reload_notifications');
+      DeviceEventEmitter.emit('new_join_request', data);
     });
 
     setSocket(newSocket);

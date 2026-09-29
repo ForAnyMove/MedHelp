@@ -3,10 +3,13 @@ import Constants from 'expo-constants';
 
 const getApiUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
-  if (Platform.OS === 'web') return 'http://localhost:3000/api';
-  const hostUri = Constants.expoConfig?.hostUri;
-  if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
-  return 'http://10.0.2.2:3000/api';
+  if (__DEV__) {
+    if (Platform.OS === 'web') return 'http://localhost:3000/api';
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
+    return 'http://10.0.2.2:3000/api';
+  }
+  return '/api'; // fallback for production web if env is missing
 };
 
 /**
@@ -19,8 +22,11 @@ const getApiUrl = () => {
 export function createApiClient(session, refreshSessionToken = null) {
   const BASE_URL = getApiUrl();
 
-  const buildHeaders = (customSession = session) => {
-    const headers = { 'Content-Type': 'application/json' };
+  const buildHeaders = (customSession = session, isMultipart = false) => {
+    const headers = {};
+    if (!isMultipart) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (customSession?.accessToken) {
       headers['Authorization'] = `Bearer ${customSession.accessToken}`;
     } else {
@@ -40,8 +46,8 @@ export function createApiClient(session, refreshSessionToken = null) {
     if (res.status === 401 && refreshSessionToken) {
       const newSession = await refreshSessionToken();
       if (newSession) {
-        // Retry with new headers
-        options.headers = buildHeaders(newSession);
+        // Retry with new headers (maintain isMultipart flag implicitly by preserving options except session token headers)
+        options.headers = buildHeaders(newSession, !options.headers['Content-Type']);
         res = await fetch(url, options);
       }
     }
@@ -73,6 +79,13 @@ export function createApiClient(session, refreshSessionToken = null) {
       body: JSON.stringify(body),
     });
 
+  const postForm = (path, formData) =>
+    executeRequest(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers: buildHeaders(session, true),
+      body: formData,
+    });
+
   const patch = (path, body = {}) =>
     executeRequest(`${BASE_URL}${path}`, {
       method: 'PATCH',
@@ -90,5 +103,5 @@ export function createApiClient(session, refreshSessionToken = null) {
   const del = (path) =>
     executeRequest(`${BASE_URL}${path}`, { method: 'DELETE', headers: buildHeaders() });
 
-  return { get, post, patch, put, del };
+  return { get, post, postForm, patch, put, del };
 }

@@ -37,8 +37,8 @@ export default function Index() {
     return <Redirect href="/home" />;
   }
 
-  // Fully registered doctor — check doc verification status
-  if (session.role === 'doctor') {
+  // Fully registered doctor or owner — check doc verification status
+  if (session.role === 'doctor' || session.role === 'owner') {
     const status = session.docVerificationStatus || 'none';
     if (status === 'none' || status === 'skipped') {
       // Must go through doc-upload (may skip again)

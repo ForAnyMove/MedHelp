@@ -19,6 +19,7 @@ export default function ProfileSetup() {
   const { session, registerProfile, getProfessions } = useSession();
 
   const isDoctor = session?.role === 'doctor';
+  const isOwner = session?.role === 'owner';
 
   // Pre-fill from session data (for back-navigation or re-login)
   const [fullName, setFullName] = useState(() => {
@@ -37,6 +38,13 @@ export default function ProfileSetup() {
   });
   const [gender, setGender] = useState(session?.gender || null); // 'female' | 'male' | null
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Owner org fields
+  const [orgName, setOrgName] = useState(session?.organization?.name || '');
+  const [orgAddress, setOrgAddress] = useState(session?.organization?.address || '');
+  const [orgPhone, setOrgPhone] = useState(session?.organization?.phone || '');
+  const [orgWebsite, setOrgWebsite] = useState(session?.organization?.website || '');
+  const [orgDescription, setOrgDescription] = useState(session?.organization?.description || '');
 
   const handleDobChange = (text) => {
     let cleaned = text.replace(/\D/g, '');
@@ -115,6 +123,10 @@ export default function ProfileSetup() {
       errors.professionCode = t('auth.required_field') || 'Required';
       valid = false;
     }
+    if (isOwner && !orgName.trim()) {
+      errors.orgName = t('auth.required_field') || 'Required';
+      valid = false;
+    }
     if (phone && phone.length < 10) {
       errors.phone = t('auth.invalid_format') || 'Too short';
       valid = false;
@@ -158,11 +170,16 @@ export default function ProfileSetup() {
         gender: gender,
         professionCodes: isDoctor ? professionCodes : [],
         professionNames: isDoctor ? selectedProfessionNames : [],
+        orgName: isOwner ? orgName.trim() : undefined,
+        orgAddress: isOwner ? orgAddress.trim() : undefined,
+        orgPhone: isOwner ? orgPhone.trim() : undefined,
+        orgWebsite: isOwner ? orgWebsite.trim() : undefined,
+        orgDescription: isOwner ? orgDescription.trim() : undefined,
       });
       if (!result.success) {
         setErrorMsg(result.error || 'Failed to complete registration');
       } else {
-        if (isDoctor) {
+        if (isDoctor || isOwner) {
           router.push('/(onboarding)/doc-upload');
         } else {
           router.push('/(onboarding)/profile-created');
@@ -289,7 +306,63 @@ export default function ProfileSetup() {
           </TouchableOpacity>
         </View>
 
-        {isDoctor && (
+          {isOwner && (
+            <View style={styles.specializationSection}>
+              <Text style={styles.sectionTitle}>{t('auth.org_data_title')}</Text>
+              <Text style={styles.specializationHint}>{t('auth.org_data_hint')}</Text>
+
+              <Input
+                label={t('auth.org_name')}
+                placeholder={t('auth.org_name_placeholder')}
+                value={orgName}
+                onChangeText={(text) => {
+                  setOrgName(text);
+                  if (validationErrors.orgName) setValidationErrors(prev => ({ ...prev, orgName: '' }));
+                }}
+                error={validationErrors.orgName}
+                autoCapitalize="words"
+                rounded
+              />
+
+              <Input
+                label={t('auth.org_address')}
+                placeholder={t('auth.org_address_placeholder')}
+                value={orgAddress}
+                onChangeText={setOrgAddress}
+                rounded
+              />
+
+              <Input
+                label={t('auth.org_phone')}
+                placeholder={t('auth.phone_placeholder')}
+                value={orgPhone}
+                onChangeText={setOrgPhone}
+                keyboardType="phone-pad"
+                rounded
+              />
+
+              <Input
+                label={t('auth.org_website')}
+                placeholder="https://"
+                value={orgWebsite}
+                onChangeText={setOrgWebsite}
+                autoCapitalize="none"
+                keyboardType="url"
+                rounded
+              />
+
+              <Input
+                label={t('auth.org_description')}
+                placeholder={t('auth.org_description_placeholder')}
+                value={orgDescription}
+                onChangeText={setOrgDescription}
+                multiline
+                rounded
+              />
+            </View>
+          )}
+
+          {isDoctor && (
           <View style={styles.specializationSection}>
             <Text style={styles.sectionTitle}>{t('auth.specialization_title')}</Text>
             <Text style={styles.specializationHint}>

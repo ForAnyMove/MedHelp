@@ -4,7 +4,7 @@ import { Icon } from '../../../../components/ui/Icon';
 import { Switch } from '../../../../components/ui/Switch';
 import { useTheme } from '../../../../theme/ThemeContext';
 
-export function ProfileItem({ label, value, type = 'chevron', isLast = false, onPress, onToggle, isToggled, isDanger = false, statusColor, statusIcon }) {
+export function ProfileItem({ label, value, type = 'chevron', isLast = false, onPress, onToggle, isToggled, isDanger = false, statusColor, statusIcon, valueIcon, valueIconColor }) {
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
 
@@ -19,13 +19,21 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
         <Text style={[styles.label, isDanger && styles.dangerText]}>{label}</Text>
         <View style={styles.right}>
           {value && (
-            <Text 
+            <Text
               style={[styles.value, type === 'status' && statusColor && { color: statusColor }]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {value}
             </Text>
+          )}
+          {valueIcon && (
+            <Icon
+              name={valueIcon}
+              size={sizes.scale(24)}
+              color={valueIconColor || colors.p500}
+              style={{ marginRight: sizes.spacing.s }}
+            />
           )}
 
           {type === 'status' && statusIcon ? (
@@ -47,7 +55,7 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
               name="arrow-right"
               size={sizes.scale(24)}
               color={isDanger ? colors.danger : colors.p500}
-             />
+            />
           )}
         </View>
       </TouchableOpacity>

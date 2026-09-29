@@ -5,10 +5,12 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { Avatar } from '../../../../components/common/Avatar';
+import { useComponentContext } from '../../../../context/GlobalContext';
 
 export function ProfileHeader({ user, isSheetOpen, onEditPress, onNotificationPress, onCloseSheetPress }) {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
+  const { notificationController } = useComponentContext();
   const styles = useStyles(themeStyles);
 
   return (
@@ -26,6 +28,9 @@ export function ProfileHeader({ user, isSheetOpen, onEditPress, onNotificationPr
         ) : (
           <TouchableOpacity style={styles.notificationBtn} onPress={onNotificationPress}>
             <Icon name="notifications" size={sizes.scale(24)} color={colors.white} />
+            {(notificationController?.notifications || []).filter(n => !n.is_read).length > 0 && (
+              <View style={styles.notifDot} />
+            )}
           </TouchableOpacity>
         )}
       </View>
@@ -97,6 +102,17 @@ const themeStyles = (theme) => ({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.sizes.scale(0),
+  },
+  notifDot: {
+    position: 'absolute',
+    top: theme.sizes.scale(0),
+    right: theme.sizes.scale(0),
+    width: theme.sizes.scale(8),
+    height: theme.sizes.scale(8),
+    borderRadius: theme.sizes.scale(4),
+    backgroundColor: theme.colors.danger || '#F05252',
+    borderWidth: 1.5,
+    borderColor: theme.colors.p400,
   },
   profileSection: {
     alignItems: 'center',

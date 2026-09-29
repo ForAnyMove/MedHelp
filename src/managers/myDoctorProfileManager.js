@@ -37,6 +37,7 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       experience: session?.experience || 0,
       education: session?.education || '',
       workplace: session?.workplace || '',
+      workplaceConfirmed: session?.workplaceConfirmed || false,
       docVerificationStatus: session?.docVerificationStatus || 'none',
       about: session?.about || '',
       preferences: session?.preferences || {},
@@ -60,6 +61,7 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
           experience: freshProfile.experience ?? prev.experience,
           education: freshProfile.education || prev.education,
           workplace: freshProfile.workplace || prev.workplace,
+          workplaceConfirmed: freshProfile.workplaceConfirmed !== undefined ? freshProfile.workplaceConfirmed : prev.workplaceConfirmed,
           docVerificationStatus: freshProfile.docVerificationStatus || prev.docVerificationStatus,
           about: freshProfile.about !== undefined ? freshProfile.about : prev.about,
         }));
@@ -89,6 +91,7 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
             experience: doctorData.experience ?? prev.experience,
             education: doctorData.education || prev.education,
             workplace: doctorData.workplace || prev.workplace,
+            workplaceConfirmed: doctorData.workplaceConfirmed !== undefined ? doctorData.workplaceConfirmed : prev.workplaceConfirmed,
           };
         });
       }

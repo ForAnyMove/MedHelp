@@ -15,11 +15,9 @@ export default function DocUpload() {
   const { t, i18n } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
-  const { session, updateDocStatus, markDocUploadHandled, getProfessions } = useSession();
+  const { session, updateDocStatus, markDocUploadHandled, getProfessions, uploadDocument } = useSession();
 
-  // Determine the mode: 
-  // 'skipped' = user previously skipped and is returning after re-login
-  // 'first_time' = user is going through onboarding for the first time (status = 'none')
+  const isOwner = session?.role === 'owner';
   const isReturnAfterSkip = session?.docVerificationStatus === 'skipped';
 
   // In return-after-skip mode: no back button, skip/submit go directly to /home
@@ -77,7 +75,9 @@ export default function DocUpload() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // All required docs must be uploaded to enable submit
-  const canSubmit = !!diploma && licenseFiles.every(f => !!f);
+  const canSubmit = isOwner
+    ? !!diploma
+    : (!!diploma && licenseFiles.every(f => !!f));
 
   const pickDocument = async (setter) => {
     try {
@@ -116,17 +116,34 @@ export default function DocUpload() {
     }
   };
 
-  const handleSubmit = () => {
-    setShowModal(true);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      if (isOwner) {
+        if (diploma) await uploadDocument(diploma, 'org_registration');
+      } else {
+        if (diploma) await uploadDocument(diploma, 'diploma');
+        for (let i = 0; i < licenseFiles.length; i++) {
+          if (licenseFiles[i]) await uploadDocument(licenseFiles[i], `license_${i}`);
+        }
+      }
+      
+      if (certs) await uploadDocument(certs, 'certificate');
+      if (identity) await uploadDocument(identity, 'identity');
+
+      await updateDocStatus('pending');
+      markDocUploadHandled();
+      setShowModal(true);
+    } catch (e) {
+      console.error('Upload failed', e);
+      alert(t('auth.upload_error', 'Upload failed'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleModalOk = async () => {
-    setIsSubmitting(true);
-    await updateDocStatus('pending');
-    markDocUploadHandled();
-    setIsSubmitting(false);
+  const handleModalOk = () => {
     setShowModal(false);
-
     if (isReturnAfterSkip) {
       // Return flow → go directly to app
       router.replace('/home');
@@ -194,33 +211,51 @@ export default function DocUpload() {
         )}
 
         <View style={styles.textWrap}>
-          <Text style={styles.title}>{t('auth.doc_upload_title')}</Text>
-          <Text style={styles.subtitle}>{t('auth.doc_upload_subtitle')}</Text>
+          <Text style={styles.title}>
+            {isOwner ? t('auth.owner_doc_upload_title') : t('auth.doc_upload_title')}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isOwner ? t('auth.owner_doc_upload_subtitle') : t('auth.doc_upload_subtitle')}
+          </Text>
         </View>
 
         {/* ── Required documents ── */}
         <Text style={styles.sectionTitle}>{t('auth.necessarily')}</Text>
 
-        {/* Diploma — always required */}
-        {renderDocCard(
-          null,
-          t('auth.medical_diploma'),
-          t('auth.license_cert_desc'),
-          "doc-diploma",
-          diploma,
-          setDiploma
-        )}
-
-        {/* One license card per specialization */}
-        {professionNames.map((name, index) =>
+        {isOwner ? (
+          // Owner only needs a single organization registration document
           renderDocCard(
-            `${index}`,
-            `${t('auth.license_cert')} — ${name}`,
-            t('auth.license_cert_desc'),
-            "doc-license",
-            licenseFiles[index],
-            (file) => setLicenseFile(index, file),
+            null,
+            t('auth.org_registration_doc'),
+            t('auth.org_registration_doc_desc'),
+            "doc-diploma",
+            diploma,
+            setDiploma
           )
+        ) : (
+          <>
+            {/* Diploma — always required */}
+            {renderDocCard(
+              null,
+              t('auth.medical_diploma'),
+              t('auth.license_cert_desc'),
+              "doc-diploma",
+              diploma,
+              setDiploma
+            )}
+
+            {/* One license card per specialization */}
+            {professionNames.map((name, index) =>
+              renderDocCard(
+                `${index}`,
+                `${t('auth.license_cert')} — ${name}`,
+                t('auth.license_cert_desc'),
+                "doc-license",
+                licenseFiles[index],
+                (file) => setLicenseFile(index, file),
+              )
+            )}
+          </>
         )}
 
         {/* ── Optional documents ── */}
@@ -254,6 +289,7 @@ export default function DocUpload() {
           variant="primary"
           onPress={handleSubmit}
           disabled={!canSubmit || isSubmitting}
+          loading={isSubmitting}
           style={styles.submitBtn}
         />
         <Button
@@ -282,7 +318,6 @@ export default function DocUpload() {
               title={t('auth.ok_btn')}
               variant="primary"
               onPress={handleModalOk}
-              loading={isSubmitting}
               style={{ width: '100%' }}
             />
           </View>

@@ -17,7 +17,7 @@ export default function ChooseRole() {
   const styles = useStyles(themeStyles);
   const { setRole, logout, session } = useSession();
 
-  const [selectedRole, setSelectedRole] = useState(session?.role || null); // 'patient' or 'doctor'
+  const [selectedRole, setSelectedRole] = useState(session?.role || null); // 'patient', 'doctor', or 'owner'
   const [loading, setLoading] = useState(false);
 
   const handleBack = async () => {
@@ -87,6 +87,26 @@ export default function ChooseRole() {
             <View style={styles.radioContainer}>
               <Icon
                 name={selectedRole === 'doctor' ? "radio-selected" : "radio-empty"}
+                size={sizes.scale(24)}
+              />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.card, selectedRole === 'owner' && styles.cardActive]}
+            activeOpacity={0.8}
+            onPress={() => setSelectedRole('owner')}
+          >
+            <View style={styles.cardImageContainer}>
+              <Image source={Images.doctorCard} style={styles.cardImage} resizeMode="contain" />
+            </View>
+            <View style={styles.cardTextContainer}>
+              <Text style={styles.cardTitle}>{t('auth.owner_card_title')}</Text>
+              <Text style={styles.cardDesc}>{t('auth.owner_card_desc')}</Text>
+            </View>
+            <View style={styles.radioContainer}>
+              <Icon
+                name={selectedRole === 'owner' ? "radio-selected" : "radio-empty"}
                 size={sizes.scale(24)}
               />
             </View>

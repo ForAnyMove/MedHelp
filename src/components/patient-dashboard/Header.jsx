@@ -9,7 +9,7 @@ import { Icon } from '../ui/Icon';
 
 export function Header({ onNotificationPress }) {
   const { sizes, colors } = useTheme();
-  const { user, initials } = useComponentContext();
+  const { user, initials, notificationController } = useComponentContext();
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
@@ -25,7 +25,12 @@ export function Header({ onNotificationPress }) {
       </View>
       
       <View style={{flexDirection: 'row', alignItems: 'center', gap: sizes.spacing.m}}>
-        <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} onPress={onNotificationPress} />
+        <TouchableOpacity style={styles.notifBtn} onPress={onNotificationPress}>
+          <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} />
+          {(notificationController?.notifications || []).filter(n => !n.is_read).length > 0 && (
+            <View style={styles.notifDot} />
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -58,6 +63,21 @@ const themeStyles = (theme) => ({
   greeting: {
     ...theme.sizes.typography.h4,
     color: theme.colors.n900,
+  },
+  notifBtn: {
+    position: 'relative',
+    padding: theme.sizes.spacing.xs,
+  },
+  notifDot: {
+    position: 'absolute',
+    top: theme.sizes.scale(6),
+    right: theme.sizes.scale(6),
+    width: theme.sizes.scale(8),
+    height: theme.sizes.scale(8),
+    borderRadius: theme.sizes.scale(4),
+    backgroundColor: theme.colors.danger || '#F05252',
+    borderWidth: 1.5,
+    borderColor: theme.colors.bg || theme.colors.white,
   },
   langBtn: {
     paddingHorizontal: theme.sizes.spacing.xs,

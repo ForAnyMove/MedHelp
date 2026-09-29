@@ -122,17 +122,58 @@ export function NavigationManager({ children }) {
             return;
           }
         }
+
+      // -- OWNER: same doc-upload flow as doctor --
+      } else if (session.role === 'owner') {
+        const docStatus = session.docVerificationStatus || 'none';
+
+        if (docStatus === 'none') {
+          const allowedForNone = ['choose-role', 'onboarding', 'profile-setup', 'doc-upload'];
+          if (inOnboardingGroup && allowedForNone.includes(currentScreen)) {
+            // Allowed
+          } else if (!inOnboardingGroup || !allowedForNone.includes(currentScreen)) {
+            router.replace('/(onboarding)/doc-upload');
+            return;
+          }
+        } else if (docStatus === 'skipped') {
+          if (docUploadHandledThisSession) {
+            if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
+              router.replace('/home');
+              return;
+            }
+            if (inAuthGroup || isRoot) {
+              router.replace('/home');
+              return;
+            }
+          } else {
+            if (currentScreen !== 'doc-upload') {
+              router.replace('/(onboarding)/doc-upload');
+              return;
+            }
+          }
+        } else {
+          // pending or verified → straight to app
+          if (inAuthGroup || isRoot || inOnboardingGroup) {
+            router.replace('/home');
+            return;
+          }
+        }
       }
 
       // ── RBAC: prevent cross-role access ──
       const inDoctorGroup = segments.includes('(doctor)') || segments.includes('doctor');
       const inPatientGroup = segments.includes('(patient)') || segments.includes('patient');
+      const inOwnerGroup = segments.includes('(owner)') || segments.includes('owner');
 
-      if (session.role === 'patient' && inDoctorGroup) {
+      if (session.role === 'patient' && (inDoctorGroup || inOwnerGroup)) {
         router.replace('/home');
         return;
       }
-      if (session.role === 'doctor' && inPatientGroup) {
+      if (session.role === 'doctor' && (inPatientGroup || inOwnerGroup)) {
+        router.replace('/home');
+        return;
+      }
+      if (session.role === 'owner' && (inDoctorGroup || inPatientGroup)) {
         router.replace('/home');
         return;
       }

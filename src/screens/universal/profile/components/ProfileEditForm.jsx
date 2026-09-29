@@ -14,6 +14,7 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
   const styles = useStyles(themeStyles);
 
   const isDoctor = role === 'doctor';
+  const isOwner = role === 'owner';
 
   const [fullName, setFullName] = useState(() => {
     if (user?.firstName || user?.lastName) {
@@ -314,7 +315,7 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
           </View>
         )}
 
-        {!isDoctor && (
+        {!isDoctor && !isOwner && (
           <View style={styles.bodySection}>
             <Text style={styles.sectionTitle}>{t('auth.additionally', 'Body parameters')}</Text>
 

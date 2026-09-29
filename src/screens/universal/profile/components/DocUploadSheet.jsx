@@ -12,7 +12,7 @@ export function DocUploadSheet({ onClose }) {
   const { t, i18n } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
-  const { session, updateDocStatus, getProfessions } = useSession();
+  const { session, updateDocStatus, getProfessions, uploadDocument } = useSession();
 
   const [resolvedProfessionNames, setResolvedProfessionNames] = useState(
     session?.professionNames?.length > 0 ? session.professionNames : []
@@ -82,14 +82,32 @@ export function DocUploadSheet({ onClose }) {
     });
   };
 
-  const handleSubmit = () => {
-    setShowModal(true);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      if (session?.role === 'owner') {
+        if (diploma) await uploadDocument(diploma, 'org_registration');
+      } else {
+        if (diploma) await uploadDocument(diploma, 'diploma');
+        for (let i = 0; i < licenseFiles.length; i++) {
+          if (licenseFiles[i]) await uploadDocument(licenseFiles[i], `license_${i}`);
+        }
+      }
+      
+      if (certs) await uploadDocument(certs, 'certificate');
+      if (identity) await uploadDocument(identity, 'identity');
+
+      await updateDocStatus('pending');
+      setShowModal(true);
+    } catch (e) {
+      console.error('Upload failed', e);
+      alert(t('auth.upload_error', 'Upload failed'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleModalOk = async () => {
-    setIsSubmitting(true);
-    await updateDocStatus('pending');
-    setIsSubmitting(false);
+  const handleModalOk = () => {
     setShowModal(false);
     if (onClose) onClose(true); // pass true to indicate changes saved
   };
@@ -195,6 +213,7 @@ export function DocUploadSheet({ onClose }) {
           variant="primary"
           onPress={handleSubmit}
           disabled={!canSubmit || isSubmitting}
+          loading={isSubmitting}
         />
       </View>
 
@@ -216,7 +235,6 @@ export function DocUploadSheet({ onClose }) {
               title={t('auth.ok_btn')}
               variant="primary"
               onPress={handleModalOk}
-              loading={isSubmitting}
               style={{ width: '100%' }}
             />
           </View>

@@ -31,45 +31,48 @@ export function NotificationProvider({ children }) {
   const [pendingRoute, setPendingRoute] = useState(null);
   const [isHandlingNotification, setIsHandlingNotification] = useState(false);
 
-  const handleResponse = useCallback((response) => {
+  const handleResponse = (response) => {
     setIsHandlingNotification(true);
     DeviceEventEmitter.emit('reload_notifications');
     console.log('User interacted with notification:', response);
     const data = response.notification.request.content.data;
-    // Fallback for url generation if not provided by Edge function
     let targetUrl = data?.url;
-    if (!targetUrl && data?.type && data?.reference_id) {
+    if (!targetUrl && data?.type) {
        if (data.type.includes('appointment') || data.type === 'consultation_started' || data.type === 'completed_consultation') {
           targetUrl = session?.role === 'doctor' 
-             ? `medapp://(doctor)?tab=history&openHistoryId=${data.reference_id}`
-             : `medapp://(patient)?tab=history&openHistoryId=${data.reference_id}`;
+             ? `/(doctor)?tab=history&openHistoryId=${data.reference_id}`
+             : `/(patient)?tab=history&openHistoryId=${data.reference_id}`;
        } else if (data.type.includes('lab')) {
-          targetUrl = `medapp://lab-result/${data.reference_id}`;
+          targetUrl = `/lab-result/${data.reference_id}`;
        } else if (data.type.includes('message')) {
-          targetUrl = `medapp://chat/${data.reference_id}`;
+          targetUrl = `/chat/${data.reference_id}`;
+       } else if (data.type === 'owner_join_request' || data.action === 'open_requests') {
+          targetUrl = '/doctors?view=requests';
        }
     }
 
     // Parse deep link url or screen from notification data
     if (targetUrl) {
-      try {
-        const parsed = Linking.parse(targetUrl);
-        let finalRoute = targetUrl;
-        if (parsed.hostname) {
-          const routePath = parsed.path ? `/${parsed.path}` : '';
-          finalRoute = `/${parsed.hostname}${routePath}`;
-        } else if (parsed.path) {
-          finalRoute = '/' + parsed.path;
-        }
-        
-        setPendingRoute(finalRoute);
-      } catch (e) {
+      if (targetUrl.startsWith('/')) {
         setPendingRoute(targetUrl);
+      } else {
+        try {
+          const parsed = Linking.parse(targetUrl);
+          let finalRoute = targetUrl;
+          if (parsed.hostname) {
+            const routePath = parsed.path ? `/${parsed.path}` : '';
+            // We should ideally append query params if they exist, but simple relative routes are better
+            finalRoute = `/${parsed.hostname}${routePath}`;
+          }
+          setPendingRoute(finalRoute);
+        } catch (e) {
+          setPendingRoute(targetUrl);
+        }
       }
     } else {
       setIsHandlingNotification(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -89,6 +92,11 @@ export function NotificationProvider({ children }) {
     }
   }, [pendingRoute, navigationState?.key, session?.role]);
 
+  const handleResponseRef = useRef(handleResponse);
+  useEffect(() => {
+    handleResponseRef.current = handleResponse;
+  });
+
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => {
       if (token) setExpoPushToken(token);
@@ -99,7 +107,11 @@ export function NotificationProvider({ children }) {
       DeviceEventEmitter.emit('reload_notifications');
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(handleResponse);
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      if (handleResponseRef.current) {
+        handleResponseRef.current(response);
+      }
+    });
 
     return () => {
       if (notificationListener.current) notificationListener.current.remove();

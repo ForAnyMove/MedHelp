@@ -12,6 +12,7 @@ import { BottomSheet } from '../../../components/ui/BottomSheet';
 import { ProfileEditForm } from './components/ProfileEditForm';
 import { DocUploadSheet } from './components/DocUploadSheet';
 import { ProfileAboutForm } from './components/ProfileAboutForm';
+import { WorkplaceSelectScreen } from './components/WorkplaceSelectScreen';
 import { Alert } from 'react-native';
 
 import { useSession } from '../../../context/SessionContext';
@@ -32,6 +33,7 @@ export function ProfileTab({ role = 'patient' }) {
   const { doctorProfileController, settingsController } = context;
 
   const isDoctor = role === 'doctor';
+  const isOwner = role === 'owner';
   const user = isDoctor ? doctorProfileController?.profile : context.user;
   const updateProfile = context.updateProfile;
   const { logout, registerProfile, getProfessions } = useSession();
@@ -40,6 +42,7 @@ export function ProfileTab({ role = 'patient' }) {
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isDocSheetOpen, setIsDocSheetOpen] = useState(false);
   const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
+  const [isWorkplaceSheetOpen, setIsWorkplaceSheetOpen] = useState(false);
   const [isAboutSaving, setIsAboutSaving] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isNotificationSheetOpen, setIsNotificationSheetOpen] = useState(false);
@@ -68,7 +71,7 @@ export function ProfileTab({ role = 'patient' }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const syncFromUrl = () => {
       const searchParams = new URLSearchParams(window.location.search);
       const view = searchParams.get('view');
@@ -87,7 +90,8 @@ export function ProfileTab({ role = 'patient' }) {
 
   const patientDashboard = role === 'patient' ? require('../../../context/PatientDashboardContext').usePatientDashboard() : null;
   const doctorDashboard = role === 'doctor' ? require('../../../context/DoctorDashboardContext').useDoctorDashboard() : null;
-  const currentTab = role === 'patient' ? patientDashboard?.tabIndex : doctorDashboard?.tabIndex;
+  const ownerDashboard = role === 'owner' ? require('../../../context/OwnerDashboardContext').useOwnerDashboard() : null;
+  const currentTab = role === 'patient' ? patientDashboard?.tabIndex : (role === 'doctor' ? doctorDashboard?.tabIndex : ownerDashboard?.tabIndex);
 
   useEffect(() => {
     if (currentTab === 4 && typeof window !== 'undefined') {
@@ -183,6 +187,8 @@ export function ProfileTab({ role = 'patient' }) {
               handleRequestClose();
             } else if (isDocSheetOpen) {
               setIsDocSheetOpen(false);
+            } else if (isWorkplaceSheetOpen) {
+              setIsWorkplaceSheetOpen(false);
             } else if (isAboutSheetOpen) {
               setIsAboutSheetOpen(false);
             } else if (isNotificationSheetOpen) {
@@ -227,6 +233,7 @@ export function ProfileTab({ role = 'patient' }) {
                   color = colors.warning || colors.warning;
                   break;
                 case 'canceled':
+                case 'rejected':
                   val = t('profile.license_canceled', 'Please re-upload documents');
                   icon = 'important';
                   color = colors.danger;
@@ -250,7 +257,22 @@ export function ProfileTab({ role = 'patient' }) {
                 />
               );
             })()}
-            <ProfileItem label={t('profile.workplace')} value={user.workplace || '--'} isLast />
+            <ProfileItem
+              label={t('profile.workplace')}
+              value={user.workplace || '--'}
+              valueIcon={user.workplaceConfirmed ? "check" : null}
+              valueIconColor={user.workplaceConfirmed ? colors.info : undefined}
+              isLast
+              onPress={() => setIsWorkplaceSheetOpen(true)}
+            />
+          </ProfileSection>
+        )}
+
+        {isOwner && context.ownerController?.organization && (
+          <ProfileSection title={t('profile.organization_details', 'Organization Details')}>
+            <ProfileItem label={t('profile.org_name', 'Name')} value={context.ownerController.organization.name} />
+            <ProfileItem label={t('profile.org_address', 'Address')} value={context.ownerController.organization.address} />
+            <ProfileItem label={t('profile.org_description', 'Description')} value={context.ownerController.organization.description || '--'} isLast />
           </ProfileSection>
         )}
 
@@ -269,7 +291,7 @@ export function ProfileTab({ role = 'patient' }) {
           </ProfileSection>
         )}
 
-        {!isDoctor && (
+        {!isDoctor && !isOwner && (
           <ProfileSection title={t('profile.medical_data')}>
             <ProfileItem
               label={t('profile.chronic_conditions')}
@@ -296,30 +318,32 @@ export function ProfileTab({ role = 'patient' }) {
           </ProfileSection>
         )}
 
-        <ProfileSection title={t('profile.preferences')}>
-          <ProfileItem
-            label={t('profile.consultation_format')}
-            value={user.preferences?.consultationFormat}
-            isLast={isDoctor}
-          />
-          {isDoctor ? (
+        {!isDoctor && !isOwner && (
+          <ProfileSection title={t('profile.preferences')}>
             <ProfileItem
-              label={t('profile.accepting_new_patients')}
-              value={user.preferences?.acceptingNewPatients ? t('common.yes') : t('common.no')}
-              isLast
+              label={t('profile.consultation_format')}
+              value={user.preferences?.consultationFormat}
+              isLast={isDoctor}
             />
-          ) : (
-            <ProfileItem
-              label={t('profile.preferred_gender')}
-              value={user.preferences?.preferredGender}
-              isLast
-            />
-          )}
-        </ProfileSection>
+            {isDoctor ? (
+              <ProfileItem
+                label={t('profile.accepting_new_patients')}
+                value={user.preferences?.acceptingNewPatients ? t('common.yes') : t('common.no')}
+                isLast
+              />
+            ) : (
+              <ProfileItem
+                label={t('profile.preferred_gender')}
+                value={user.preferences?.preferredGender}
+                isLast
+              />
+            )}
+          </ProfileSection>
+        )}
 
         <ProfileSection title={t('profile.security_privacy')}>
-          <ProfileItem 
-            label={t('profile.change_password')} 
+          <ProfileItem
+            label={t('profile.change_password')}
             onPress={() => router.push('/(app)/change-password')}
           />
           <ProfileItem
@@ -337,18 +361,18 @@ export function ProfileTab({ role = 'patient' }) {
         </ProfileSection>
 
         <ProfileSection title={t('profile.settings', 'Settings')}>
-          <ProfileItem 
-            label={t('profile.notifications', 'Notifications')} 
+          <ProfileItem
+            label={t('profile.notifications', 'Notifications')}
             value={settingsController?.settings?.notification_types?.all !== false ? t('common.on', 'On') : t('common.off', 'Off')}
             onPress={() => handleSetScreen('notifications')}
           />
-          <ProfileItem 
-            label={t('profile.application_language', 'Application language')} 
+          <ProfileItem
+            label={t('profile.application_language', 'Application language')}
             value={settingsController?.settings?.app_languages?.name || 'English'}
             onPress={() => handleSetScreen('language')}
           />
-          <ProfileItem 
-            label={t('profile.profile_visibility', 'Profile visibility')} 
+          <ProfileItem
+            label={t('profile.profile_visibility', 'Profile visibility')}
             value={
               (() => {
                 const hiddenCount = Object.values(settingsController?.settings?.data_visibility || {}).filter(v => v === true).length;
@@ -429,6 +453,25 @@ export function ProfileTab({ role = 'patient' }) {
             onClose={() => setMedicalProfileType(null)}
           />
         )}
+      </BottomSheet>
+      <BottomSheet
+        visible={isWorkplaceSheetOpen}
+        onClose={() => setIsWorkplaceSheetOpen(false)}
+        title=""
+        showClose={false}
+        fullHeight
+      >
+        <WorkplaceSelectScreen
+          currentWorkplace={user.workplace}
+          // onBack={() => setIsWorkplaceSheetOpen(false)}
+          onClose={() => setIsWorkplaceSheetOpen(false)}
+          onSave={() => {
+            setIsWorkplaceSheetOpen(false);
+            if (isDoctor && doctorProfileController?.reloadProfile) {
+              doctorProfileController.reloadProfile();
+            }
+          }}
+        />
       </BottomSheet>
     </View>
   );

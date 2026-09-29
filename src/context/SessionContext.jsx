@@ -13,13 +13,13 @@ const SessionContext = createContext(null);
 // ---- API auth helpers ----
 const getApiUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
-  if (Platform.OS === 'web') return 'http://localhost:3000/api';
-
-  const hostUri = Constants.expoConfig?.hostUri;
-  if (hostUri) {
-    return `http://${hostUri.split(':')[0]}:3000/api`;
+  if (__DEV__) {
+    if (Platform.OS === 'web') return 'http://localhost:3000/api';
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
+    return 'http://10.0.2.2:3000/api';
   }
-  return 'http://10.0.2.2:3000/api';
+  return '/api';
 };
 
 const API_URL = getApiUrl();
@@ -65,6 +65,45 @@ async function clearSessionFromStorage() {
   }
 }
 
+const DOC_SKIP_KEY = 'medhelp_doc_skip';
+
+async function setDocSkipFlag() {
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(DOC_SKIP_KEY, 'true');
+    } else {
+      await SecureStore.setItemAsync(DOC_SKIP_KEY, 'true');
+    }
+  } catch (e) {
+    console.error('Failed to set skip flag', e);
+  }
+}
+
+async function clearDocSkipFlag() {
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(DOC_SKIP_KEY);
+    } else {
+      await SecureStore.deleteItemAsync(DOC_SKIP_KEY);
+    }
+  } catch (e) {
+    console.error('Failed to clear skip flag', e);
+  }
+}
+
+async function getDocSkipFlag() {
+  try {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(DOC_SKIP_KEY) === 'true';
+    } else {
+      const val = await SecureStore.getItemAsync(DOC_SKIP_KEY);
+      return val === 'true';
+    }
+  } catch {
+    return false;
+  }
+}
+
 // ---- Provider ----
 
 let refreshPromise = null;
@@ -89,6 +128,12 @@ export function SessionProvider({ children }) {
         if (saved) {
           setSession(saved);
         }
+        
+        const skipped = await getDocSkipFlag();
+        if (skipped) {
+          setDocUploadHandledThisSession(true);
+        }
+        
         setIsSessionLoaded(true);
 
         await Asset.loadAsync(allImages);
@@ -106,9 +151,12 @@ export function SessionProvider({ children }) {
   /**
    * Call after successful OTP verification.
    */
-  const login = useCallback(async (sessionData) => {
+  const login = useCallback(async (sessionData, isRefresh = false) => {
     setSession(sessionData);
-    setDocUploadHandledThisSession(false); // Reset on new login
+    if (!isRefresh) {
+      setDocUploadHandledThisSession(false); // Reset on new login
+      await clearDocSkipFlag();
+    }
     await saveSessionToStorage(sessionData);
   }, []);
 
@@ -119,15 +167,9 @@ export function SessionProvider({ children }) {
     setSession(null);
     setDocUploadHandledThisSession(false);
     await clearSessionFromStorage();
+    await clearDocSkipFlag();
   }, []);
 
-  /**
-   * Mark doc-upload as handled for this app session.
-   * Called after the user skips or submits docs from doc-upload screen.
-   */
-  const markDocUploadHandled = useCallback(() => {
-    setDocUploadHandledThisSession(true);
-  }, []);
 
   /**
    * Refresh the user's session using the refresh token.
@@ -152,7 +194,7 @@ export function SessionProvider({ children }) {
         });
         const json = await response.json();
         if (json.success && json.data?.session) {
-          await login(json.data.session);
+          await login(json.data.session, true);
           return json.data.session;
         } else {
           await logout();
@@ -220,6 +262,15 @@ export function SessionProvider({ children }) {
       return updated;
     });
   }, []);
+  /**
+   * Mark doc-upload as handled for this app session.
+   * Called after the user skips or submits docs from doc-upload screen.
+   */
+  const markDocUploadHandled = useCallback(() => {
+    setDocUploadHandledThisSession(true);
+    setDocSkipFlag().catch(console.error);
+  }, []);
+
 
   /**
    * Set role for a new user (called from choose-role screen).
@@ -251,6 +302,12 @@ export function SessionProvider({ children }) {
     weight,
     bloodType,
     about,
+    // Owner org fields
+    orgName,
+    orgAddress,
+    orgPhone,
+    orgWebsite,
+    orgDescription,
   }) => {
     try {
       // Split full name into first_name / last_name
@@ -272,6 +329,12 @@ export function SessionProvider({ children }) {
         profession_codes: professionCodes || [],
         // Legacy single code for backward compat
         profession_code: professionCodes?.[0] || null,
+        // Owner org fields
+        org_name: orgName || undefined,
+        org_address: orgAddress || undefined,
+        org_phone: orgPhone || undefined,
+        org_website: orgWebsite || undefined,
+        org_description: orgDescription || undefined,
       });
 
       // Reset doc-upload flag when re-submitting profile
@@ -297,6 +360,8 @@ export function SessionProvider({ children }) {
         // Reset doc status to 'none' since profile was re-submitted
         // (specializations may have changed → old docs are invalid)
         docVerificationStatus: 'none',
+        // Owner organization data
+        organization: data.organization || null,
       });
       return { success: true };
     } catch (e) {
@@ -327,6 +392,33 @@ export function SessionProvider({ children }) {
   }, [session, refreshSessionToken, updateSession]);
 
   /**
+   * Upload a verification document (e.g., diploma, license).
+   */
+  const uploadDocument = useCallback(async (file, docType) => {
+    try {
+      if (!file) return { success: false, error: 'No file provided' };
+      const api = createApiClient(session, refreshSessionToken);
+      const formData = new FormData();
+      if (Platform.OS === 'web' && file.file) {
+        formData.append('file', file.file);
+      } else {
+        formData.append('file', {
+          uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+          name: file.name || 'document.pdf',
+          type: file.mimeType || 'application/pdf',
+        });
+      }
+      formData.append('docType', docType);
+      
+      const data = await api.postForm('/auth/me/documents', formData);
+      return { success: true, data };
+    } catch (e) {
+      console.error('uploadDocument error:', e);
+      return { success: false, error: e.message || 'Upload failed' };
+    }
+  }, [session, refreshSessionToken]);
+
+  /**
    * Fetch professions list for doctor specialization.
    */
   const getProfessions = useCallback(async (lang = 'en') => {
@@ -353,6 +445,7 @@ export function SessionProvider({ children }) {
       updateSession,
       registerProfile,
       updateDocStatus,
+      uploadDocument,
       markDocUploadHandled,
       refreshSessionToken,
       getProfessions

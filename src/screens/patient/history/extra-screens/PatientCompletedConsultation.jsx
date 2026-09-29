@@ -241,12 +241,12 @@ export function PatientCompletedConsultation({ id: propId }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
                 {/* UPCOMING: Reminder Pill */}
-                {isScheduled && getReminderText() && (
+                {isScheduled && getReminderText() ? (
                     <View style={styles.reminderPill}>
                         <Icon name="clock" size={sizes.scale(16)} color={colors.info} />
                         <Text style={styles.reminderText}>{getReminderText()}</Text>
                     </View>
-                )}
+                ) : null}
 
                 {/* Patient Info Card (shows doctor info) */}
                 <TouchableOpacity
@@ -334,7 +334,7 @@ export function PatientCompletedConsultation({ id: propId }) {
                 </View>
 
                 {/* UPCOMING: Patient's Note Card */}
-                {isScheduled && consultation.purpose && (
+                {isScheduled && consultation.purpose ? (
                     <View style={styles.purposeCard}>
                         <View style={styles.purposeHeader}>
                             <Icon name="file-text" size={sizes.scale(18)} color={colors.p500} />
@@ -342,7 +342,7 @@ export function PatientCompletedConsultation({ id: propId }) {
                         </View>
                         <Text style={styles.purposeText}>{consultation.purpose}</Text>
                     </View>
-                )}
+                ) : null}
 
                 {/* COMPLETED: Summary & Rating */}
                 {isCompleted && (
@@ -409,7 +409,7 @@ export function PatientCompletedConsultation({ id: propId }) {
                                 ))}
                             </View>
 
-                            {(!ratingData || ratingComment) && (
+                            {(!ratingData || ratingComment) ? (
                                 <View style={styles.commentBox}>
                                     <TextInput
                                         style={[styles.commentInput, ratingData && { color: colors.n700 }]}
@@ -425,7 +425,7 @@ export function PatientCompletedConsultation({ id: propId }) {
                                     />
                                     {!ratingData && <Text style={styles.charCount}>{ratingComment.length}/100</Text>}
                                 </View>
-                            )}
+                            ) : null}
 
                             {!ratingData && (
                                 <Button

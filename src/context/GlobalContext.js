@@ -12,6 +12,7 @@ import notificationManager from '../managers/notificationManager';
 import doctorHistoryManager from '../managers/doctorHistoryManager';
 import settingsManager from '../managers/settingsManager';
 import { useLegalManager } from '../managers/legalManager';
+import ownerManager from '../managers/ownerManager';
 
 const ComponentContext = createContext();
 
@@ -41,6 +42,7 @@ export const ComponentProvider = ({ children }) => {
   const notificationController = notificationManager(setAppLoading, session, refreshSessionToken);
   const settingsController = settingsManager(setAppLoading, session, refreshSessionToken);
   const legalController = useLegalManager(setAppLoading, session, refreshSessionToken);
+  const ownerController = ownerManager(setAppLoading, session, refreshSessionToken);
 
   const value = {
     themeController,
@@ -54,6 +56,7 @@ export const ComponentProvider = ({ children }) => {
     settingsController,
     legalController,
     setAppLoading,
+    ownerController,
     chatButtonConfig,
     setChatButtonConfig,
     session,

@@ -59,7 +59,7 @@ export function DoctorHomeTab() {
         onClose={() => setIsNotificationSheetOpen(false)}
         initialHeight={sizes.height}
       >
-        <ProfileNotifications user={user} />
+        <ProfileNotifications user={user} onClose={() => setIsNotificationSheetOpen(false)} />
       </BottomSheet>
     </View>
   );
