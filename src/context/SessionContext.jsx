@@ -12,7 +12,8 @@ const SessionContext = createContext(null);
 
 // ---- API auth helpers ----
 const getApiUrl = () => {
-  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
+  let url = process.env.EXPO_PUBLIC_API_URL;
+  if (url) return url.endsWith('/api') ? url : url + '/api';
   if (__DEV__) {
     if (Platform.OS === 'web') return 'http://localhost:3000/api';
     const hostUri = Constants.expoConfig?.hostUri;
