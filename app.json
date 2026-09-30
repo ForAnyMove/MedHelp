@@ -27,9 +27,6 @@
       "favicon": "./assets/favicon.png",
       "output": "static"
     },
-    "experiments": {
-      "baseUrl": "/MedHelp"
-    },
     "plugins": [
       "expo-router",
       "expo-asset",
