@@ -177,7 +177,8 @@ export function SessionProvider({ children }) {
    * Prevents concurrent refresh requests using a module-level promise.
    */
   const refreshSessionToken = useCallback(async () => {
-    if (!session?.refreshToken) {
+    const currentRefreshToken = session?.refreshToken || session?.refresh_token;
+    if (!currentRefreshToken) {
       await logout();
       return null;
     }
@@ -191,7 +192,7 @@ export function SessionProvider({ children }) {
         const response = await fetch(`${API_URL}/auth/refresh-token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: session.refreshToken })
+          body: JSON.stringify({ refreshToken: currentRefreshToken })
         });
         const json = await response.json();
         if (json.success && json.data?.session) {
@@ -309,12 +310,18 @@ export function SessionProvider({ children }) {
     orgPhone,
     orgWebsite,
     orgDescription,
+    avatarUrl,
   }) => {
     try {
       // Split full name into first_name / last_name
       const parts = (fullName || '').trim().split(/\s+/);
-      const first_name = parts[0] || '';
-      const last_name = parts.slice(1).join(' ') || '';
+      let first_name = parts[0] || '';
+      let last_name = parts.slice(1).join(' ') || '';
+
+      if (!first_name && !last_name) {
+        first_name = session?.firstName || '';
+        last_name = session?.lastName || '';
+      }
 
       const api = createApiClient(session, refreshSessionToken);
       const data = await api.put('/auth/profile', {
@@ -336,18 +343,25 @@ export function SessionProvider({ children }) {
         org_phone: orgPhone || undefined,
         org_website: orgWebsite || undefined,
         org_description: orgDescription || undefined,
+        avatar_url: avatarUrl || undefined,
       });
 
-      // Reset doc-upload flag when re-submitting profile
+      // Reset doc-upload flag when re-submitting profile during onboarding
       // (user may have gone back and changed specializations)
-      setDocUploadHandledThisSession(false);
+      if (!session?.isRegistered) {
+        setDocUploadHandledThisSession(false);
+      }
 
       await updateSession({
         isRegistered: data.isRegistered,
         firstName: data.firstName,
         lastName: data.lastName,
         avatarUrl: data.avatarUrl,
+        pendingAvatarUrl: data.pendingAvatarUrl,
+        avatarModerationStatus: data.avatarModerationStatus,
         about: data.about,
+        pendingAbout: data.pendingAbout,
+        aboutModerationStatus: data.aboutModerationStatus,
         role: data.role,
         professionCodes: data.professionCodes || professionCodes || [],
         professionNames: professionNames || [],
@@ -358,9 +372,8 @@ export function SessionProvider({ children }) {
         phone: phone || null,
         dateOfBirth: dateOfBirth || null,
         gender: gender || null,
-        // Reset doc status to 'none' since profile was re-submitted
-        // (specializations may have changed → old docs are invalid)
-        docVerificationStatus: 'none',
+        // Preserve doc status to avoid redirecting already-registered users
+        docVerificationStatus: session?.isRegistered ? session.docVerificationStatus : 'none',
         // Owner organization data
         organization: data.organization || null,
       });
@@ -420,6 +433,32 @@ export function SessionProvider({ children }) {
   }, [session, refreshSessionToken]);
 
   /**
+   * Upload an avatar image.
+   */
+  const uploadAvatar = useCallback(async (file) => {
+    try {
+      if (!file) return { success: false, error: 'No file provided' };
+      const api = createApiClient(session, refreshSessionToken);
+      const formData = new FormData();
+      if (Platform.OS === 'web' && file.file) {
+        formData.append('file', file.file);
+      } else {
+        formData.append('file', {
+          uri: Platform.OS === 'android' ? file.uri : file.uri.replace('file://', ''),
+          name: file.name || 'avatar.jpg',
+          type: file.mimeType || 'image/jpeg',
+        });
+      }
+      
+      const data = await api.postForm('/auth/profile/avatar', formData);
+      return { success: true, url: data.publicUrl };
+    } catch (e) {
+      console.error('uploadAvatar error:', e);
+      return { success: false, error: e.message || 'Avatar upload failed' };
+    }
+  }, [session, refreshSessionToken]);
+
+  /**
    * Fetch professions list for doctor specialization.
    */
   const getProfessions = useCallback(async (lang = 'en') => {
@@ -447,6 +486,7 @@ export function SessionProvider({ children }) {
       registerProfile,
       updateDocStatus,
       uploadDocument,
+      uploadAvatar,
       markDocUploadHandled,
       refreshSessionToken,
       getProfessions

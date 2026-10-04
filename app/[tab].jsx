@@ -24,12 +24,12 @@ export default function TabScreen() {
     if (currentTab && PATIENT_TABS.includes(currentTab)) {
       return <PatientTabs currentTab={currentTab} />;
     }
-    return null;
+    return <PatientTabs currentTab="home" />;
   } else if (session.role === 'doctor') {
     if (currentTab && DOCTOR_TABS.includes(currentTab)) {
       return <DoctorTabs currentTab={currentTab} />;
     }
-    return null;
+    return <DoctorTabs currentTab="home" />;
   } else if (session.role === 'owner') {
     if (currentTab && OWNER_TABS.includes(currentTab)) {
       return <OwnerTabs currentTab={currentTab} />;

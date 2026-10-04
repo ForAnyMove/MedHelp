@@ -151,6 +151,18 @@ export function SocketProvider({ children }) {
       DeviceEventEmitter.emit('patient_joined', { consultationId: data.consultation_id });
     });
 
+    newSocket.on('notification', (data) => {
+      console.log('[Socket.io] notification', data);
+      addNotification({
+        title: data.title || t('notifications.new_notification', 'New notification'),
+        body: data.description || data.body || '',
+        targetRoute: '/profile',
+        type: 'system'
+      });
+      DeviceEventEmitter.emit('reload_notifications');
+      DeviceEventEmitter.emit('notification_received', data);
+    });
+
     newSocket.on('join_request_cancelled', (data) => {
       console.log('[Socket.io] join_request_cancelled', data);
       addNotification({

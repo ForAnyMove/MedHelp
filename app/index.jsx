@@ -17,36 +17,8 @@ export default function Index() {
     );
   }
 
-  // Not logged in
-  if (!session) {
-    return <Redirect href="/(auth)/welcome" />;
-  }
-
-  // Logged in but no role yet
-  if (!session.role) {
-    return <Redirect href="/(onboarding)/choose-role" />;
-  }
-
-  // Has role but hasn't completed profile setup
-  if (!session.isRegistered) {
-    return <Redirect href="/(onboarding)/profile-setup" />;
-  }
-
-  // Fully registered patient
-  if (session.role === 'patient') {
-    return <Redirect href="/home" />;
-  }
-
-  // Fully registered doctor or owner — check doc verification status
-  if (session.role === 'doctor' || session.role === 'owner') {
-    const status = session.docVerificationStatus || 'none';
-    if (status === 'none' || status === 'skipped') {
-      // Must go through doc-upload (may skip again)
-      return <Redirect href="/(onboarding)/doc-upload" />;
-    }
-    // pending or verified — go straight to app
-    return <Redirect href="/home" />;
-  }
-
-  return <Redirect href="/home" />;
+  // NavigationManager handles all redirects.
+  // This component is only rendered briefly at app launch.
+  // Return null — NavigationManager will redirect immediately.
+  return null;
 }

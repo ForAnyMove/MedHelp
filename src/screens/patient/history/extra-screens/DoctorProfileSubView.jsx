@@ -9,6 +9,7 @@ import { useComponentContext } from '../../../../context/GlobalContext';
 import { useSession } from '../../../../context/SessionContext';
 import { createApiClient } from '../../../../api/apiClient';
 import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
+import ReportModal from '../../../../components/common/ReportModal';
 
 export function DoctorProfileSubView({ doctorId: id, onBack }) {
   const { sizes, colors } = useTheme();
@@ -22,6 +23,7 @@ export function DoctorProfileSubView({ doctorId: id, onBack }) {
   const [activeTab, setActiveTab] = useState('Profile');
   const [doctorData, setDoctorData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchDoctorData = async () => {
@@ -79,6 +81,9 @@ export function DoctorProfileSubView({ doctorId: id, onBack }) {
             <Icon name="arrow-back" size={sizes.scale(24)} color={colors.white} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('doctor_history.doctor_profile', 'Doctor profile')}</Text>
+          <TouchableOpacity onPress={() => setReportModalVisible(true)}>
+            <Icon name="AlertCircle" size={sizes.scale(24)} color={colors.danger} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.profileInfoRow}>
@@ -124,6 +129,13 @@ export function DoctorProfileSubView({ doctorId: id, onBack }) {
         {activeTab === 'Documents' && <DocumentsTab doctorId={id} />}
 
       </ScrollView>
+
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType="profile"
+        targetId={id}
+      />
     </View>
   );
 }

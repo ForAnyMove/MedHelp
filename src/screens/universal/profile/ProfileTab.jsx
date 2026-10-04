@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useComponentContext } from '../../../context/GlobalContext';
@@ -14,6 +14,7 @@ import { DocUploadSheet } from './components/DocUploadSheet';
 import { ProfileAboutForm } from './components/ProfileAboutForm';
 import { WorkplaceSelectScreen } from './components/WorkplaceSelectScreen';
 import { Alert } from 'react-native';
+import { Icon } from '../../../components/ui/Icon';
 
 import { useSession } from '../../../context/SessionContext';
 import { useRouter } from 'expo-router';
@@ -48,6 +49,7 @@ export function ProfileTab({ role = 'patient' }) {
   const [isNotificationSheetOpen, setIsNotificationSheetOpen] = useState(false);
   const [medicalProfileType, setMedicalProfileType] = useState(null); // 'conditions', 'allergies', 'medications'
   const [activeScreen, setActiveScreen] = useState('main'); // 'main' | 'notifications' | 'language' | 'visibility'
+  const [isAboutPendingModalVisible, setIsAboutPendingModalVisible] = useState(false);
 
   const handleSetScreen = (screen, type) => {
     setActiveScreen(screen);
@@ -283,10 +285,24 @@ export function ProfileTab({ role = 'patient' }) {
           >
             <View style={styles.aboutContainer}>
               <View style={styles.aboutContent}>
-                <Text style={styles.aboutDesc}>{t('profile.about_placeholder')}</Text>
-                <Text style={styles.aboutText}>{user.about}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: sizes.spacing.xs }}>
+                  <Text style={styles.aboutDesc}>{t('profile.about_placeholder')}</Text>
+                  {(user.aboutModerationStatus === 'pending' || user.aboutModerationStatus === 'rejected') && (
+                    <TouchableOpacity 
+                      hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+                      onPress={() => setIsAboutPendingModalVisible(true)}
+                    >
+                      <Icon 
+                        name="AlertCircle" 
+                        size={sizes.scale(20)} 
+                        color={user.aboutModerationStatus === 'rejected' ? colors.danger : colors.warning} 
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={styles.aboutText}>{user.pendingAbout || user.about}</Text>
               </View>
-              <Text style={styles.aboutCount}>{user.about?.length || 0}/200</Text>
+              <Text style={styles.aboutCount}>{(user.pendingAbout || user.about)?.length || 0}/200</Text>
             </View>
           </ProfileSection>
         )}
@@ -431,6 +447,40 @@ export function ProfileTab({ role = 'patient' }) {
         />
       </BottomSheet>
 
+      <Modal
+        visible={isAboutPendingModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsAboutPendingModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={[styles.modalIconContainer, user.aboutModerationStatus === 'rejected' && { backgroundColor: colors.danger + '20' }]}>
+              <Icon 
+                name={user.aboutModerationStatus === 'rejected' ? "AlertCircle" : "time"} 
+                size={sizes.scale(32)} 
+                color={user.aboutModerationStatus === 'rejected' ? colors.danger : colors.warning} 
+              />
+            </View>
+            <Text style={styles.modalTitle}>
+              {user.aboutModerationStatus === 'rejected' ? t('profile.rejected_moderation_title', 'Moderation Rejected') : t('profile.pending_moderation_title', 'Pending Moderation')}
+            </Text>
+            <Text style={styles.modalMessage}>
+              {user.aboutModerationStatus === 'rejected' 
+                ? (user.aboutModerationComment || t('profile.about_rejected_desc', 'Your about me text was rejected. Please make changes and resubmit.'))
+                : t('profile.about_pending_desc', 'Your about me text is currently under review by our moderators and is not yet visible to other users.')}
+            </Text>
+            
+            <TouchableOpacity 
+              style={styles.modalBtn}
+              onPress={() => setIsAboutPendingModalVisible(false)}
+            >
+              <Text style={styles.modalBtnText}>{t('common.got_it', 'Got it')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <BottomSheet
         visible={isNotificationSheetOpen}
         onClose={() => setIsNotificationSheetOpen(false)}
@@ -516,5 +566,59 @@ const themeStyles = (theme) => ({
     textAlign: 'right',
     marginTop: theme.sizes.spacing.xs,
     marginRight: theme.sizes.spacing.m,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.sizes.spacing.l,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.xl,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: theme.sizes.scale(320),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  modalIconContainer: {
+    width: theme.sizes.scale(60),
+    height: theme.sizes.scale(60),
+    borderRadius: theme.sizes.scale(30),
+    backgroundColor: theme.colors.warning + '20', // transparent warning color
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.sizes.spacing.m,
+  },
+  modalTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n900,
+    marginBottom: theme.sizes.spacing.s,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    ...theme.sizes.typography.body,
+    color: theme.colors.n600,
+    textAlign: 'center',
+    marginBottom: theme.sizes.spacing.l,
+    lineHeight: theme.sizes.scale(22),
+  },
+  modalBtn: {
+    backgroundColor: theme.colors.p500,
+    paddingVertical: theme.sizes.spacing.s,
+    paddingHorizontal: theme.sizes.spacing.xl,
+    borderRadius: theme.sizes.borderRadius.medium,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    ...theme.sizes.typography.h5,
+    color: theme.colors.white,
   }
 });

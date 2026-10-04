@@ -10,6 +10,7 @@ import { useSession } from '../../../../context/SessionContext';
 import { createApiClient } from '../../../../api/apiClient';
 import { createLabResultsApi } from '../../../../api/labResultsApi';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
+import ReportModal from '../../../../components/common/ReportModal';
 
 // We'll separate the tabs into components below to keep it organized
 
@@ -21,6 +22,7 @@ export function PatientProfileSubView({ patientId: id, onBack }) {
   const lang = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
 
   const [activeTab, setActiveTab] = useState('Profile');
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   // Extract patient data from consultations
   const patientData = useMemo(() => {
@@ -73,9 +75,12 @@ export function PatientProfileSubView({ patientId: id, onBack }) {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.white}  />
+            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.white} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('doctor_history.patient_profile', 'Patient profile')}</Text>
+          <TouchableOpacity onPress={() => setReportModalVisible(true)}>
+            <Icon name="AlertCircle" size={sizes.scale(24)} color={colors.white} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.profileInfoRow}>
@@ -116,6 +121,13 @@ export function PatientProfileSubView({ patientId: id, onBack }) {
         {activeTab === 'Documents' && <DocumentsTab patientData={patientData} />}
 
       </ScrollView>
+
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType="profile"
+        targetId={id}
+      />
     </View>
   );
 }
@@ -228,8 +240,8 @@ function ProfileTab({ patientData }) {
           }
 
           return (
-            <TouchableOpacity 
-              key={c.id} 
+            <TouchableOpacity
+              key={c.id}
               style={styles.visitCard}
               onPress={() => navigateToHistoryDetail(c.id)}
             >
@@ -240,7 +252,7 @@ function ProfileTab({ patientData }) {
                 <Text style={styles.visitDate}>{date} · {time}</Text>
                 <Text style={styles.visitDesc}>{desc}</Text>
               </View>
-              <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500}  />
+              <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
             </TouchableOpacity>
           );
         })}
@@ -386,7 +398,7 @@ function DocumentsTab({ patientData }) {
           {doc.by ? ` · by ${doc.by}` : ''}
         </Text>
       </View>
-      <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500}  />
+      <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
     </TouchableOpacity>
   );
 

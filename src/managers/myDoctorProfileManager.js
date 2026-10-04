@@ -28,6 +28,8 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       fullName: `${session?.firstName || ''} ${session?.lastName || ''}`.trim(),
       email: session?.email || '',
       avatarUrl: session?.avatarUrl || null,
+      pendingAvatarUrl: session?.pendingAvatarUrl || null,
+      avatarModerationStatus: session?.avatarModerationStatus || null,
       role: session?.role || 'doctor',
       phone: session?.phone || '',
       dob: session?.dateOfBirth || '',
@@ -40,6 +42,8 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       workplaceConfirmed: session?.workplaceConfirmed || false,
       docVerificationStatus: session?.docVerificationStatus || 'none',
       about: session?.about || '',
+      pendingAbout: session?.pendingAbout || null,
+      aboutModerationStatus: session?.aboutModerationStatus || null,
       preferences: session?.preferences || {},
       privacy: {
         faceId: true,
@@ -51,19 +55,27 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
       const api = createApiClient(session, refreshSessionToken);
 
       // Explicitly fetch latest profile data from auth to ensure name/lastName are fresh
-      const freshProfile = await api.get('/auth/profile').catch(() => null);
+      const freshProfileRaw = await api.get('/auth/profile').catch(() => null);
+      const freshProfile = freshProfileRaw?.session || freshProfileRaw;
+      
       if (freshProfile) {
         setProfile(prev => ({
           ...prev,
           firstName: freshProfile.firstName || prev.firstName,
           lastName: freshProfile.lastName || prev.lastName,
           avatarUrl: freshProfile.avatarUrl || prev.avatarUrl,
+          pendingAvatarUrl: freshProfile.pendingAvatarUrl !== undefined ? freshProfile.pendingAvatarUrl : prev.pendingAvatarUrl,
+          avatarModerationStatus: freshProfile.avatarModerationStatus !== undefined ? freshProfile.avatarModerationStatus : prev.avatarModerationStatus,
+          avatarModerationComment: freshProfile.avatarModerationComment !== undefined ? freshProfile.avatarModerationComment : prev.avatarModerationComment,
           experience: freshProfile.experience ?? prev.experience,
           education: freshProfile.education || prev.education,
           workplace: freshProfile.workplace || prev.workplace,
           workplaceConfirmed: freshProfile.workplaceConfirmed !== undefined ? freshProfile.workplaceConfirmed : prev.workplaceConfirmed,
           docVerificationStatus: freshProfile.docVerificationStatus || prev.docVerificationStatus,
           about: freshProfile.about !== undefined ? freshProfile.about : prev.about,
+          pendingAbout: freshProfile.pendingAbout !== undefined ? freshProfile.pendingAbout : prev.pendingAbout,
+          aboutModerationStatus: freshProfile.aboutModerationStatus !== undefined ? freshProfile.aboutModerationStatus : prev.aboutModerationStatus,
+          aboutModerationComment: freshProfile.aboutModerationComment !== undefined ? freshProfile.aboutModerationComment : prev.aboutModerationComment,
         }));
       }
 
@@ -137,12 +149,17 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
        console.log('[myDoctorProfileManager] booking_rescheduled event received, waiting 500ms then calling load()');
        setTimeout(load, 500);
     });
+    const sub5 = DeviceEventEmitter.addListener('notification_received', () => {
+       console.log('[myDoctorProfileManager] notification_received event received, waiting 500ms then calling load()');
+       setTimeout(load, 500);
+    });
 
     return () => {
       sub1.remove();
       sub2.remove();
       sub3.remove();
       sub4.remove();
+      sub5.remove();
     };
   }, [load]);
 

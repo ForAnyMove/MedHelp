@@ -102,6 +102,7 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
   const [historyView, setHistoryView] = useState('dashboard'); // 'dashboard' | 'all' | 'detail' | 'ratings' | 'patient-profile'
   const [historySelectedId, setHistorySelectedId] = useState(null);
   const [historyPatientProfileId, setHistoryPatientProfileId] = useState(null);
+  const [historyPreviousView, setHistoryPreviousView] = useState(null);
 
   // ── Derived ───────────────────────────────────────────────────────
   /**
@@ -157,6 +158,7 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
 
   const navigateToHistoryPatientProfile = (patientId) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setHistoryPreviousView(historyView);
     setHistoryPatientProfileId(patientId);
     setHistoryView('patient-profile');
     nav.setTabIndex(3);
@@ -180,13 +182,23 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
       }
     } else if (nav.tabIndex === 3) {
       if (historyView === 'patient-profile') {
-        if (historySelectedId) {
+        if (historyPreviousView === 'ratings') {
+          setHistoryView('ratings');
+          updateUrlParams('history', 'ratings');
+        } else if (historyPreviousView === 'all') {
+          setHistoryView('all');
+          updateUrlParams('history', 'all');
+        } else if (historyPreviousView === 'detail' && historySelectedId) {
+          setHistoryView('detail');
+          updateUrlParams('history', 'detail', historySelectedId);
+        } else if (historySelectedId) {
           setHistoryView('detail');
           updateUrlParams('history', 'detail', historySelectedId);
         } else {
           setHistoryView('dashboard');
           updateUrlParams('history');
         }
+        setHistoryPreviousView(null);
       } else if (historyView === 'detail') {
         setHistoryView('all');
         updateUrlParams('history', 'all');

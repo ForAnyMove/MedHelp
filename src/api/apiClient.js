@@ -2,14 +2,14 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 const getApiUrl = () => {
-  let url = process.env.EXPO_PUBLIC_API_URL;
-  if (url) return url.endsWith('/api') ? url : url + '/api';
   if (__DEV__) {
     if (Platform.OS === 'web') return 'http://localhost:3000/api';
     const hostUri = Constants.expoConfig?.hostUri;
     if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
     return 'http://10.0.2.2:3000/api';
   }
+  let url = process.env.EXPO_PUBLIC_API_URL;
+  if (url) return url.endsWith('/api') ? url : url + '/api';
   return '/api'; // fallback for production web if env is missing
 };
 
@@ -28,14 +28,9 @@ export function createApiClient(session, refreshSessionToken = null) {
     if (!isMultipart) {
       headers['Content-Type'] = 'application/json';
     }
-    if (customSession?.accessToken) {
-      headers['Authorization'] = `Bearer ${customSession.accessToken}`;
-    } else {
-      // Dev bypass — allows testing without real Supabase tokens
-      headers['Authorization'] = 'Bearer mock-token';
-    }
-    if (customSession?.userId) {
-      headers['X-Mock-User-Id'] = customSession.userId;
+    const token = customSession?.accessToken || customSession?.access_token;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
   };

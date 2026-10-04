@@ -17,7 +17,7 @@ export function DoctorHeader({ profile, onNotificationPress }) {
     <View style={styles.container}>
       <View style={styles.leftRow}>
         <Avatar 
-          source={profile.avatarUrl ? { uri: profile.avatarUrl } : null}
+          source={(profile.pendingAvatarUrl || profile.avatarUrl) ? { uri: (profile.pendingAvatarUrl || profile.avatarUrl) } : null}
           firstName={profile.firstName}
           lastName={profile.lastName}
           size={sizes.scale(29)}

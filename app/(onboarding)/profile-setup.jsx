@@ -9,12 +9,13 @@ import { useTheme } from '../../src/theme/ThemeContext';
 import { useStyles } from '../../src/theme/useStyles';
 import { Icon } from '../../src/components/ui/Icon';
 import { useSession } from '../../src/context/SessionContext';
+import { AvatarPicker } from '../../src/components/ui/AvatarPicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function ProfileSetup() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { session, registerProfile, getProfessions } = useSession();
 
@@ -38,6 +39,7 @@ export default function ProfileSetup() {
   });
   const [gender, setGender] = useState(session?.gender || null); // 'female' | 'male' | null
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // Owner org fields
   const [orgName, setOrgName] = useState(session?.organization?.name || '');
@@ -168,6 +170,7 @@ export default function ProfileSetup() {
         phone: phone.trim() || null,
         dateOfBirth: formattedDob || null,
         gender: gender,
+        avatarUrl: avatarUrl || undefined,
         professionCodes: isDoctor ? professionCodes : [],
         professionNames: isDoctor ? selectedProfessionNames : [],
         orgName: isOwner ? orgName.trim() : undefined,
@@ -208,6 +211,15 @@ export default function ProfileSetup() {
 
       <View style={styles.formContainer}>
         <Text style={styles.sectionTitle}>{t('auth.personal_data')}</Text>
+
+        <AvatarPicker 
+          onUploadSuccess={setAvatarUrl} 
+        />
+        {avatarUrl && (
+          <Text style={{ textAlign: 'center', color: colors.n500, fontSize: sizes.typography.caption.fontSize, marginBottom: sizes.spacing.m, marginTop: -sizes.spacing.m + 8, paddingHorizontal: sizes.spacing.m }}>
+            {t('profile.avatar_moderation_note', 'After registration, your avatar will be sent for moderation and will be visible to others only after approval.')}
+          </Text>
+        )}
 
         <Input
           label={t('auth.full_name')}

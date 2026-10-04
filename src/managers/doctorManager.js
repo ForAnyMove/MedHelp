@@ -25,6 +25,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
   // ── Fetch all doctors ──────────────────────────────────────────────────────
 
   const fetchDoctors = useCallback(async () => {
+    if (!session?.accessToken && !session?.access_token) return;
     setAppLoading(true);
     try {
       const data = await doctorsApi.listAll();

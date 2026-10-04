@@ -6,6 +6,7 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Input } from '../../../../components/ui/Input';
 import { Button } from '../../../../components/ui/Button';
 import { Icon } from '../../../../components/ui/Icon';
+import { AvatarPicker } from '../../../../components/ui/AvatarPicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }) {
@@ -44,6 +45,7 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
   const [height, setHeight] = useState(user?.height ? String(user.height) : '');
   const [weight, setWeight] = useState(user?.weight ? String(user.weight) : '');
   const [bloodType, setBloodType] = useState(user?.bloodType || null);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,11 +77,12 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
       phone !== (user?.phone || '') ||
       dateOfBirth !== originalDob ||
       gender !== (user?.gender || null) ||
+      avatarUrl !== null ||
       (isDoctor && JSON.stringify(professionCodes) !== JSON.stringify(originalProfessionCodes)) ||
       (!isDoctor && (height !== originalHeight || weight !== originalWeight || bloodType !== originalBloodType));
 
     setDirty(isDirty);
-  }, [fullName, phone, dateOfBirth, gender, professionCodes, height, weight, bloodType, user, isDoctor, setDirty]);
+  }, [fullName, phone, dateOfBirth, gender, professionCodes, height, weight, bloodType, avatarUrl, user, isDoctor, setDirty]);
 
   const handleDobChange = (text) => {
     let cleaned = text.replace(/\D/g, '');
@@ -161,6 +164,10 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
       gender: gender,
     };
 
+    if (avatarUrl) {
+      payload.avatarUrl = avatarUrl;
+    }
+
     if (isDoctor) {
       payload.professionCodes = professionCodes;
       payload.professionNames = professionCodes.map(code => {
@@ -186,6 +193,18 @@ export function ProfileEditForm({ user, role, getProfessions, onSave, setDirty }
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+
+        <AvatarPicker 
+          currentAvatarUrl={user?.avatarUrl} 
+          pendingAvatarUrl={user?.pendingAvatarUrl}
+          avatarModerationStatus={user?.avatarModerationStatus}
+          onUploadSuccess={setAvatarUrl} 
+        />
+        {(avatarUrl || user?.avatarModerationStatus === 'pending') && (
+          <Text style={{ textAlign: 'center', color: colors.n500, fontSize: sizes.typography.caption.fontSize, marginBottom: sizes.spacing.m, marginTop: -sizes.spacing.m + 8, paddingHorizontal: sizes.spacing.m }}>
+            {t('profile.avatar_moderation_note', 'After saving, your avatar will be sent for moderation and will be visible to others only after approval.')}
+          </Text>
+        )}
 
         <Input
           label={t('auth.full_name')}

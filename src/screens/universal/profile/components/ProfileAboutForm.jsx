@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
+import { useTheme } from '../../../../theme/ThemeContext';
 import { Button } from '../../../../components/ui/Button';
 
 export function ProfileAboutForm({ user, onSave, loading }) {
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
+  const { sizes, colors } = useTheme();
 
-  const [about, setAbout] = useState(user?.about || '');
+  const [about, setAbout] = useState(user?.pendingAbout || user?.about || '');
+
+  const isPending = user?.aboutModerationStatus === 'pending';
 
   const MAX_LENGTH = 200;
 
@@ -25,7 +29,16 @@ export function ProfileAboutForm({ user, onSave, loading }) {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.subtitle}>{t('profile.description', 'Description')}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: sizes.spacing.s }}>
+          <Text style={styles.subtitle}>{t('profile.description', 'Description')}</Text>
+          {isPending && (
+            <View style={{ backgroundColor: colors.warning, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 }}>
+              <Text style={{ color: colors.white, fontSize: sizes.typography.caption.fontSize, fontWeight: '600' }}>
+                {t('profile.pending_moderation', 'Pending Moderation')}
+              </Text>
+            </View>
+          )}
+        </View>
 
         <View style={styles.inputContainer}>
           <View style={styles.textInputContainer}>

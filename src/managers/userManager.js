@@ -20,6 +20,8 @@ export default function userManager(session, refreshSessionToken) {
     lastName: session?.lastName || '',
     email: session?.email || '',
     avatarUrl: session?.avatarUrl || null,
+    pendingAvatarUrl: session?.pendingAvatarUrl || null,
+    avatarModerationStatus: session?.avatarModerationStatus || null,
     role: session?.role || 'patient',
     phone: session?.phone || '',
     dob: session?.dateOfBirth || '',
@@ -30,6 +32,8 @@ export default function userManager(session, refreshSessionToken) {
     professionCodes: session?.professionCodes || [],
     professionNames: session?.professionNames || [],
     about: session?.about || '',
+    pendingAbout: session?.pendingAbout || null,
+    aboutModerationStatus: session?.aboutModerationStatus || null,
     medicalData: {
       chronicConditions: null,
       allergies: null,
@@ -98,6 +102,8 @@ export default function userManager(session, refreshSessionToken) {
         lastName: session.lastName || prev.lastName,
         email: session.email || prev.email,
         avatarUrl: session.avatarUrl || prev.avatarUrl,
+        pendingAvatarUrl: session.pendingAvatarUrl !== undefined ? session.pendingAvatarUrl : prev.pendingAvatarUrl,
+        avatarModerationStatus: session.avatarModerationStatus || prev.avatarModerationStatus,
         role: session.role || prev.role,
         phone: session.phone !== undefined ? session.phone : prev.phone,
         dob: session.dateOfBirth !== undefined ? session.dateOfBirth : prev.dob,
@@ -107,6 +113,9 @@ export default function userManager(session, refreshSessionToken) {
         bloodType: session.bloodType !== undefined ? session.bloodType : prev.bloodType,
         professionCodes: session.professionCodes || prev.professionCodes,
         professionNames: session.professionNames || prev.professionNames,
+        about: session.about !== undefined ? session.about : prev.about,
+        pendingAbout: session.pendingAbout !== undefined ? session.pendingAbout : prev.pendingAbout,
+        aboutModerationStatus: session.aboutModerationStatus || prev.aboutModerationStatus,
       }));
       refreshMedicalProfile();
     }

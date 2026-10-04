@@ -10,13 +10,14 @@ import { formatIsoDate } from '../../../../utils/dateUtils';
 import _ from 'lodash';
 import { format, parseISO } from 'date-fns';
 import { useTheme } from '../../../../theme/ThemeContext';
+import ReportModal from '../../../../components/common/ReportModal';
 
 export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) {
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
   const { user, doctorController } = useComponentContext();
-  const { navigateBack } = useDoctorDashboard();
+  const { navigateBack, navigateToHistoryPatientProfile } = useDoctorDashboard();
   
   // If no doctorId is passed, use the logged-in user's ID
   const doctorId = propsDoctorId || user?.id;
@@ -29,6 +30,8 @@ export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) 
   
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  const [reportModalTargetId, setReportModalTargetId] = useState(null);
 
   // Filters
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 5, 4, 3, 'comments'
@@ -205,7 +208,16 @@ export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) 
           <View style={styles.monthGroup}>
             <Text style={styles.monthTitle}>{month}</Text>
             {groupedItems[month].map((rating) => (
-              <RatingCard key={rating.id} rating={rating} />
+              <RatingCard 
+                key={rating.id} 
+                rating={rating} 
+                onReport={() => setReportModalTargetId(rating.id)}
+                onUserClick={() => {
+                  if (rating.patient?.id) {
+                    navigateToHistoryPatientProfile(rating.patient.id);
+                  }
+                }}
+              />
             ))}
           </View>
         )}
@@ -228,6 +240,13 @@ export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) 
           ) : null
         }
       />
+
+      <ReportModal
+        visible={!!reportModalTargetId}
+        onClose={() => setReportModalTargetId(null)}
+        targetId={reportModalTargetId}
+        targetType="review"
+      />
     </View>
   );
 }
@@ -246,8 +265,8 @@ function FilterChip({ label, isActive, onPress }) {
   );
 }
 
-function RatingCard({ rating }) {
-  const { sizes } = useTheme();
+function RatingCard({ rating, onReport, onUserClick }) {
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const patientName = rating.patient 
     ? `${rating.patient.first_name || ''} ${rating.patient.last_name ? rating.patient.last_name.charAt(0) + '.' : ''}`.trim()
@@ -256,24 +275,29 @@ function RatingCard({ rating }) {
   return (
     <View style={styles.ratingCard}>
       <View style={styles.ratingHeader}>
-        <View style={styles.userInfo}>
+        <TouchableOpacity style={styles.userInfo} onPress={onUserClick} disabled={!rating.patient?.id}>
           <Image 
             source={{ uri: rating.patient?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(patientName) }} 
             style={styles.avatar} 
           />
           <Text style={styles.patientName}>{patientName}</Text>
-        </View>
-        <View style={styles.starsRow}>
-          {[1, 2, 3, 4, 5].map((s) => (
-             <Icon 
-               key={s} 
-               name="star" 
-               size={sizes.scale(16)} 
-               color={s <= rating.rating ? /* TODO: color */ '#FFD233' : /* TODO: color */ '#E8ECEC'} 
-               fill={s <= rating.rating ? /* TODO: color */ '#FFD233' : 'none'}
-              />
-          ))}
-          <Text style={styles.ratingScore}>{rating.rating.toFixed(1)}</Text>
+        </TouchableOpacity>
+        <View style={styles.rightHeaderActions}>
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((s) => (
+               <Icon 
+                 key={s} 
+                 name="star" 
+                 size={sizes.scale(16)} 
+                 color={s <= rating.rating ? /* TODO: color */ '#FFD233' : /* TODO: color */ '#E8ECEC'} 
+                 fill={s <= rating.rating ? /* TODO: color */ '#FFD233' : 'none'}
+                />
+            ))}
+            <Text style={styles.ratingScore}>{rating.rating.toFixed(1)}</Text>
+          </View>
+          <TouchableOpacity onPress={onReport} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} style={styles.reportBtn}>
+            <Icon name="AlertCircle" size={sizes.scale(16)} color={colors.n400} />
+          </TouchableOpacity>
         </View>
       </View>
       {!!rating.comment && (
@@ -333,7 +357,7 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
     marginBottom: theme.sizes.spacing.m,
     shadowColor: /* TODO: color */ '#000',
-    shadowOffset: { width: sizes.scale(0), height: sizes.scale(4) },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
@@ -344,10 +368,10 @@ const themeStyles = (theme) => ({
     marginRight: theme.sizes.spacing.xl,
   },
   bigRating: {
-    fontSize: sizes.scale(56),
+    fontSize: theme.sizes.scale(56),
     fontFamily: 'Manrope_800ExtraBold',
     color: /* TODO: color */ '#0D3F3A',
-    lineHeight: sizes.scale(64),
+    lineHeight: theme.sizes.scale(64),
   },
   reviewsCount: {
     ...theme.sizes.typography.caption,
@@ -356,7 +380,7 @@ const themeStyles = (theme) => ({
   overviewRight: {
     flex: 1,
     justifyContent: 'space-between',
-    gap: sizes.scale(4),
+    gap: theme.sizes.scale(4),
   },
   barRow: {
     flexDirection: 'row',
@@ -365,24 +389,24 @@ const themeStyles = (theme) => ({
   barStar: {
     ...theme.sizes.typography.caption,
     color: theme.colors.n400,
-    width: sizes.scale(12),
+    width: theme.sizes.scale(12),
   },
   barContainer: {
     flex: 1,
-    height: sizes.scale(6),
+    height: theme.sizes.scale(6),
     backgroundColor: /* TODO: color */ '#F3F9F9',
-    borderRadius: sizes.scale(3),
+    borderRadius: theme.sizes.scale(3),
     marginHorizontal: theme.sizes.spacing.s,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    borderRadius: sizes.scale(3),
+    borderRadius: theme.sizes.scale(3),
   },
   barCount: {
     ...theme.sizes.typography.caption,
     color: theme.colors.n300,
-    width: sizes.scale(20),
+    width: theme.sizes.scale(20),
     textAlign: 'right',
   },
   statsRow: {
@@ -397,7 +421,7 @@ const themeStyles = (theme) => ({
     paddingVertical: theme.sizes.spacing.m,
     alignItems: 'center',
     shadowColor: /* TODO: color */ '#000',
-    shadowOffset: { width: sizes.scale(0), height: sizes.scale(4) },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
@@ -406,7 +430,7 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.h3,
     color: theme.colors.n900,
     fontFamily: 'Manrope_700Bold',
-    marginBottom: sizes.scale(4),
+    marginBottom: theme.sizes.scale(4),
   },
   statLabel: {
     ...theme.sizes.typography.caption,
@@ -420,9 +444,9 @@ const themeStyles = (theme) => ({
     paddingRight: theme.sizes.spacing.l,
   },
   filterChip: {
-    paddingHorizontal: sizes.scale(16),
-    paddingVertical: sizes.scale(8),
-    borderRadius: sizes.scale(20),
+    paddingHorizontal: theme.sizes.scale(16),
+    paddingVertical: theme.sizes.scale(8),
+    borderRadius: theme.sizes.scale(20),
     borderWidth: 1,
     borderColor: /* TODO: color */ '#54DACC',
     backgroundColor: theme.colors.white,
@@ -453,7 +477,7 @@ const themeStyles = (theme) => ({
     padding: theme.sizes.spacing.l,
     marginBottom: theme.sizes.spacing.m,
     shadowColor: /* TODO: color */ '#000',
-    shadowOffset: { width: sizes.scale(0), height: sizes.scale(4) },
+    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
@@ -469,9 +493,9 @@ const themeStyles = (theme) => ({
     alignItems: 'center',
   },
   avatar: {
-    width: sizes.scale(40),
-    height: sizes.scale(40),
-    borderRadius: sizes.scale(20),
+    width: theme.sizes.scale(40),
+    height: theme.sizes.scale(40),
+    borderRadius: theme.sizes.scale(20),
     marginRight: theme.sizes.spacing.s,
   },
   patientName: {
@@ -479,21 +503,29 @@ const themeStyles = (theme) => ({
     color: /* TODO: color */ '#0D3F3A',
     fontFamily: 'Manrope_700Bold',
   },
+  rightHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.sizes.scale(12),
+  },
   starsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: sizes.scale(2),
+    gap: theme.sizes.scale(2),
+  },
+  reportBtn: {
+    padding: theme.sizes.scale(2),
   },
   ratingScore: {
     ...theme.sizes.typography.body,
     color: /* TODO: color */ '#0D3F3A',
     fontFamily: 'Manrope_700Bold',
-    marginLeft: sizes.scale(4),
+    marginLeft: theme.sizes.scale(4),
   },
   commentText: {
     ...theme.sizes.typography.body,
     color: theme.colors.n500,
-    lineHeight: sizes.scale(22),
+    lineHeight: theme.sizes.scale(22),
   },
   emptyText: {
     ...theme.sizes.typography.body,

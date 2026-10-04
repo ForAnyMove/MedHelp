@@ -24,10 +24,12 @@ export function NavigationManager({ children }) {
     const currentScreen = segments[segments.length - 1];
     const isRoot = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
 
+    const safeReplace = (path) => setTimeout(() => router.replace(path), 0);
+
     // ──── NOT LOGGED IN ────
     if (!session) {
       if (!inAuthGroup) {
-        router.replace('/(auth)/welcome');
+        safeReplace('/(auth)/welcome');
         return;
       }
 
@@ -35,7 +37,7 @@ export function NavigationManager({ children }) {
     } else if (!session.role) {
       // Must be on choose-role (or auth/welcome if just logged in)
       if (currentScreen !== 'choose-role') {
-        router.replace('/(onboarding)/choose-role');
+        safeReplace('/(onboarding)/choose-role');
         return;
       }
 
@@ -45,7 +47,7 @@ export function NavigationManager({ children }) {
       // Block: doc-upload, profile-created, /home, app screens
       const allowedBeforeRegister = ['choose-role', 'onboarding', 'profile-setup'];
       if (!inOnboardingGroup || !allowedBeforeRegister.includes(currentScreen)) {
-        router.replace('/(onboarding)/profile-setup');
+        safeReplace('/(onboarding)/profile-setup');
         return;
       }
 
@@ -55,7 +57,7 @@ export function NavigationManager({ children }) {
       // -- PATIENT: fully registered → only app screens --
       if (session.role === 'patient') {
         if (inAuthGroup || isRoot || inOnboardingGroup) {
-          router.replace('/home');
+          safeReplace('/home');
           return;
         }
 
@@ -71,7 +73,7 @@ export function NavigationManager({ children }) {
           if (inOnboardingGroup && allowedForNone.includes(currentScreen)) {
             // Allowed — stay here
           } else if (!inOnboardingGroup || !allowedForNone.includes(currentScreen)) {
-            router.replace('/(onboarding)/doc-upload');
+            safeReplace('/(onboarding)/doc-upload');
             return;
           }
 
@@ -80,18 +82,18 @@ export function NavigationManager({ children }) {
             // ── User already handled doc-upload this session ──
             // Allow profile-created (for first-time skip flow), doc-upload (to let it route itself), and /home
             if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
             if (inAuthGroup || isRoot) {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
           } else {
             // ── Return after skip — force doc-upload ONLY ──
             // No other onboarding screens, no /home, no app
             if (currentScreen !== 'doc-upload') {
-              router.replace('/(onboarding)/doc-upload');
+              safeReplace('/(onboarding)/doc-upload');
               return;
             }
           }
@@ -100,17 +102,17 @@ export function NavigationManager({ children }) {
           if (docUploadHandledThisSession) {
             // ── Just submitted — allow profile-created, doc-upload, then /home ──
             if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
             if (inAuthGroup || isRoot) {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
           } else {
             // ── Re-login with pending → straight to app ──
             if (inAuthGroup || isRoot || inOnboardingGroup) {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
           }
@@ -118,7 +120,7 @@ export function NavigationManager({ children }) {
         } else {
           // ── verified → straight to app ──
           if (inAuthGroup || isRoot || inOnboardingGroup) {
-            router.replace('/home');
+            safeReplace('/home');
             return;
           }
         }
@@ -132,29 +134,29 @@ export function NavigationManager({ children }) {
           if (inOnboardingGroup && allowedForNone.includes(currentScreen)) {
             // Allowed
           } else if (!inOnboardingGroup || !allowedForNone.includes(currentScreen)) {
-            router.replace('/(onboarding)/doc-upload');
+            safeReplace('/(onboarding)/doc-upload');
             return;
           }
         } else if (docStatus === 'skipped') {
           if (docUploadHandledThisSession) {
             if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
             if (inAuthGroup || isRoot) {
-              router.replace('/home');
+              safeReplace('/home');
               return;
             }
           } else {
             if (currentScreen !== 'doc-upload') {
-              router.replace('/(onboarding)/doc-upload');
+              safeReplace('/(onboarding)/doc-upload');
               return;
             }
           }
         } else {
           // pending or verified → straight to app
           if (inAuthGroup || isRoot || inOnboardingGroup) {
-            router.replace('/home');
+            safeReplace('/home');
             return;
           }
         }
@@ -166,15 +168,15 @@ export function NavigationManager({ children }) {
       const inOwnerGroup = segments.includes('(owner)') || segments.includes('owner');
 
       if (session.role === 'patient' && (inDoctorGroup || inOwnerGroup)) {
-        router.replace('/home');
+        safeReplace('/home');
         return;
       }
       if (session.role === 'doctor' && (inPatientGroup || inOwnerGroup)) {
-        router.replace('/home');
+        safeReplace('/home');
         return;
       }
       if (session.role === 'owner' && (inDoctorGroup || inPatientGroup)) {
-        router.replace('/home');
+        safeReplace('/home');
         return;
       }
     }

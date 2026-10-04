@@ -486,6 +486,10 @@
     "first_name_placeholder": "Enter your first name",
     "last_name": "Last Name",
     "last_name_placeholder": "Enter your last name",
+    "avatar_pending_title": "Avatar on Moderation",
+    "avatar_pending_message": "Your new avatar is currently under moderation. It will be visible to other users once approved.",
+    "avatar_moderation_note": "After saving, your avatar will be sent for moderation and will be visible to others only after approval.",
+    "pending_moderation": "Pending Moderation",
     "title": "Profile",
     "medical_data": "Medical data",
     "chronic_conditions": "Chronic conditions:",
@@ -512,6 +516,15 @@
     "about_me": "About me",
     "about_title": "Describe how you can be helpful to the patient",
     "about_placeholder": "Write about yourself",
+    "avatar_rejected_title": "Avatar Rejected",
+    "avatar_rejected_message": "Your avatar was rejected. Please upload a different image that complies with the guidelines.",
+    "avatar_pending_title": "Avatar on Moderation",
+    "avatar_pending_message": "Your new avatar is currently under moderation. It will be visible to other users once approved.",
+    "rejected_moderation_title": "Moderation Rejected",
+    "pending_moderation_title": "Pending Moderation",
+    "about_rejected_desc": "Your about me text was rejected. Please make changes and resubmit.",
+    "about_pending_desc": "Your about me text is currently under review by our moderators and is not yet visible to other users.",
+    "admin_note": "Admin Note",
     "accepting_new_patients": "Accepting new patients",
     "phone_number": "Phone number",
     "dob": "Date of birth",
@@ -859,6 +872,14 @@
     "connecting_call": "Connecting to call..."
   },
   "notifications": {
+    "report_resolved": "Report Resolved",
+    "report_resolved_desc": "Your report has been successfully resolved. Appropriate action has been taken.{{admin_comment_text}}",
+    "report_dismissed": "Report Dismissed",
+    "report_dismissed_desc": "Your report was reviewed but no violations were found.{{admin_comment_text}}",
+    "moderation_rejected": "Moderation Rejected",
+    "moderation_rejected_desc": "Please make the necessary changes.",
+    "moderation_approved": "Moderation Approved",
+    "moderation_approved_desc": "Your data has been successfully approved.",
     "success": "Success",
     "booking_created_self": "Booking successfully created",
     "new_booking": "New booking",
@@ -994,5 +1015,19 @@
   "owner_history": {
     "title": "Consultation History",
     "total": "{{count}} consultations"
+  },
+  "reports": {
+    "title": "Report Content",
+    "subtitle": "Please select a reason for reporting this {{type}}.",
+    "reason_spam": "Spam or misleading",
+    "reason_inappropriate": "Inappropriate content",
+    "reason_harassment": "Harassment or bullying",
+    "reason_fake": "Fake profile or impersonation",
+    "reason_other": "Other",
+    "describe_issue": "Describe the issue...",
+    "reason_too_short": "Reason must be at least 5 characters long.",
+    "success_msg": "Your report has been submitted. Our moderators will review it shortly.",
+    "error_msg": "Failed to submit report. You may have already reported this content.",
+    "submit": "Submit Report"
   }
 }

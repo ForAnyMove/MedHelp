@@ -9,6 +9,7 @@ import { DoctorAvatar } from '../../../../components/doctor/DoctorAvatar';
 import { SlotPicker } from '../../../../components/doctor/SlotPicker';
 import { useSession } from '../../../../context/SessionContext';
 import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
+import ReportModal from '../../../../components/common/ReportModal';
 
 export function DoctorProfile() {
   const { t } = useTranslation();
@@ -26,9 +27,10 @@ export function DoctorProfile() {
 
   const { session, refreshSessionToken } = useSession();
   const { navigateToConsultationDetail, updateUrlParams } = usePatientDashboard();
-  const { consultationController } = useComponentContext();
+  const consultationController = useComponentContext()?.consultationController;
 
   const [modalState, setModalState] = useState('hidden');
+  const [reportModalVisible, setReportModalVisible] = useState(false);
 
   const executeReschedule = async () => {
     setModalState('loading');
@@ -80,6 +82,10 @@ export function DoctorProfile() {
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
+          </TouchableOpacity>
+          <View style={{flex: 1}} />
+          <TouchableOpacity onPress={() => setReportModalVisible(true)}>
+            <Icon name="AlertCircle" size={sizes.scale(24)} color={colors.danger} />
           </TouchableOpacity>
         </View>
 
@@ -196,7 +202,7 @@ export function DoctorProfile() {
             )}
             {modalState === 'error' && (
               <>
-                <Icon name="alert-circle" size={sizes.scale(48)} color={colors.danger} style={{ alignSelf: 'center', marginBottom: sizes.spacing.m }} />
+                <Icon name="AlertCircle" size={sizes.scale(48)} color={colors.danger} style={{ alignSelf: 'center', marginBottom: sizes.spacing.m }} />
                 <Text style={[styles.modalTitle, { textAlign: 'center' }]}>{t('common.error', 'Ошибка')}</Text>
                 <Text style={[styles.modalText, { textAlign: 'center', marginBottom: sizes.spacing.xl }]}>{t('common.reschedule_error', 'Не удалось перенести консультацию. Попробуйте еще раз.')}</Text>
                 <View style={styles.modalButtons}>
@@ -208,6 +214,13 @@ export function DoctorProfile() {
           </View>
         </View>
       </Modal>
+
+      <ReportModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        targetType="profile"
+        targetId={selectedDoctor.id}
+      />
     </View>
   );
 }

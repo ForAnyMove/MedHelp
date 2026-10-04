@@ -24,13 +24,20 @@ export default function notificationManager(setAppLoading, session, refreshSessi
             const data = response || [];
             
             // Trigger local notifications for web if there are new unread ones
-            if (Platform.OS === 'web' && prevIdsRef.current.size > 0) {
+            if (prevIdsRef.current.size > 0) {
                 const newUnread = data.filter(n => !prevIdsRef.current.has(n.id) && !n.is_read);
-                newUnread.forEach(n => {
-                    if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === 'granted') {
-                        new window.Notification(n.title, { body: n.body || n.description });
+                if (newUnread.length > 0) {
+                    const { DeviceEventEmitter } = require('react-native');
+                    DeviceEventEmitter.emit('notification_received');
+                    
+                    if (Platform.OS === 'web') {
+                        newUnread.forEach(n => {
+                            if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === 'granted') {
+                                new window.Notification(n.title, { body: n.body || n.description });
+                            }
+                        });
                     }
-                });
+                }
             }
             
             prevIdsRef.current = new Set(data.map(n => n.id));

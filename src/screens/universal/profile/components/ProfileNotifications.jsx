@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { formatRelativeTime } from '../../../../utils/dateUtils';
@@ -7,6 +7,7 @@ import { useComponentContext } from '../../../../context/GlobalContext';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { Icon } from '../../../../components/ui/Icon';
+import { Button } from '../../../../components/ui/Button';
 import { useTheme } from '../../../../theme/ThemeContext';
 
 
@@ -16,7 +17,9 @@ export function ProfileNotifications({ user, onClose }) {
   const styles = useStyles(themeStyles);
   const { notificationController } = useComponentContext();
   const router = useRouter();
+  const { colors } = useTheme();
 
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const { notifications, markAsRead, markAllAsRead } = notificationController;
 
   const unreadCount = useMemo(() => {
@@ -87,8 +90,22 @@ export function ProfileNotifications({ user, onClose }) {
       } else {
         router.push(`/consultation/${item.reference_id}`);
       }
+      return;
     }
-    // Handle other types here
+    
+    if (
+      item.type === 'report_resolved' || 
+      item.type === 'report_dismissed' || 
+      item.type === 'moderation_rejected' || 
+      item.type === 'moderation_approved' ||
+      item.type === 'system'
+    ) {
+      setSelectedNotification(item);
+      return;
+    }
+
+    // Handle other types here (fallback to modal if it's informational)
+    setSelectedNotification(item);
   };
 
   return (
@@ -121,6 +138,39 @@ export function ProfileNotifications({ user, onClose }) {
           ))
         )}
       </ScrollView>
+
+      <Modal
+        visible={!!selectedNotification}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedNotification(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selectedNotification && t(`notifications.${selectedNotification.type}`, { defaultValue: selectedNotification.title || selectedNotification.type, ...(selectedNotification.data || {}) })}
+              </Text>
+              <TouchableOpacity onPress={() => setSelectedNotification(null)}>
+                <Icon name="x" size={24} color={colors.n500} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalDesc}>
+              {selectedNotification && t(`notifications.${selectedNotification.type}_desc`, { 
+                defaultValue: selectedNotification.description, 
+                ...(selectedNotification.data || {}),
+                admin_comment_text: selectedNotification.data?.admin_comment ? `\n\n${t('profile.admin_note', 'Admin Note')}: ${selectedNotification.data.admin_comment}` : ''
+              })}
+            </Text>
+            <Button
+              title={t('common.close', 'Close')}
+              variant="primary"
+              onPress={() => setSelectedNotification(null)}
+              style={styles.modalButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -253,5 +303,40 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.scale(4),
     backgroundColor: theme.colors.p500,
     marginLeft: theme.sizes.spacing.s,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.sizes.spacing.l,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.sizes.spacing.m,
+  },
+  modalTitle: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n900,
+    flex: 1,
+    marginRight: theme.sizes.spacing.s,
+  },
+  modalDesc: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
+    marginBottom: theme.sizes.spacing.xl,
+    lineHeight: 22,
+  },
+  modalButton: {
+    width: '100%',
   }
 });
