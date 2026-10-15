@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Animated } from 'react-native';
+import { View, Animated, Platform } from 'react-native';
 import { useStyles } from '../../theme/useStyles';
 
 /**
@@ -15,10 +15,16 @@ export function SkeletonCard({ lines = 2, height }) {
   const styles = useStyles(themeStyles);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Avoid Animated.loop on Web to prevent JS-fallback burst crashes upon tab resume
+      opacity.setValue(0.5);
+      return;
+    }
+
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: Platform.OS !== 'web' }),
       ])
     );
     pulse.start();

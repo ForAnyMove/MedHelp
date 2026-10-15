@@ -11,6 +11,7 @@ import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { useSession } from '../../../../context/SessionContext';
 import { createApiClient } from '../../../../api/apiClient';
 import { createConsultationsApi } from '../../../../api/consultationsApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function DoctorConsultationForm({ consultation }) {
   const { sizes, colors } = useTheme();
@@ -73,6 +74,23 @@ export function DoctorConsultationForm({ consultation }) {
             const parsed = typeof resData.recommendations === 'string' ? JSON.parse(resData.recommendations) : resData.recommendations;
             if (parsed.length > 0) setRecommendations(parsed);
           }
+        } else {
+          // If no result in DB, check local draft
+          const localDraftStr = await AsyncStorage.getItem(`draft_consultation_${consultation.id}`);
+          if (localDraftStr) {
+            try {
+              const draft = JSON.parse(localDraftStr);
+              if (draft.overview) setOverview(draft.overview);
+              if (draft.diagnosis_icd10) setDiagnosisIcd10(draft.diagnosis_icd10);
+              if (draft.diagnosis_name) setDiagnosisName(draft.diagnosis_name);
+              if (draft.prescriptions) setPrescriptions(draft.prescriptions);
+              if (draft.patient_has?.length > 0) setPatientHas(draft.patient_has);
+              if (draft.next_steps?.length > 0) setNextSteps(draft.next_steps);
+              if (draft.recommendations?.length > 0) setRecommendations(draft.recommendations);
+            } catch (e) {
+              console.error('Failed to parse local draft', e);
+            }
+          }
         }
       } catch (error) {
         console.error('[DoctorConsultationForm] Error fetching data:', error);
@@ -87,6 +105,30 @@ export function DoctorConsultationForm({ consultation }) {
       setIsLoading(false);
     }
   }, [consultation?.id, session]);
+
+  // Debounced auto-save to local storage
+  useEffect(() => {
+    if (isLoading || isSent || !consultation?.id) return;
+    const saveDraftLocally = async () => {
+      try {
+        const draft = {
+          overview,
+          diagnosis_icd10: diagnosisIcd10,
+          diagnosis_name: diagnosisName,
+          patient_has: patientHas,
+          next_steps: nextSteps,
+          recommendations: recommendations,
+          prescriptions
+        };
+        await AsyncStorage.setItem(`draft_consultation_${consultation.id}`, JSON.stringify(draft));
+      } catch (e) {
+        // Ignore local storage errors
+      }
+    };
+
+    const timeoutId = setTimeout(saveDraftLocally, 1500);
+    return () => clearTimeout(timeoutId);
+  }, [overview, diagnosisIcd10, diagnosisName, patientHas, nextSteps, recommendations, prescriptions, isLoading, isSent, consultation?.id]);
 
   const handleDynamicListChange = (setter, list, index, value) => {
     const newList = [...list];
@@ -133,6 +175,9 @@ export function DoctorConsultationForm({ consultation }) {
 
       const { DeviceEventEmitter } = require('react-native');
       DeviceEventEmitter.emit('consultation_completed');
+
+      // Clear local draft on successful save
+      await AsyncStorage.removeItem(`draft_consultation_${consultation.id}`).catch(() => {});
 
       setIsSaving(false);
 

@@ -18,12 +18,20 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
   
   const nav = useDashboardNavigator('dashboard', initialIndex);
 
-  const updateUrlParams = (tabName, view, id, filter) => {
+  const updateUrlParams = (tabName, view, id, filter, returnTabStr) => {
     if (typeof window !== 'undefined' && window.history) {
       const searchParams = new URLSearchParams();
       if (view) searchParams.set('view', view);
       if (id) searchParams.set('id', id);
       if (filter) searchParams.set('filter', filter);
+      if (returnTabStr) searchParams.set('returnTab', returnTabStr);
+
+      if (historySelectedId && (view === 'doctor-profile' || view === 'summary')) {
+         searchParams.set('prevId', historySelectedId);
+      }
+      if (historyPreviousView) {
+         searchParams.set('prevView', historyPreviousView);
+      }
       
       const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
       const newUrl = `/${tabName}${queryString}`;
@@ -35,6 +43,22 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
     const view = searchParams.get('view');
     const id = searchParams.get('id');
     const filter = searchParams.get('filter');
+    const returnTabStr = searchParams.get('returnTab');
+    const prevId = searchParams.get('prevId');
+    const prevView = searchParams.get('prevView');
+
+    if (returnTabStr) {
+      setReturnToTab(returnTabStr);
+    }
+    if (filter) {
+      setDoctorFilter(filter);
+    }
+    if (prevId) {
+      setHistorySelectedId(prevId);
+    }
+    if (prevView) {
+      setHistoryPreviousView(prevView);
+    }
 
     if (tabName === 'home') {
       if (view === 'symptom-checker') {
@@ -70,6 +94,11 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
         setHistoryView('all');
         // We do not set the local state for filter here as the component might handle it, 
         // but we ensure the view is active.
+      } else if (view === 'checkups') {
+        setHistoryView('checkups');
+      } else if (view === 'checkup-detail') {
+        setHistoryView('checkup-detail');
+        if (id) setHistorySelectedCheckupId(id);
       } else if (view === 'detail') {
         setHistoryView('detail');
         setHistorySelectedId(id);
@@ -83,6 +112,8 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
         setHistoryView('dashboard');
         setHistorySelectedId(null);
         setHistoryDoctorProfileId(null);
+        setHistorySelectedCheckupId(null);
+        setHistorySelectedCheckup(null);
       }
     }
   };
@@ -94,7 +125,13 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
   const [historyView, setHistoryView] = useState('dashboard'); // 'dashboard' | 'all' | 'detail' | 'doctor-profile'
   const [historySelectedId, setHistorySelectedId] = useState(null);
   const [historyDoctorProfileId, setHistoryDoctorProfileId] = useState(null);
+  const [historySelectedCheckup, setHistorySelectedCheckup] = useState(null);
+  const [historySelectedCheckupId, setHistorySelectedCheckupId] = useState(null);
   const [symptomCheckerProps, setSymptomCheckerProps] = useState(null);
+  const [returnToTab, setReturnToTab] = useState(null);
+  const [historyPreviousView, setHistoryPreviousView] = useState(null);
+  const [doctorFilter, setDoctorFilter] = useState(null);
+  const [pendingCheckupForBooking, setPendingCheckupForBooking] = useState(null);
 
   // ── Derived ────────────────────────────────────────────────────────
   /**
@@ -131,9 +168,15 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
     nav.navigateTo('symptom-checker');
     updateUrlParams('home', 'symptom-checker');
   };
-  const navigateToDoctors = () => {
+  const navigateToDoctors = (filter = null, pendingCheckup = null) => {
+    setDoctorFilter(filter);
+    if (pendingCheckup !== undefined) {
+      setPendingCheckupForBooking(pendingCheckup);
+    }
+    setSymptomCheckerProps(null);
+    nav.resetToMain();
     nav.setTabIndex(1);
-    updateUrlParams('doctors');
+    updateUrlParams('doctors', null, null, filter);
   };
   const navigateToConsultation = () => {
     nav.setTabIndex(2);
@@ -193,14 +236,6 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
     updateUrlParams('history', 'all', '', filterParam || 'All');
   };
 
-  const navigateToHistoryDetail = (id) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setHistorySelectedId(id);
-    setHistoryView('detail');
-    nav.setTabIndex(3);
-    updateUrlParams('history', 'detail', id);
-  };
-
   const navigateToHistorySummary = (id) => {
     setHistorySelectedId(id);
     setHistoryView('summary');
@@ -208,28 +243,123 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
     updateUrlParams('history', 'summary', id);
   };
 
-  const navigateToHistoryDoctorProfile = (doctorId) => {
+  const navigateToHistoryDoctorProfile = (doctorId, returnTab = null) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setHistoryPreviousView(historyView);
     setHistoryDoctorProfileId(doctorId);
     setHistoryView('doctor-profile');
+    const newReturnTab = returnTab || returnToTab;
+    if (returnTab) setReturnToTab(returnTab);
     nav.setTabIndex(3);
-    updateUrlParams('history', 'doctor-profile', doctorId);
+    updateUrlParams('history', 'doctor-profile', doctorId, null, newReturnTab);
+  };
+
+  const navigateToHistoryDetail = (id, returnTab = null) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setHistorySelectedId(id);
+    setHistoryView('detail');
+    const newReturnTab = returnTab || returnToTab;
+    if (returnTab) setReturnToTab(returnTab);
+    nav.setTabIndex(3);
+    updateUrlParams('history', 'detail', id, null, newReturnTab);
+  };
+
+  const navigateToHistoryCheckups = (filterParam = null) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setHistoryView('checkups');
+    nav.setTabIndex(3);
+    updateUrlParams('history', 'checkups', '', filterParam || '');
+  };
+
+  const navigateToHistoryCheckupDetail = (checkup) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setHistorySelectedCheckup(checkup);
+    setHistorySelectedCheckupId(checkup?.id);
+    setHistoryView('checkup-detail');
+    nav.setTabIndex(3);
+    updateUrlParams('history', 'checkup-detail', checkup?.id);
+  };
+
+  const resetViews = () => {
+    nav.resetToMain();
+    setConsultationView('main');
+    setHistoryView('dashboard');
+    setDoctorFilter(null);
+    setReturnToTab(null);
+    setHistoryPreviousView(null);
+    setSymptomCheckerProps(null);
+    setSelectedSummaryBooking(null);
+    setHistorySelectedId(null);
+    setHistoryDoctorProfileId(null);
+    setHistorySelectedCheckup(null);
+    setHistorySelectedCheckupId(null);
+    setPendingCheckupForBooking(null);
+  };
+
+  const handleTabSwitchRequest = (newIndex) => {
+    if (nav.tabIndex === newIndex) {
+      // If tapping currently active tab
+      if (newIndex === 0) {
+        if (nav.currentView !== 'dashboard') {
+          nav.resetToMain();
+          updateUrlParams('home');
+        } else {
+          nav.scrollToTop();
+        }
+      } else {
+        resetViews();
+        updateUrlParams(indexToTab[newIndex]);
+      }
+      return;
+    }
+    // Switch to new tab without resetting other tabs' state unless necessary
+    nav.setTabIndex(newIndex);
+    // Explicitly update URL to the base path of the new tab, 
+    // unless it already has parameters handled by the URL sync.
   };
 
   const navigateBack = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     if (nav.tabIndex === 3) {
       if (historyView === 'doctor-profile') {
-        if (historySelectedId) {
+        if (returnToTab) {
+          nav.setTabIndex(indexToTab.indexOf(returnToTab));
+          setReturnToTab(null);
+          updateUrlParams(returnToTab);
+          setHistoryPreviousView(null);
+          return;
+        }
+        if (historyPreviousView === 'all') {
+          setHistoryView('all');
+          updateUrlParams('history', 'all');
+        } else if (historyPreviousView === 'detail' && historySelectedId) {
+          setHistoryView('detail');
+          updateUrlParams('history', 'detail', historySelectedId);
+        } else if (historySelectedId) {
           setHistoryView('detail');
           updateUrlParams('history', 'detail', historySelectedId);
         } else {
           setHistoryView('dashboard');
           updateUrlParams('history');
         }
+        setHistoryPreviousView(null);
       } else if (historyView === 'detail') {
+        if (returnToTab) {
+          nav.setTabIndex(indexToTab.indexOf(returnToTab));
+          setReturnToTab(null);
+          updateUrlParams(returnToTab);
+          return;
+        }
         setHistoryView('all');
         updateUrlParams('history', 'all');
+      } else if (historyView === 'checkup-detail') {
+        setHistoryView('checkups');
+        setHistorySelectedCheckup(null);
+        setHistorySelectedCheckupId(null);
+        updateUrlParams('history', 'checkups');
+      } else if (historyView === 'checkups') {
+        setHistoryView('dashboard');
+        updateUrlParams('history');
       } else if (historyView === 'all' || historyView === 'summary') {
         setHistoryView('dashboard');
         updateUrlParams('history');
@@ -263,6 +393,12 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
         historyView,
         historySelectedId,
         historyDoctorProfileId,
+        historySelectedCheckup,
+        historySelectedCheckupId,
+        doctorFilter,
+        setDoctorFilter,
+        pendingCheckupForBooking,
+        setPendingCheckupForBooking,
         symptomCheckerProps,
         setSymptomCheckerProps,
         // Navigation actions
@@ -283,7 +419,11 @@ export function PatientDashboardProvider({ children, initialTab = 'home' }) {
         navigateToHistoryDetail,
         navigateToHistorySummary,
         navigateToHistoryDoctorProfile,
+        navigateToHistoryCheckups,
+        navigateToHistoryCheckupDetail,
         navigateBack,
+        resetViews,
+        handleTabSwitchRequest,
         syncStateFromUrl,
         updateUrlParams,
       }}

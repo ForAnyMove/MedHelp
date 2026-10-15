@@ -149,12 +149,18 @@ export function PatientAllConsultations({ activeSegment = 'all' }) {
                                         <View style={styles.infoContainer}>
                                             <View style={styles.consultationRow}>
                                                 <Text style={styles.consultationText}>
-                                                    {item.status === 'scheduled' || item.status === 'canceled' ? item.doctorName : t('doctor_history.consultation', 'Consultation')} •{' '}
+                                                    {item.status === 'scheduled' || item.status === 'canceled' ? `${t('doctors.dr_prefix')}${item.doctorName}` : t('doctor_history.consultation', 'Consultation')}
                                                 </Text>
+                                                {item.doctorIsVerified && (item.status === 'scheduled' || item.status === 'canceled') && (
+                                                    <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                                                )}
+                                                <Text style={styles.consultationText}> •{' '}</Text>
                                                 <View style={[styles.statusDot, { backgroundColor: iconProps.color }]} />
                                             </View>
                                             <Text style={styles.doctorText} numberOfLines={1}>
-                                                {item.status === 'scheduled' || item.status === 'canceled' ? item.diagnosis || t('doctor_history.general', 'General') : `${item.doctorName || t('doctor_history.doctor', 'Doctor')} • ${item.diagnosis || t('doctor_history.general', 'General')}`}
+                                                {item.status === 'scheduled' || item.status === 'canceled' 
+                                                    ? t(item.specialty || 'doctors.general') 
+                                                    : `${t('doctors.dr_prefix')}${item.doctorName || t('doctor_history.doctor', 'Doctor')} • ${t(item.specialty || 'doctors.general')}`}
                                             </Text>
                                         </View>
 

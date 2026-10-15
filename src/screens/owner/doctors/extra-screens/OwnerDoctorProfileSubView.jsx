@@ -99,7 +99,12 @@ export function OwnerDoctorProfileSubView({ onBack }) {
           )}
 
           <View style={styles.infoCol}>
-            <Text style={styles.nameText}>{name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.nameText}>{name}</Text>
+              {doctorData.isVerified && (
+                <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6), marginBottom: sizes.scale(4) }} />
+              )}
+            </View>
             <Text style={styles.subText}>{doctorData.specialization || t('doctor_history.specialist', 'Specialist')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: sizes.scale(4) }}>
               <Icon name="star" size={sizes.scale(12)} color={colors.warning} />

@@ -17,7 +17,7 @@ export function ProfileNotifications({ user, onClose }) {
   const styles = useStyles(themeStyles);
   const { notificationController } = useComponentContext();
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, sizes } = useTheme();
 
   const [selectedNotification, setSelectedNotification] = useState(null);
   const { notifications, markAsRead, markAllAsRead } = notificationController;
@@ -31,36 +31,76 @@ export function ProfileNotifications({ user, onClose }) {
       markAsRead(item.id);
     }
 
+    // 1. Owner join requests
     if (item.type === 'owner_join_request') {
       if (onClose) onClose();
       router.push('/doctors?view=requests');
       return;
     }
 
+    // 2. Lab results / Additional lab tests
+    if (item.type === 'additional_lab_requested' || item.type === 'test_results_ready') {
+      const labId = item.data?.lab_result_id || item.reference_id;
+      if (onClose) onClose();
+      if (labId) {
+        router.push(`/(patient)/lab-results/${labId}`);
+      } else {
+        router.push('/(patient)/lab-results');
+      }
+      return;
+    }
+
+    // 3. Consultation lifecycle routing
+    const isConsultation = 
+      item.type === 'consultation_started' ||
+      item.type === 'consultation_resumed' ||
+      item.type === 'consultation_completed' ||
+      item.type === 'canceled_appointment' ||
+      item.type === 'rescheduled_appointment' ||
+      item.type === 'new_appointment' ||
+      item.data?.url?.includes('consultation');
+
+    if (isConsultation) {
+      const url = item.data?.url || '';
+      const idMatch = url.match(/consultation\/([^&/?]+)/) || url.match(/id=([^&]+)/);
+      const consultationId = item.reference_id || item.data?.consultation_id || (idMatch ? idMatch[1] : null);
+
+      if (consultationId) {
+        if (onClose) onClose();
+
+        // Doctor perspective
+        if (user?.role === 'doctor') {
+          if (item.type === 'consultation_started' || item.type === 'consultation_resumed') {
+            router.push(`/consultation/${consultationId}`);
+          } else if (item.type === 'new_appointment') {
+            router.push(`/(doctor)?tab=consultation&openConsultationId=${consultationId}&action=view`);
+          } else {
+            // Completed, canceled, rescheduled -> consultation history detail
+            router.push(`/(doctor)?tab=history&openHistoryId=${consultationId}`);
+          }
+          return;
+        }
+
+        // Patient perspective
+        if (user?.role === 'patient') {
+          if (item.type === 'consultation_started' || item.type === 'consultation_resumed') {
+            // Active live call room
+            router.push(`/consultation/${consultationId}`);
+          } else if (item.type === 'rescheduled_appointment') {
+            // Upcoming appointments tab
+            router.push('/(patient)?tab=consultations');
+          } else {
+            // Completed, canceled -> patient history detail (diagnosis, prescription, summary)
+            router.push(`/(patient)?tab=history&openHistoryId=${consultationId}`);
+          }
+          return;
+        }
+      }
+    }
+
+    // 4. Custom URL deep link
     if (item.data?.url) {
       const url = item.data.url;
-      const isConsultation = url.includes('completed-consultation') || url.includes('consultation/');
-      
-      if (isConsultation && user?.role === 'doctor') {
-        const idMatch = url.match(/id=([^&]+)/) || url.match(/consultation\/([^&/?]+)/);
-        const id = idMatch ? idMatch[1] : item.reference_id;
-        if (id) {
-          if (onClose) onClose();
-          router.push(`/(doctor)?tab=history&openHistoryId=${id}`);
-          return;
-        }
-      }
-
-      if (url.includes('completed-consultation') && user?.role === 'patient') {
-        const idMatch = url.match(/id=([^&]+)/);
-        const id = idMatch ? idMatch[1] : item.reference_id;
-        if (id) {
-          if (onClose) onClose();
-          router.push(`/(patient)?tab=history&openHistoryId=${id}`);
-          return;
-        }
-      }
-
       if (url.startsWith('/')) {
         if (onClose) onClose();
         router.push(url);
@@ -70,6 +110,10 @@ export function ProfileNotifications({ user, onClose }) {
       try {
         const parsed = Linking.parse(url);
         if (onClose) onClose();
+        if (parsed.hostname === 'lab-result' && parsed.path) {
+          router.push(`/(patient)/lab-results/${parsed.path}`);
+          return;
+        }
         if (parsed.hostname) {
           const routePath = parsed.path ? `/${parsed.path}` : '';
           router.push(`/${parsed.hostname}${routePath}`);
@@ -83,28 +127,18 @@ export function ProfileNotifications({ user, onClose }) {
       return;
     }
 
+    // 5. Fallback for reference_id
     if (item.reference_id) {
       if (onClose) onClose();
       if (user?.role === 'doctor') {
         router.push(`/(doctor)?tab=history&openHistoryId=${item.reference_id}`);
       } else {
-        router.push(`/consultation/${item.reference_id}`);
+        router.push(`/(patient)?tab=history&openHistoryId=${item.reference_id}`);
       }
       return;
     }
-    
-    if (
-      item.type === 'report_resolved' || 
-      item.type === 'report_dismissed' || 
-      item.type === 'moderation_rejected' || 
-      item.type === 'moderation_approved' ||
-      item.type === 'system'
-    ) {
-      setSelectedNotification(item);
-      return;
-    }
 
-    // Handle other types here (fallback to modal if it's informational)
+    // 6. Informational notifications (system, moderation, reports, join status) -> open in detail modal
     setSelectedNotification(item);
   };
 
@@ -152,7 +186,7 @@ export function ProfileNotifications({ user, onClose }) {
                 {selectedNotification && t(`notifications.${selectedNotification.type}`, { defaultValue: selectedNotification.title || selectedNotification.type, ...(selectedNotification.data || {}) })}
               </Text>
               <TouchableOpacity onPress={() => setSelectedNotification(null)}>
-                <Icon name="x" size={24} color={colors.n500} />
+                <Icon name="close" size={sizes.scale(22)} color={colors.n500} />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalDesc}>
@@ -185,36 +219,65 @@ const NotificationItem = ({ item, onPress }) => {
       case 'confirmed_appointment':
       case 'new_appointment':
         return { name: 'calendar', bgColor: colors.p100, color: colors.p500 };
+
+      case 'canceled_appointment':
+        return { name: 'calendar-x', bgColor: colors.danger + '22', color: colors.danger };
+
+      case 'rescheduled_appointment':
+        return { name: 'time', bgColor: colors.warning + '22', color: colors.warning };
+
+      case 'consultation_started':
+      case 'consultation_resumed':
+        return { name: 'video', bgColor: colors.success + '22', color: colors.success };
+
+      case 'consultation_completed':
+        return { name: 'medic-history', bgColor: colors.p100, color: colors.p500 };
+
       case 'test_results_ready':
-        return { name: 'flask-conical', bgColor: colors.warning + '33', color: colors.warning };
+      case 'additional_lab_requested':
+        return { name: 'chemical', bgColor: colors.info + '22', color: colors.sBlue };
+
       case 'new_message':
-        return { name: 'stethoscope', bgColor: colors.danger + '33', color: colors.danger };
+        return { name: 'chat', bgColor: colors.p100, color: colors.p500 };
+
       case 'doctor_join_rejected':
+      case 'join_request_cancelled':
         return { name: 'close', bgColor: colors.danger + '22', color: colors.danger };
+
       case 'org_removed':
-        return { name: 'logout', bgColor: colors.warning + '22', color: colors.warning };
+        return { name: 'LogOut', bgColor: colors.warning + '22', color: colors.warning };
+
       case 'doctor_join_accepted':
+      case 'moderation_approved':
+      case 'report_resolved':
         return { name: 'check', bgColor: colors.success + '22', color: colors.success };
+
+      case 'moderation_rejected':
+      case 'report_dismissed':
+        return { name: 'warning', bgColor: colors.danger + '22', color: colors.danger };
+
       case 'owner_join_request':
-        return { name: 'group', bgColor: colors.info + '22', color: colors.info };
+        return { name: 'patients', bgColor: colors.info + '22', color: colors.sBlue };
+
+      case 'system':
       default:
-        return { name: 'bell', bgColor: colors.info + '33', color: colors.sBlue };
+        return { name: 'notifications', bgColor: colors.p100, color: colors.p500 };
     }
   };
 
   const config = getIconConfig(item.type);
 
   return (
-    <TouchableOpacity style={styles.itemContainer} onPress={onPress}>
+    <TouchableOpacity style={styles.itemContainer} onPress={onPress} activeOpacity={0.7}>
       <View style={[styles.iconContainer, { backgroundColor: config.bgColor }]}>
-        <Icon name={config.name} size={sizes.scale(24)} color={config.color} />
+        <Icon name={config.name} size={sizes.scale(22)} color={config.color} />
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.itemTitle}>
+        <Text style={styles.itemTitle} numberOfLines={1}>
           {t(`notifications.${item.type}`, { defaultValue: item.title || item.type, ...(item.data || {}) })}
         </Text>
-        <Text style={styles.itemDesc} numberOfLines={1}>
+        <Text style={styles.itemDesc} numberOfLines={2}>
           {t(`notifications.${item.type}_desc`, { defaultValue: item.description, ...(item.data || {}) })}
         </Text>
         <Text style={styles.timeText}>{formatRelativeTime(item.created_at, t)}</Text>
@@ -265,15 +328,15 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: /* TODO: color */ '#000',
+    shadowColor: theme.colors.n900,
     shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(2) },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
+    shadowOpacity: 0.04,
+    shadowRadius: theme.sizes.scale(8),
     elevation: 2,
   },
   iconContainer: {
-    width: theme.sizes.scale(48),
-    height: theme.sizes.scale(48),
+    width: theme.sizes.scale(46),
+    height: theme.sizes.scale(46),
     borderRadius: theme.sizes.borderRadius.medium,
     justifyContent: 'center',
     alignItems: 'center',
@@ -291,7 +354,8 @@ const themeStyles = (theme) => ({
   itemDesc: {
     ...theme.sizes.typography.bodySmall,
     color: theme.colors.n500,
-    marginBottom: theme.sizes.scale(2),
+    marginBottom: theme.sizes.scale(3),
+    lineHeight: theme.sizes.scale(18),
   },
   timeText: {
     ...theme.sizes.typography.caption,
@@ -316,7 +380,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.l,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: theme.sizes.scale(400),
   },
   modalHeader: {
     flexDirection: 'row',
@@ -334,7 +398,7 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n700,
     marginBottom: theme.sizes.spacing.xl,
-    lineHeight: 22,
+    lineHeight: theme.sizes.scale(22),
   },
   modalButton: {
     width: '100%',

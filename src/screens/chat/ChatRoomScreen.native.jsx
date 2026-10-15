@@ -140,7 +140,7 @@ export default function ChatRoomScreen() {
   );
   const otherUser = otherMembers.length > 0 ? otherMembers[0].user : null;
   const name = otherUser?.name || 'Unknown';
-  const avatar = otherUser?.image;
+  const avatar = otherUser?.image || otherUser?.avatar_url || otherUser?.avatar;
   const online = otherUser?.online;
 
   return (
@@ -180,9 +180,14 @@ export default function ChatRoomScreen() {
             )}
           </View>
           <View>
-            <Text style={{ color: colors.n900, ...sizes.typography.h4 }}>
-              {name}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ color: colors.n900, ...sizes.typography.h4 }}>
+                {name}
+              </Text>
+              {otherUser?.isVerified && (
+                <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+              )}
+            </View>
             <Text style={{ color: online ? colors.success : colors.p500, ...sizes.typography.caption, marginTop: sizes.scale(2) }}>
               {online ? t('chat.online') : t('chat.offline')}
             </Text>

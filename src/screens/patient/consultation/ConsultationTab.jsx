@@ -176,15 +176,30 @@ export function ConsultationTab() {
 
   const isOngoing = activeSession.status === 'ongoing';
 
-
-  if (consultationView === 'summary') {
-    return <ConsultationSummary booking={selectedSummaryBooking} onClose={navigateToConsultationMain} />;
+  let activeBooking = selectedSummaryBooking;
+  if (selectedSummaryBooking?.id && !selectedSummaryBooking.doctor) {
+    const groupedConsultations = consultationController.getGroupedConsultations();
+    for (const group of groupedConsultations) {
+      const found = group.data.find(c => c.id === selectedSummaryBooking.id);
+      if (found) {
+        activeBooking = found;
+        break;
+      }
+    }
+    if (!activeBooking?.doctor) {
+      activeBooking = bookings.find(b => b.id === selectedSummaryBooking.id) || results.find(r => r.id === selectedSummaryBooking.id) || selectedSummaryBooking;
+    }
   }
 
-  if (consultationView === 'detail' && selectedSummaryBooking) {
+
+  if (consultationView === 'summary') {
+    return <ConsultationSummary booking={activeBooking} onClose={navigateToConsultationMain} />;
+  }
+
+  if (consultationView === 'detail' && activeBooking) {
     return (
       <importPatientConsultationCard.PatientConsultationCard
-        booking={selectedSummaryBooking}
+        booking={activeBooking}
         onBack={navigateToConsultationMain}
         onConnect={(booking) => navigateToActiveConsultation(booking)}
         onCancel={(booking) => {
@@ -200,10 +215,10 @@ export function ConsultationTab() {
     );
   }
 
-  if (consultationView === 'active' && selectedSummaryBooking) {
+  if (consultationView === 'active' && activeBooking) {
     return (
       <importPatientActiveConsultation.PatientActiveConsultation
-        booking={selectedSummaryBooking}
+        booking={activeBooking}
         onBack={navigateToConsultationMain}
         onEnd={async (booking) => {
           try {
@@ -225,20 +240,20 @@ export function ConsultationTab() {
     );
   }
 
-  if (consultationView === 'rate' && selectedSummaryBooking) {
+  if (consultationView === 'rate' && activeBooking) {
     return (
       <PatientConsultationRate
-        booking={selectedSummaryBooking}
-        onSkip={() => navigateToConsultationCompleted(selectedSummaryBooking)}
-        onSubmit={() => navigateToConsultationCompleted(selectedSummaryBooking)}
+        booking={activeBooking}
+        onSkip={() => navigateToConsultationCompleted(activeBooking)}
+        onSubmit={() => navigateToConsultationCompleted(activeBooking)}
       />
     );
   }
 
-  if (consultationView === 'completed' && selectedSummaryBooking) {
+  if (consultationView === 'completed' && activeBooking) {
     return (
       <PatientConsultationCompleted
-        booking={selectedSummaryBooking}
+        booking={activeBooking}
         onBackToHome={() => {
           navigateToDashboard();
         }}

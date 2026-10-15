@@ -11,13 +11,15 @@ import { supabase } from '../api/apiClient'; // or wherever supabase is exported
 
 // We will use standard fetch for supabase if it's not exported. Wait, I should import supabase from the right place.
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 const NotificationContext = createContext({});
 
@@ -98,6 +100,8 @@ export function NotificationProvider({ children }) {
   });
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+
     registerForPushNotificationsAsync().then(token => {
       if (token) setExpoPushToken(token);
     });

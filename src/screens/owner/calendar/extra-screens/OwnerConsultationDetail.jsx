@@ -33,7 +33,7 @@ export function OwnerConsultationDetail({ consultation, onBack }) {
   const rows = [
     { label: t('doctor_history.label_date'), value: dateStr },
     { label: t('doctor_history.label_time'), value: timeStr },
-    { label: t('owner_calendar.doctor_label'), value: `${t('doctors.dr_prefix')}${consultation.doctorName || ''}` },
+    { label: t('owner_calendar.doctor_label'), value: `${t('doctors.dr_prefix')}${consultation.doctorName || ''}`, isVerified: consultation.doctorIsVerified },
     { label: t('owner_calendar.patient_label'), value: consultation.patientName || t('common.unknown') },
     { label: t('doctor_history.label_format'), value: consultation.format === 'online' ? t('doctor_history.format_online') : t('doctor_history.format_offline') },
     { label: t('doctors.price'), value: consultation.price ? `$${consultation.price}` : '—' },
@@ -65,7 +65,12 @@ export function OwnerConsultationDetail({ consultation, onBack }) {
           {rows.map((row, i) => (
             <View key={i} style={[styles.detailRow, i < rows.length - 1 && styles.detailRowBorder]}>
               <Text style={styles.detailLabel}>{row.label}</Text>
-              <Text style={styles.detailValue}>{row.value}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+                <Text style={styles.detailValue}>{row.value}</Text>
+                {row.isVerified && (
+                  <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                )}
+              </View>
             </View>
           ))}
         </View>

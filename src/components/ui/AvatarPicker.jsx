@@ -65,14 +65,14 @@ export function AvatarPicker({ currentAvatarUrl, pendingAvatarUrl, avatarModerat
         {displayUrl ? (
           <Image source={{ uri: displayUrl }} style={styles.image} />
         ) : (
-          <Icon name="person" size={sizes.scale(40)} color={colors.n400} />
+          <Icon name="User" size={sizes.scale(40)} color={colors.n400} />
         )}
 
         <View style={[styles.editBadge, { backgroundColor: colors.p500, borderColor: colors.white }]}>
           {loading ? (
             <ActivityIndicator size="small" color={colors.white} />
           ) : (
-            <Icon name="pencil" size={sizes.scale(14)} color={colors.white} />
+            <Icon name="Pencil" size={sizes.scale(14)} color={colors.white} />
           )}
         </View>
       </TouchableOpacity>

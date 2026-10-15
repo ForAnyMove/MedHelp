@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, TextInput, Image, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComponentContext } from '../../../../context/GlobalContext';
 import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
@@ -63,7 +63,7 @@ export function PatientCompletedConsultation({ id: propId }) {
     const [consultation, setConsultation] = useState(null);
     const [patientHistory, setPatientHistory] = useState(null);
     const [ratingData, setRatingData] = useState(null);
-    const [loadingHistory, setLoadingHistory] = useState(false);
+    const [loadingHistory, setLoadingHistory] = useState(true);
 
     // Rating state
     const [ratingValue, setRatingValue] = useState(0);
@@ -98,18 +98,21 @@ export function PatientCompletedConsultation({ id: propId }) {
                     const consultApi = createConsultationsApi(api);
 
                     const [historyRes, resultRes, ratingRes] = await Promise.all([
-                        consultApi.getPatientHistory(consultation.id).catch(() => null),
-                        consultApi.getResults(consultation.id).catch(() => null),
-                        consultApi.getRating(consultation.id).catch(() => null)
+                        consultApi.getPatientHistory(consultation.id).catch(() => ({ _error: true })),
+                        consultApi.getResults(consultation.id).catch(() => ({ _error: true })),
+                        consultApi.getRating(consultation.id).catch(() => ({ _error: true }))
                     ]);
 
                     console.log('[PatientCompletedConsultation] resultRes:', resultRes);
                     console.log('[PatientCompletedConsultation] ratingRes:', ratingRes);
 
-                    if (historyRes) {
+                    if (historyRes && !historyRes._error) {
                         setPatientHistory(historyRes);
+                    } else if (historyRes?._error) {
+                        setPatientHistory({ _error: true });
                     }
-                    if (resultRes) {
+
+                    if (resultRes && !resultRes._error) {
                         setConsultation(prev => ({
                             ...prev,
                             hasResult: true,
@@ -125,8 +128,14 @@ export function PatientCompletedConsultation({ id: propId }) {
                             resultId: null,
                             result: null
                         }));
+                    } else if (resultRes?._error) {
+                         setConsultation(prev => ({
+                            ...prev,
+                            _resultError: true
+                         }));
                     }
-                    if (ratingRes && ratingRes.rating) {
+
+                    if (ratingRes && !ratingRes._error && ratingRes.rating) {
                         setRatingData(ratingRes);
                         setRatingValue(ratingRes.rating);
                         setRatingComment(ratingRes.comment || '');
@@ -178,7 +187,7 @@ export function PatientCompletedConsultation({ id: propId }) {
                 const num = parseInt(part);
                 return t('common.years_old', { count: num, defaultValue: `${num} лет` });
             }
-            return part;
+            return t(part, part);
         }).join(' · ');
     };
 
@@ -264,9 +273,14 @@ export function PatientCompletedConsultation({ id: propId }) {
                         </View>
                     )}
                     <View style={styles.patientInfo}>
-                        <Text style={styles.patientName}>
-                            {consultation.doctorName || t('doctor_history.doctor', 'Doctor')}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={[styles.patientName, { marginBottom: 0 }]}>
+                                {consultation.doctorName ? `${t('doctors.dr_prefix')}${consultation.doctorName}` : t('doctor_history.doctor', 'Doctor')}
+                            </Text>
+                            {consultation.doctorIsVerified && (
+                                <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                            )}
+                        </View>
                         {consultation.doctorMeta ? (
                             <Text style={[styles.patientMeta, { color: typeConfig.color }]}>
                                 {translateMeta(consultation.doctorMeta)}
@@ -347,7 +361,19 @@ export function PatientCompletedConsultation({ id: propId }) {
                 {/* COMPLETED: Summary & Rating */}
                 {isCompleted && (
                     <View style={styles.resultsContainer}>
-                        {consultation.hasResult && !consultation.is_draft ? (
+                        {consultation._resultError ? (
+                            <View style={[styles.summaryReadyCard, { backgroundColor: colors.danger, opacity: 0.8 }]}>
+                                <View style={styles.summaryReadyInner}>
+                                    <Icon name="alert-circle" size={sizes.scale(24)} color={colors.danger} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
+                                    <View style={styles.summaryTexts}>
+                                        <Text style={styles.summaryTitle}>{t('common.error', 'Error')}</Text>
+                                        <Text style={styles.summarySub}>
+                                            {t('consultation.failed_load_results', 'Failed to load consultation results.')}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        ) : consultation.hasResult && !consultation.is_draft ? (
                             <TouchableOpacity
                                 style={[styles.summaryReadyCard, { backgroundColor: colors.p400 }]}
                                 onPress={() => navigateToHistorySummary(consultation.id)}
@@ -392,51 +418,57 @@ export function PatientCompletedConsultation({ id: propId }) {
                                 </View>
                             </View>
 
-                            <View style={styles.starsContainer}>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <TouchableOpacity
-                                        key={star}
-                                        onPress={() => !ratingData && setRatingValue(star)}
-                                        style={styles.starButton}
-                                        activeOpacity={ratingData ? 1 : 0.7}
-                                    >
-                                        <Icon
-                                            name={star <= ratingValue ? 'rate-star' : 'rate-star-empty'}
-                                            size={sizes.scale(36)}
-                                            color={colors.sYell2}
+                            {loadingHistory ? (
+                                <ActivityIndicator size="large" color={colors.sYell2} style={{ marginVertical: sizes.scale(24) }} />
+                            ) : (
+                                <>
+                                    <View style={styles.starsContainer}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <TouchableOpacity
+                                                key={star}
+                                                onPress={() => !ratingData && setRatingValue(star)}
+                                                style={styles.starButton}
+                                                activeOpacity={ratingData ? 1 : 0.7}
+                                            >
+                                                <Icon
+                                                    name={star <= ratingValue ? 'rate-star' : 'rate-star-empty'}
+                                                    size={sizes.scale(36)}
+                                                    color={colors.sYell2}
+                                                />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+
+                                    {(!ratingData || ratingComment) ? (
+                                        <View style={styles.commentBox}>
+                                            <TextInput
+                                                style={[styles.commentInput, ratingData && { color: colors.n700 }]}
+                                                placeholder={ratingData ? '' : t('consultation.leave_comment', 'Leave a comment (optional)')}
+                                                placeholderTextColor={colors.n400}
+                                                multiline
+                                                numberOfLines={3}
+                                                textAlignVertical="top"
+                                                value={ratingComment}
+                                                onChangeText={setRatingComment}
+                                                maxLength={100}
+                                                editable={!ratingData}
+                                            />
+                                            {!ratingData && <Text style={styles.charCount}>{ratingComment.length}/100</Text>}
+                                        </View>
+                                    ) : null}
+
+                                    {!ratingData && (
+                                        <Button
+                                            title={t('consultation.submit_rating', 'Submit rating')}
+                                            variant={'outlined'}
+                                            onPress={handleRatingSubmit}
+                                            style={styles.submitRatingBtn}
+                                            textStyle={{ color: colors.warning }}
+                                            loading={ratingSubmitting}
+                                            disabled={ratingSubmitting || ratingValue === 0}
                                         />
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            {(!ratingData || ratingComment) ? (
-                                <View style={styles.commentBox}>
-                                    <TextInput
-                                        style={[styles.commentInput, ratingData && { color: colors.n700 }]}
-                                        placeholder={ratingData ? '' : t('consultation.leave_comment', 'Leave a comment (optional)')}
-                                        placeholderTextColor={colors.n400}
-                                        multiline
-                                        numberOfLines={3}
-                                        textAlignVertical="top"
-                                        value={ratingComment}
-                                        onChangeText={setRatingComment}
-                                        maxLength={100}
-                                        editable={!ratingData}
-                                    />
-                                    {!ratingData && <Text style={styles.charCount}>{ratingComment.length}/100</Text>}
-                                </View>
-                            ) : null}
-
-                            {!ratingData && (
-                                <Button
-                                    title={t('consultation.submit_rating', 'Submit rating')}
-                                    variant={'outlined'}
-                                    onPress={handleRatingSubmit}
-                                    style={styles.submitRatingBtn}
-                                    textStyle={{ color: colors.warning }}
-                                    loading={ratingSubmitting}
-                                    disabled={ratingSubmitting || ratingValue === 0}
-                                />
+                                    )}
+                                </>
                             )}
                         </View>
                     </View>
@@ -449,6 +481,8 @@ export function PatientCompletedConsultation({ id: propId }) {
 
                         {loadingHistory ? (
                             <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
+                        ) : patientHistory?._error ? (
+                            <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
                         ) : patientHistory && patientHistory.totalVisits > 0 ? (
                             <View style={styles.visitsList}>
                                 <DetailRow

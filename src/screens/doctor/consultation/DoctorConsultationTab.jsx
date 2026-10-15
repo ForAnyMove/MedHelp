@@ -37,42 +37,42 @@ export function DoctorConsultationTab() {
   
   console.log(`[DoctorConsultationTab] Rendering! groupedConsultations groups: ${groupedConsultations.length}, total items: ${groupedConsultations.reduce((acc, g) => acc + g.data.length, 0)}`);
 
+  let fullConsultation = selectedConsultation;
+  if (selectedConsultation?.id && !selectedConsultation.patient) {
+    for (const group of groupedConsultations) {
+      const found = group.data.find(c => c.id === selectedConsultation.id);
+      if (found) {
+        fullConsultation = found;
+        break;
+      }
+    }
+  }
+
   if (consultationStatus === 'form') {
-    return <DoctorConsultationForm consultation={selectedConsultation} />;
+    return <DoctorConsultationForm consultation={fullConsultation} />;
   }
 
   if (consultationStatus === 'summary') {
-    return <DoctorConsultationSummary consultation={selectedConsultation} />;
+    return <DoctorConsultationSummary consultation={fullConsultation} />;
   }
 
   if (consultationStatus === 'ongoing') {
-    return <OngoingConsultation consultation={selectedConsultation} onEndConsultation={endConsultation} />;
+    return <OngoingConsultation consultation={fullConsultation} onEndConsultation={endConsultation} />;
   }
 
   if (currentView === 'patient-card') {
-    let fullConsultation = selectedConsultation;
-    if (selectedConsultation?.id && !selectedConsultation.patient) {
-      // Find the full consultation object from the global store
-      for (const group of groupedConsultations) {
-        const found = group.data.find(c => c.id === selectedConsultation.id);
-        if (found) {
-          fullConsultation = found;
-          break;
-        }
-      }
-    }
     return (
       <PatientCard
         consultation={fullConsultation}
         onBack={navigateBack}
-        onViewDetails={() => navigateToHistoryDetail(selectedConsultation.id)}
+        onViewDetails={() => navigateToHistoryDetail(selectedConsultation.id, 'consultation')}
         onStartConsultation={startConsultation}
       />
     );
   }
 
   if (currentView === 'patient-details') {
-    return <PatientDetails patient={selectedConsultation.patient} onBack={navigateBack} />;
+    return <PatientDetails patient={fullConsultation?.patient} onBack={navigateBack} />;
   }
 
   return (

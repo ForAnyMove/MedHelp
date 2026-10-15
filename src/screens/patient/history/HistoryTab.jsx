@@ -17,17 +17,33 @@ import { PatientAllConsultations } from './extra-screens/PatientAllConsultations
 import { PatientCompletedConsultation } from './extra-screens/PatientCompletedConsultation';
 import { DoctorProfileSubView } from './extra-screens/DoctorProfileSubView';
 import { ConsultationSummary } from '../consultation/extra-screens/ConsultationSummary';
+import { PatientAllCheckups } from './extra-screens/PatientAllCheckups';
+import { Step6Result } from '../home/extra-screens/symptom-checker/Step6Result';
 
 export function HistoryTab() {
-  const { historyController, themeController: { sizes } } = useComponentContext();
+  const { historyController, themeController: { sizes }, checkupsApi } = useComponentContext();
   const styles = useStyles(themeStyles);
   const { metrics, analysisSummary, vitamins, timeline, pastConsultations = [] } = historyController;
   const router = useRouter();
   const [activeSegment, setActiveSegment] = useState('all'); // 'all' or 'latest'
   const { t } = useTranslation();
-  const { historyView, historySelectedId, historyDoctorProfileId, navigateToHistoryAll, navigateToHistoryDetail, navigateBack } = usePatientDashboard();
+  const { 
+    historyView, 
+    historySelectedId, 
+    historyDoctorProfileId, 
+    historySelectedCheckup,
+    historySelectedCheckupId,
+    navigateToHistoryAll, 
+    navigateToHistoryDetail, 
+    navigateToHistoryCheckups,
+    navigateToHistoryCheckupDetail,
+    navigateToSymptomChecker,
+    navigateBack 
+  } = usePatientDashboard();
 
   const [loading, setLoading] = useState(true);
+  const [checkups, setCheckups] = useState([]);
+  const [loadingCheckups, setLoadingCheckups] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,12 +57,34 @@ export function HistoryTab() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCheckups = async () => {
+      try {
+        if (checkupsApi?.getAll) {
+          const data = await checkupsApi.getAll();
+          if (!cancelled && Array.isArray(data)) {
+            setCheckups(data);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load checkups in history:', e);
+      } finally {
+        if (!cancelled) setLoadingCheckups(false);
+      }
+    };
+    fetchCheckups();
+    return () => { cancelled = true; };
+  }, [checkupsApi, historyView]);
+
   const currentSummary = React.useMemo(() => {
     let data = pastConsultations || [];
+    let chkData = checkups || [];
     if (activeSegment === 'latest') {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       data = data.filter(c => new Date(c.date) >= weekAgo);
+      chkData = chkData.filter(c => new Date(c.created_at) >= weekAgo);
     }
     const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -54,12 +92,41 @@ export function HistoryTab() {
       ...analysisSummary,
       lastOverview: sortedData.length > 0 ? sortedData[0].date : analysisSummary.lastOverview,
       consultationsCount: data.length,
+      checkupsCount: chkData.length,
       analysesCount: activeSegment === 'all' ? analysisSummary.analysesCount : Math.max(0, Math.floor(analysisSummary.analysesCount / 4)),
     };
-  }, [pastConsultations, activeSegment, analysisSummary]);
+  }, [pastConsultations, checkups, activeSegment, analysisSummary]);
 
   if (historyView === 'all') {
     return <PatientAllConsultations activeSegment={activeSegment} />;
+  }
+
+  if (historyView === 'checkups') {
+    return (
+      <PatientAllCheckups 
+        activeSegment={activeSegment} 
+        checkups={checkups} 
+        loading={loadingCheckups} 
+        onSelectCheckup={(checkup) => navigateToHistoryCheckupDetail(checkup)}
+        onBack={navigateBack}
+        onStartCheckup={navigateToSymptomChecker}
+      />
+    );
+  }
+
+  if (historyView === 'checkup-detail') {
+    const selected = historySelectedCheckup || checkups.find(c => String(c.id) === String(historySelectedCheckupId));
+    if (selected) {
+      return (
+        <Step6Result 
+          data={selected}
+          answers={selected.payload?.payload || selected.payload}
+          onBack={navigateBack}
+          onClose={navigateBack}
+          onRestart={navigateToSymptomChecker}
+        />
+      );
+    }
   }
 
   if (historyView === 'detail' && historySelectedId) {
@@ -88,6 +155,7 @@ export function HistoryTab() {
             onSegmentChange={(v) => setActiveSegment(v)}
             summary={currentSummary}
             onConsultationsPress={() => navigateToHistoryAll(activeSegment)}
+            onCheckupsPress={() => navigateToHistoryCheckups(activeSegment)}
           />
           <HealthMetricsCard metrics={metrics} />
           <AnalysisProgressCard vitamins={vitamins} />
@@ -108,7 +176,12 @@ function PastConsultationCard({ consultation: c, styles, sizes, t }) {
     <TouchableOpacity style={styles.card} activeOpacity={0.85}>
       <Image source={{ uri: c.avatarUrl }} style={styles.avatar} />
       <View style={styles.cardBody}>
-        <Text style={styles.doctorName}>{c.doctorName}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[styles.doctorName, { marginBottom: 0 }]}>{t('doctors.dr_prefix')}{c.doctorName}</Text>
+          {c.doctorIsVerified && (
+            <Icon name="BadgeCheck" size={sizes.scale(16)} color={styles.metaIcon.color} style={{ marginLeft: sizes.scale(4) }} />
+          )}
+        </View>
         <Text style={styles.specialty}>{c.specialty}</Text>
         <Text style={styles.diagnosis} numberOfLines={1}>{c.diagnosis}</Text>
         <View style={styles.meta}>

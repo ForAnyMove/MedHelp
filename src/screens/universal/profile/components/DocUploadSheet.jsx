@@ -57,7 +57,8 @@ export function DocUploadSheet({ onClose }) {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = !!diploma && licenseFiles.every(f => !!f);
+  const isOwner = session?.role === 'owner';
+  const canSubmit = isOwner ? !!diploma : (!!diploma && licenseFiles.every(f => !!f));
 
   const pickDocument = async (setter) => {
     try {
@@ -162,24 +163,37 @@ export function DocUploadSheet({ onClose }) {
         </View>
 
         <Text style={styles.sectionTitle}>{t('auth.necessarily')}</Text>
-        {renderDocCard(
-          null,
-          t('auth.medical_diploma'),
-          t('auth.license_cert_desc'),
-          "doc-diploma",
-          diploma,
-          setDiploma
-        )}
-
-        {professionNames.map((name, index) =>
+        {isOwner ? (
           renderDocCard(
-            `${index}`,
-            `${t('auth.license_cert')} — ${name}`,
+            null,
+            t('auth.registration_certificate', 'Registration Certificate'),
             t('auth.license_cert_desc'),
-            "doc-license",
-            licenseFiles[index],
-            (file) => setLicenseFile(index, file),
+            "doc-diploma",
+            diploma,
+            setDiploma
           )
+        ) : (
+          <>
+            {renderDocCard(
+              null,
+              t('auth.medical_diploma'),
+              t('auth.license_cert_desc'),
+              "doc-diploma",
+              diploma,
+              setDiploma
+            )}
+
+            {professionNames.map((name, index) =>
+              renderDocCard(
+                `${index}`,
+                `${t('auth.license_cert')} — ${name}`,
+                t('auth.license_cert_desc'),
+                "doc-license",
+                licenseFiles[index],
+                (file) => setLicenseFile(index, file),
+              )
+            )}
+          </>
         )}
 
         <Text style={[styles.sectionTitle, { marginTop: sizes.spacing.m }]}>{t('auth.additionally')}</Text>

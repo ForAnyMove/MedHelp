@@ -19,12 +19,15 @@ export function mapDoctor(d) {
   if (!d) return null;
   const firstName = d.profile?.first_name ?? d.firstName ?? '';
   const lastName  = d.profile?.last_name ?? d.lastName ?? '';
+  const professionCode = d.profession_code || d.profession?.code || null;
   return {
     id:           d.id,
     fullName:     d.fullName ?? '',
     firstName,
     lastName,
-    specialization: d.profession?.code ?? d.specialization ?? 'General',
+    professionCode,
+    profession_code: professionCode,
+    specialization: professionCode ? `professions.${professionCode}` : d.specialization && d.specialization !== 'General' ? d.specialization : 'doctors.general',
     experience:   d.experience  ?? 0,
     price:        d.price       ?? 0,
     rating:       d.rating      ?? 0,
@@ -32,6 +35,8 @@ export function mapDoctor(d) {
     description:  d.about       ?? d.description ?? '',
     avatarUrl:    d.profile?.avatar_url ?? d.avatarUrl ?? null,
     isVip:        d.is_vip ?? d.isVip ?? false,
+    isVerified:   (d.doc_verification_status === 'verified') || (d.isVerified ?? false),
+    doc_verification_status: d.doc_verification_status ?? null,
     gender:       d.profile?.gender ?? d.gender ?? null,
     dateOfBirth:  d.profile?.date_of_birth ?? d.dateOfBirth ?? null,
   };
@@ -125,7 +130,8 @@ export function mapConsultationToHistory(c) {
   return {
     id:          c.id,
     doctorId:    doc?.id ?? null,
-    doctorName:  doc ? `Dr. ${doc.firstName} ${doc.lastName}`.trim() : 'Unknown Doctor',
+    doctorName:  doc ? `${doc.firstName} ${doc.lastName}`.trim() : 'Unknown Doctor',
+    doctorIsVerified: doc?.isVerified ?? false,
     specialty,
     doctorMeta,
     avatarUrl:   doc?.avatarUrl ?? null,

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, DeviceEventEmitter } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
@@ -7,12 +7,46 @@ import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
 import { DoctorAvatar } from './DoctorAvatar';
 
+const OnlineBadge = ({ userId, initialIsOnline, colors, sizes, t, styles }) => {
+  const [isOnline, setIsOnline] = useState(initialIsOnline);
+
+  useEffect(() => {
+    setIsOnline(initialIsOnline);
+  }, [initialIsOnline]);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('user_status_changed', (data) => {
+      if (data.userId === userId) {
+        setIsOnline(data.isOnline);
+      }
+    });
+    return () => sub.remove();
+  }, [userId]);
+
+  return (
+    <View style={styles.availabilityItem}>
+      <Icon name="format" size={sizes.scale(24)} color={isOnline ? colors.success : colors.n400} />
+      <Text style={[styles.availabilityText, { color: isOnline ? colors.n900 : colors.n500 }]}>
+        {isOnline ? t('doctors.online') : t('doctors.offline', 'Офлайн')}
+      </Text>
+    </View>
+  );
+};
+
 export function RegularDoctorCard({ doctor, onProfilePress, onBookPress, variant = 'full', containerStyle, customSubtitle }) {
   const { t } = useTranslation();
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
 
   const isCompact = variant === 'compact';
+
+  let nextSlotDate = null;
+  let nextSlotTime = null;
+  if (doctor.nextSlot) {
+    const d = new Date(doctor.nextSlot);
+    nextSlotDate = d.toLocaleDateString(t('common.locale') || 'en-US', { month: 'short', day: 'numeric' });
+    nextSlotTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
 
   return (
     <TouchableOpacity
@@ -28,7 +62,12 @@ export function RegularDoctorCard({ doctor, onProfilePress, onBookPress, variant
           size={isCompact ? sizes.scale(75) : sizes.scale(75)}
         />
         <View style={styles.info}>
-          <Text style={styles.name}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.name}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName}</Text>
+            {doctor.isVerified && (
+              <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+            )}
+          </View>
           <Text style={styles.specialization}>{t(doctor.specialization)}</Text>
           {customSubtitle ? (
             <Text style={styles.customSubtitle}>{customSubtitle}</Text>
@@ -47,20 +86,36 @@ export function RegularDoctorCard({ doctor, onProfilePress, onBookPress, variant
         <>
           <Text style={styles.adviceHeader}>{t('doctors.can_advise')}</Text>
           <View style={styles.availabilityPanel}>
-            <View style={styles.availabilityItem}>
-              <Icon name="calendar" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.availabilityText}>{t('doctors.today')}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.availabilityItem}>
-              <Icon name="time" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.availabilityText}>15:00</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.availabilityItem}>
-              <Icon name="format" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.availabilityText}>{t('doctors.online')}</Text>
-            </View>
+            {doctor.nextSlot ? (
+              <>
+                <View style={styles.availabilityItem}>
+                  <Icon name="calendar" size={sizes.scale(24)} color={colors.p500} />
+                  <Text style={styles.availabilityText}>{nextSlotDate}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.availabilityItem}>
+                  <Icon name="time" size={sizes.scale(24)} color={colors.p500} />
+                  <Text style={styles.availabilityText}>{nextSlotTime}</Text>
+                </View>
+                <View style={styles.divider} />
+              </>
+            ) : (
+              <>
+                <View style={[styles.availabilityItem, { flex: 1 }]}>
+                  <Icon name="calendar" size={sizes.scale(24)} color={colors.n400} />
+                  <Text style={[styles.availabilityText, { color: colors.n400 }]}>{t('consultation.no_consultations_day')}</Text>
+                </View>
+                <View style={styles.divider} />
+              </>
+            )}
+            <OnlineBadge 
+              userId={doctor.profileId || doctor.profile_id} 
+              initialIsOnline={doctor.isOnline} 
+              colors={colors} 
+              sizes={sizes} 
+              t={t} 
+              styles={styles} 
+            />
           </View>
 
           <View style={styles.actions}>

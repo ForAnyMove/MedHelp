@@ -12,7 +12,7 @@ export function ProfileItem({ label, value, type = 'chevron', isLast = false, on
     <View style={styles.wrapper}>
       <TouchableOpacity
         style={styles.item}
-        disabled={type === 'toggle' || type === 'status' || !onPress}
+        disabled={type === 'toggle' || !onPress}
         onPress={onPress}
         activeOpacity={0.7}
       >

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Modal, ActivityIndicator, AppState } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
@@ -91,19 +91,43 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
   }, [session.userId, booking?.id, endConsultation, onEnd]);
 
   React.useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const { createApiClient } = require('../../../../api/apiClient');
+        const { createConsultationsApi } = require('../../../../api/consultationsApi');
+        const api = createApiClient(session, refreshSessionToken);
+        const consultApi = createConsultationsApi(api);
+        
+        const res = await consultApi.getVideoStatus(booking.id);
+        setIsOtherUserInCall(res.is_other_user_in_video);
+        
+        const consultInfo = await consultApi.getById(booking.id);
+        if (consultInfo?.status === 'completed') {
+          endConsultation();
+          setIsConfirmVisible(false);
+          if (onEnd) onEnd(booking);
+        }
+      } catch (e) {
+        // Silent catch to prevent spamming logs on transient errors
+      }
+    };
+
     let interval;
     if (booking?.id) {
-      interval = setInterval(async () => {
-        try {
-          const res = await consultApi.getVideoStatus(booking.id);
-          setIsOtherUserInCall(res.is_other_user_in_video);
-        } catch (e) {
-          // Silent catch to prevent spamming logs on transient errors
-        }
-      }, 2000);
+      interval = setInterval(checkStatus, 5000);
     }
-    return () => clearInterval(interval);
-  }, [booking?.id]);
+
+    const appStateSub = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active' && booking?.id) {
+        checkStatus();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      appStateSub.remove();
+    };
+  }, [booking?.id, session, refreshSessionToken, endConsultation, onEnd]);
 
   useEffect(() => {
     // If we land here but the session wasn't started in context, start it now

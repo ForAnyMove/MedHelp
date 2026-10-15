@@ -22,14 +22,14 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
     Animated.parallel([
       Animated.spring(slideAnim, {
         toValue: 0,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
         tension: 45,
         friction: 8,
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
         duration: 220,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
   }, []);
@@ -39,12 +39,12 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
       Animated.timing(slideAnim, {
         toValue: isLandscape ? 120 : -120,
         duration: 280,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(opacityAnim, {
         toValue: 0,
         duration: 220,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start(() => onDismiss(notification.id));
   };
@@ -62,12 +62,12 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
           Animated.timing(swipeAnim, {
             toValue: gs.dx > 0 ? 400 : -400,
             duration: 220,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }).start(() => onDismiss(notification.id));
         } else {
           Animated.spring(swipeAnim, {
             toValue: 0,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }).start();
         }
       },
@@ -179,7 +179,6 @@ export function InAppNotification() {
         styles.wrapper,
         isLandscape ? styles.wrapperLandscape : styles.wrapperPortrait,
       ]}
-      pointerEvents="box-none"
     >
       {notifications.map((notif, index) => (
         <ToastCard

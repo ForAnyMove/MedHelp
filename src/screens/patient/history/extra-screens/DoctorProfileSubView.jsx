@@ -96,8 +96,13 @@ export function DoctorProfileSubView({ doctorId: id, onBack }) {
           )}
 
           <View style={styles.infoCol}>
-            <Text style={styles.nameText}>{name}</Text>
-            <Text style={styles.subText}>{doctorData.specialization || t('doctor_history.specialist', 'Specialist')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.nameText}>{t('doctors.dr_prefix')}{name}</Text>
+              {doctorData.isVerified && (
+                <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6), marginBottom: sizes.scale(4) }} />
+              )}
+            </View>
+            <Text style={styles.subText}>{t(doctorData.specialization || 'doctor_history.specialist', 'Specialist')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: sizes.scale(4) }}>
               <Icon name="star" size={sizes.scale(12)} color={colors.warning} />
               <Text style={[styles.subText, { marginLeft: sizes.scale(4), marginBottom: sizes.scale(0) }]}>{rating.toFixed(1)} · {t('doctor_history.years_exp', '{{years}} yrs exp', { years: experience })}</Text>
@@ -164,7 +169,7 @@ function ProfileTab({ doctorData, consultations, onVisitPress }) {
 
       <Text style={styles.sectionTitle}>{t('doctor_history.details', 'Details')}</Text>
       <View style={styles.card}>
-        {renderInfoRow(t('doctor_history.specialty', 'Specialty:'), doctorData.specialization === 'General' ? t('doctor_history.general', 'General') : doctorData.specialization || t('doctor_history.general', 'General'))}
+        {renderInfoRow(t('doctor_history.specialty', 'Specialty:'), t(doctorData.specialization || 'doctor_history.general'))}
         <View style={styles.divider} />
         {renderInfoRow(t('doctor_history.experience', 'Experience:'), t('doctor_history.years_count', '{{count}} years', { count: doctorData.experience || 0 }))}
         <View style={styles.divider} />
@@ -219,7 +224,7 @@ function ProfileTab({ doctorData, consultations, onVisitPress }) {
 }
 
 function ReviewsTab({ doctorId }) {
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
 
@@ -232,7 +237,7 @@ function ReviewsTab({ doctorId }) {
 }
 
 function DocumentsTab({ doctorId }) {
-  const { sizes } = useTheme();
+  const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
 

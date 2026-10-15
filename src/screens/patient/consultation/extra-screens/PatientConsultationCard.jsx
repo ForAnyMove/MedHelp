@@ -118,19 +118,49 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
       fetchStatus();
     }
 
-    // Listen for real-time consultation_started socket event (no polling delay)
+    // Listen for real-time consultation lifecycle socket events (no polling delay)
     const { DeviceEventEmitter } = require('react-native');
-    const sub = DeviceEventEmitter.addListener('consultation_updated', (event) => {
-      if (!event?.consultationId || event.consultationId === booking.id) {
-        // Immediately show the Connect button
+    const handleStarted = (event) => {
+      const cId = event?.consultation_id || event?.consultationId;
+      if (!cId || cId === booking.id) {
         setIsDoctorWaiting(true);
         setLoadingStatus(false);
       }
-    });
+    };
+
+    const handleSync = (event) => {
+      const cId = event?.consultation_id || event?.consultationId;
+      if (!cId || cId === booking.id) {
+        if (event?.status === 'in_progress') {
+          setIsDoctorWaiting(true);
+        } else if (event?.status === 'completed') {
+          setIsDoctorWaiting(false);
+          setIsCompleted(true);
+        }
+        setLoadingStatus(false);
+      }
+    };
+
+    const handleCompleted = (event) => {
+      const cId = event?.consultation_id || event?.consultationId;
+      if (!cId || cId === booking.id) {
+        setIsDoctorWaiting(false);
+        setIsCompleted(true);
+        setLoadingStatus(false);
+      }
+    };
+
+    const subStarted = DeviceEventEmitter.addListener('consultation_started', handleStarted);
+    const subSync = DeviceEventEmitter.addListener('consultation_sync', handleSync);
+    const subCompleted = DeviceEventEmitter.addListener('consultation_completed', handleCompleted);
+    const subUpdated = DeviceEventEmitter.addListener('consultation_updated', handleStarted);
 
     return () => {
       if (intervalId) clearInterval(intervalId);
-      sub.remove();
+      subStarted.remove();
+      subSync.remove();
+      subCompleted.remove();
+      subUpdated.remove();
     };
   }, [booking.id, isCompleted, isCanceled]);
 

@@ -20,7 +20,7 @@ export default function ownerManager(setAppLoading, session, refreshSessionToken
 
   // ── Load organization data ──────────────────────────────────────────
   const loadOrganization = useCallback(async () => {
-    if (!session?.accessToken) return;
+    if (!session?.userId) return;
     try {
       const data = await api.get('/organizations/my');
       setOrganization(data);
@@ -29,7 +29,22 @@ export default function ownerManager(setAppLoading, session, refreshSessionToken
       console.error('ownerManager: loadOrganization error', e);
       return null;
     }
-  }, [api, session?.accessToken]);
+  }, [api, session?.userId]);
+
+  // ── Update organization data ────────────────────────────────────────
+  const updateOrganization = useCallback(async (orgData) => {
+    try {
+      setAppLoading(true);
+      await api.post('/organizations', orgData);
+      await loadOrganization();
+      return { success: true };
+    } catch (e) {
+      console.error('ownerManager: updateOrganization error', e);
+      return { success: false, error: e.message };
+    } finally {
+      setAppLoading(false);
+    }
+  }, [api, loadOrganization, setAppLoading]);
 
   // ── Load doctors list (accepted) ──────────────────────────────────
   const loadDoctors = useCallback(async (orgId) => {
@@ -125,7 +140,7 @@ export default function ownerManager(setAppLoading, session, refreshSessionToken
 
   // ── Initial load ───────────────────────────────────────────────────
   useEffect(() => {
-    if (!session?.accessToken || session?.role !== 'owner') return;
+    if (!session?.userId || session?.role !== 'owner') return;
 
     let cancelled = false;
     const init = async () => {
@@ -144,7 +159,7 @@ export default function ownerManager(setAppLoading, session, refreshSessionToken
     };
     init();
     return () => { cancelled = true; };
-  }, [session?.accessToken, session?.role]);
+  }, [session?.userId, session?.role]);
 
   // ── Listen for socket events ─────────────────────────────────────────
   useEffect(() => {
@@ -162,11 +177,16 @@ export default function ownerManager(setAppLoading, session, refreshSessionToken
       }
     });
     
+    const sub3 = DeviceEventEmitter.addListener('notification_received', () => {
+      setTimeout(loadOrganization, 500);
+    });
+    
     return () => {
       sub1.remove();
       sub2.remove();
+      sub3.remove();
     };
-  }, [organization?.id, loadJoinRequests]);
+  }, [organization?.id, loadJoinRequests, loadOrganization]);
 
   return {
     organization,
@@ -175,6 +195,7 @@ export default function ownerManager(setAppLoading, session, refreshSessionToken
     consultations,
     isLoading,
     loadOrganization,
+    updateOrganization,
     loadDoctors,
     loadJoinRequests,
     loadConsultations,

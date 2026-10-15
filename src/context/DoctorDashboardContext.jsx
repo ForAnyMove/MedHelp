@@ -24,6 +24,13 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
       if (id) searchParams.set('id', id);
       if (filter) searchParams.set('filter', filter);
       if (returnTabStr) searchParams.set('returnTab', returnTabStr);
+
+      if (historySelectedId && (view === 'patient-profile' || view === 'summary')) {
+         searchParams.set('prevId', historySelectedId);
+      }
+      if (historyPreviousView) {
+         searchParams.set('prevView', historyPreviousView);
+      }
       
       const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
       const newUrl = `/${tabName}${queryString}`;
@@ -36,9 +43,17 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
     const id = searchParams.get('id');
     const filter = searchParams.get('filter');
     const returnTabStr = searchParams.get('returnTab');
+    const prevId = searchParams.get('prevId');
+    const prevView = searchParams.get('prevView');
 
     if (returnTabStr) {
       setReturnToTab(returnTabStr);
+    }
+    if (prevId) {
+      setHistorySelectedId(prevId);
+    }
+    if (prevView) {
+      setHistoryPreviousView(prevView);
     }
 
     if (tabName === 'balance') {
@@ -148,21 +163,25 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
     updateUrlParams('history', 'all', '', filterParam || 'All');
   };
 
-  const navigateToHistoryDetail = (id) => {
+  const navigateToHistoryDetail = (id, returnTab = null) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setHistorySelectedId(id);
     setHistoryView('detail');
+    const newReturnTab = returnTab || returnToTab;
+    if (returnTab) setReturnToTab(returnTab);
     nav.setTabIndex(3);
-    updateUrlParams('history', 'detail', id);
+    updateUrlParams('history', 'detail', id, null, newReturnTab);
   };
 
-  const navigateToHistoryPatientProfile = (patientId) => {
+  const navigateToHistoryPatientProfile = (patientId, returnTab = null) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setHistoryPreviousView(historyView);
     setHistoryPatientProfileId(patientId);
     setHistoryView('patient-profile');
+    const newReturnTab = returnTab || returnToTab;
+    if (returnTab) setReturnToTab(returnTab);
     nav.setTabIndex(3);
-    updateUrlParams('history', 'patient-profile', patientId);
+    updateUrlParams('history', 'patient-profile', patientId, null, newReturnTab);
   };
 
   const navigateToHistoryRatings = () => {
@@ -182,6 +201,13 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
       }
     } else if (nav.tabIndex === 3) {
       if (historyView === 'patient-profile') {
+        if (returnToTab) {
+          nav.setTabIndex(indexToTab.indexOf(returnToTab));
+          setReturnToTab(null);
+          updateUrlParams(returnToTab);
+          setHistoryPreviousView(null);
+          return;
+        }
         if (historyPreviousView === 'ratings') {
           setHistoryView('ratings');
           updateUrlParams('history', 'ratings');
@@ -200,6 +226,12 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
         }
         setHistoryPreviousView(null);
       } else if (historyView === 'detail') {
+        if (returnToTab) {
+          nav.setTabIndex(indexToTab.indexOf(returnToTab));
+          setReturnToTab(null);
+          updateUrlParams(returnToTab);
+          return;
+        }
         setHistoryView('all');
         updateUrlParams('history', 'all');
       } else if (historyView === 'all' || historyView === 'ratings') {

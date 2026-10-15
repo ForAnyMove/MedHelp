@@ -49,53 +49,82 @@ export function DoctorsTab() {
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(doc => 
-        (doc.firstName || '').toLowerCase().includes(query) ||
-        (doc.lastName || '').toLowerCase().includes(query) ||
-        (doc.fullName || '').toLowerCase().includes(query) ||
-        (doc.specialization || '').toLowerCase().includes(query) ||
-        // Check translated profession name
-        t(doc.specialization || '').toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(doc => {
+        const matchesBasic = 
+          (doc.firstName || '').toLowerCase().includes(query) ||
+          (doc.lastName || '').toLowerCase().includes(query) ||
+          (doc.fullName || '').toLowerCase().includes(query) ||
+          (doc.specialization || '').toLowerCase().includes(query) ||
+          t(doc.specialization || '').toLowerCase().includes(query);
+
+        if (matchesBasic) return true;
+
+        const profCode = (doc.specialization || '').replace('professions.', '');
+        if (profCode.toLowerCase().includes(query)) return true;
+
+        const matchingProf = professions.find(p => p.code === profCode);
+        if (matchingProf && matchingProf.name.toLowerCase().includes(query)) {
+          return true;
+        }
+
+        return false;
+      });
     }
 
-    // Always sort by rating from high to low
+    // Always sort by rating from high to load
     return [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  }, [regularDoctors, searchQuery, t]);
+  }, [regularDoctors, searchQuery, t, professions]);
 
-  const { tabIndex, updateUrlParams } = usePatientDashboard();
+  const { tabIndex, updateUrlParams, doctorFilter, setDoctorFilter } = usePatientDashboard();
 
-  // Handle URL sync
+  // Handle URL & Context filter sync
   useEffect(() => {
-    if (typeof window !== 'undefined' && tabIndex === 1) {
-      const searchParams = new URLSearchParams(window.location.search);
-      const view = searchParams.get('view');
-      const id = searchParams.get('id');
-      
-      if (view === 'profile' || view === 'summary') {
-        if (doctors.length > 0 && id) {
-          const doc = doctors.find(d => d.id === id);
-          if (doc && (!selectedDoctor || selectedDoctor.id !== id)) {
-            selectDoctor(doc);
-          }
-          
-          if (view === 'summary') {
-            if (!selectedSlot?.date) {
-              // Redirect back to profile if slot is missing (e.g. page refreshed)
-              setCurrentDoctorView('profile');
-              if (updateUrlParams) updateUrlParams('doctors', 'profile', id);
-            } else {
-              setCurrentDoctorView('summary');
+    if (tabIndex === 1) {
+      let activeFilter = doctorFilter;
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const view = searchParams.get('view');
+        const id = searchParams.get('id');
+        
+        if (view === 'profile' || view === 'summary') {
+          if (doctors.length > 0 && id) {
+            const doc = doctors.find(d => d.id === id);
+            if (doc && (!selectedDoctor || selectedDoctor.id !== id)) {
+              selectDoctor(doc);
             }
-          } else if (!selectedDoctor) {
-            setCurrentDoctorView('profile');
+            
+            if (view === 'summary') {
+              if (!selectedSlot?.date) {
+                // Redirect back to profile if slot is missing (e.g. page refreshed)
+                setCurrentDoctorView('profile');
+                if (updateUrlParams) updateUrlParams('doctors', 'profile', id);
+              } else {
+                setCurrentDoctorView('summary');
+              }
+            } else if (!selectedDoctor) {
+              setCurrentDoctorView('profile');
+            }
           }
+        } else {
+          setCurrentDoctorView('list');
         }
-      } else {
-        setCurrentDoctorView('list');
+
+        if (!activeFilter) {
+          activeFilter = searchParams.get('filter');
+        }
+      }
+
+      if (activeFilter) {
+        const found = professions.find(p => p.code === activeFilter);
+        if (found) {
+          setSearchQuery(found.name);
+        } else {
+          const translatedFilter = t(`specializations.${activeFilter}`, t(`professions.${activeFilter}`, activeFilter));
+          setSearchQuery(translatedFilter);
+        }
       }
     }
-  }, [tabIndex, doctors.length]);
+  }, [tabIndex, doctorFilter, doctors.length, professions]);
 
   // Wrap selectDoctor to push URL
   const handleSelectDoctor = (doctor) => {

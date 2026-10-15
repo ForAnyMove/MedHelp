@@ -7,7 +7,7 @@ export default function settingsManager(setAppLoading, session, refreshSessionTo
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchSettings = useCallback(async () => {
-    if (!session?.accessToken) return;
+    if (!session?.userId) return;
     try {
       setIsLoading(true);
       const api = createApiClient(session, refreshSessionToken);
@@ -31,7 +31,7 @@ export default function settingsManager(setAppLoading, session, refreshSessionTo
   }, [session, refreshSessionToken]);
 
   const updateSettings = useCallback(async (updates) => {
-    if (!session?.accessToken) return;
+    if (!session?.userId) return;
     try {
       setAppLoading(true);
       const api = createApiClient(session, refreshSessionToken);
@@ -48,13 +48,13 @@ export default function settingsManager(setAppLoading, session, refreshSessionTo
 
   // Initial fetch when session is valid
   useEffect(() => {
-    if (session?.accessToken) {
+    if (session?.userId) {
       fetchSettings();
       fetchLanguages();
     } else {
       setSettings(null);
     }
-  }, [session?.accessToken, fetchSettings, fetchLanguages]);
+  }, [session?.userId, fetchSettings, fetchLanguages]);
 
   return {
     settings,

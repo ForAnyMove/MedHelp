@@ -98,14 +98,16 @@ export function CompletedConsultation({ id }) {
                     const consultApi = createConsultationsApi(api);
 
                     const [historyRes, resultRes] = await Promise.all([
-                        consultApi.getPatientHistory(consultation.id).catch(() => null),
-                        consultApi.getResults(consultation.id).catch(() => null)
+                        consultApi.getPatientHistory(consultation.id).catch(() => ({ _error: true })),
+                        consultApi.getResults(consultation.id).catch(() => ({ _error: true }))
                     ]);
 
-                    if (historyRes) {
+                    if (historyRes && !historyRes._error) {
                         setPatientHistory(historyRes);
+                    } else if (historyRes?._error) {
+                        setPatientHistory({ _error: true });
                     }
-                    if (resultRes) {
+                    if (resultRes && !resultRes._error) {
                         setConsultation(prev => ({
                             ...prev,
                             hasResult: true,
@@ -120,6 +122,11 @@ export function CompletedConsultation({ id }) {
                             is_draft: true,
                             resultId: null,
                             result: null
+                        }));
+                    } else if (resultRes?._error) {
+                        setConsultation(prev => ({
+                            ...prev,
+                            _resultError: true
                         }));
                     }
                 } catch (error) {
@@ -329,7 +336,14 @@ export function CompletedConsultation({ id }) {
                 {/* COMPLETED: Diagnosis & Notes */}
                 {isCompleted && (
                     <View style={styles.resultsContainer}>
-                        {consultation.hasResult ? (
+                        {consultation._resultError ? (
+                            <View style={styles.notesCard}>
+                                <View style={[styles.notesHeader, { marginBottom: 0 }]}>
+                                    <Icon name="alert-circle" size={sizes.scale(20)} color={colors.danger} style={{ marginRight: sizes.spacing.s }} />
+                                    <Text style={[styles.notesTitle, { color: colors.danger }]}>{t('common.error', 'Failed to load results')}</Text>
+                                </View>
+                            </View>
+                        ) : consultation.hasResult ? (
                             <ResultBlocks consultation={consultation} styles={styles} colors={colors} sizes={sizes} t={t} />
                         ) : (
                             <View style={styles.notesCard}>
@@ -363,6 +377,8 @@ export function CompletedConsultation({ id }) {
 
                         {loadingHistory ? (
                             <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
+                        ) : patientHistory?._error ? (
+                            <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
                         ) : patientHistory && patientHistory.totalVisits > 0 ? (
                             <View style={styles.visitsList}>
                                 <DetailRow

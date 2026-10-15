@@ -208,8 +208,18 @@
     "dermatologist": "Дерматолог",
     "surgeon": "Хирург",
     "dentist": "Стоматолог",
+    "dentist_therapist": "Стоматолог-терапевт",
     "ophthalmologist": "Офтальмолог",
-    "psychiatrist": "Психиатр"
+    "psychiatrist": "Психиатр",
+    "ent": "Отоларинголог (ЛОР)",
+    "urologist": "Уролог",
+    "gynaecologist": "Гинеколог",
+    "orthopedist": "Травматолог-ортопед",
+    "rheumatologist": "Ревматолог",
+    "pulmonologist": "Пульмонолог",
+    "gastroenterologist": "Гастроэнтеролог",
+    "family_doctor": "Семейный врач",
+    "therapist": "Терапевт"
   },
   "dashboard": {
     "greeting": "Привет, {{name}}",
@@ -434,7 +444,7 @@
     "notify_when_ready": "Мы сообщим вам, как только все будет готово — можете закрыть приложение.",
     "back_to_home": "Вернуться на главную",
     "notes": "Заметки",
-    "no_consultations_day": "Нет консультаций в этот день",
+    "no_consultations_day": "Нет свободных слотов",
     "timer": "Таймер",
     "waiting_for_connection": "Waiting for connection...",
     "call_error_msg": "Что-то пошло не так со звонком",
@@ -611,6 +621,17 @@
     "last_overview": "Последний обзор",
     "analyses_count": "{{count}} анализов",
     "consultations_count": "{{count}} консультаций",
+    "checkups_count": "{{count}} опросов",
+    "all_checkups": "Результаты опросов",
+    "search_checkup": "Поиск по результатам...",
+    "no_checkups": "Вы пока не проходили опросы",
+    "no_checkups_desc": "Пройдите опрос о симптомах, чтобы получить персональные рекомендации врача.",
+    "start_checkup_btn": "Пройти опрос",
+    "view_checkup_btn": "Смотреть результат и рекомендации",
+    "linked_consultation_title": "Привязанная консультация",
+    "go_to_consultation": "Перейти к консультации",
+    "booking_with_doctor": "Запись к врачу",
+    "specialty_mismatch_notice": "Опрос был рекомендован для другого специалиста",
     "analyses_title": "Анализы",
     "total_count": "{{count}} всего",
     "analyses_list": {
@@ -825,6 +846,7 @@
     "reviews_count": "{{count}} отзывов"
   },
   "doctors": {
+    "general": "Врач общей практики",
     "recommended_title": "Рекомендованные врачи",
     "all_doctors": "Все врачи",
     "profile_title": "Профиль врача",
@@ -876,9 +898,9 @@
     "last_active_minutes_ago": "{{count}} мин назад",
     "last_active_today": "Был(а) в сети в {{time}}",
     "last_active_date": "Был(а) в сети {{date}} в {{time}}",
-    "search_by_name": "chat.search_by_name",
-    "write_message": "chat.write_message",
-    "offline": "chat.offline",
+    "search_by_name": "Поиск по имени",
+    "write_message": "Написать сообщение",
+    "offline": "Офлайн",
     "connecting_call": "Подключение к звонку..."
   },
   "notifications": {
@@ -929,9 +951,19 @@
     "org_removed": "Удаление из организации",
     "org_removed_desc": "Владелец удалил вас из клиники {{orgName}}.",
     "consultation_started_desc": "Ваша консультация началась.",
+    "consultation_resumed_desc": "Доктор возобновил консультацию, возвращайтесь в звонок.",
     "consultation_completed_desc": "Доктор завершил консультацию.",
     "new_message_desc": "У вас новое сообщение в чате.",
-    "test_results_ready_desc": "Результаты ваших анализов готовы к просмотру."
+    "new_appointment": "Новая запись",
+    "new_appointment_desc": "Пациент записался на консультацию.",
+    "canceled_appointment": "Бронь отменена",
+    "canceled_appointment_desc": "Консультация была отменена.",
+    "rescheduled_appointment": "Перенос консультации",
+    "rescheduled_appointment_desc": "Дата или время консультации были изменены.",
+    "test_results_ready": "Результаты анализов готовы",
+    "test_results_ready_desc": "Результаты ваших анализов готовы к просмотру.",
+    "additional_lab_requested": "Назначены дополнительные анализы",
+    "additional_lab_requested_desc": "Врач назначил дополнительные исследования к вашей консультации."
   },
   "no_data": "No data available",
   "errors": {
@@ -1052,5 +1084,9 @@
     "success_msg": "Ваша жалоба успешно отправлена. Наши модераторы скоро ее рассмотрят.",
     "error_msg": "Не удалось отправить жалобу. Возможно, вы уже жаловались на этот контент.",
     "submit": "Отправить жалобу"
+  },
+  "quiz": {
+    "attach_to_consultation": "Прикрепить результаты опроса",
+    "attach_desc": "Врач сможет заранее ознакомиться с вашими симптомами и рекомендациями"
   }
 }

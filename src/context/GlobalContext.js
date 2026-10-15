@@ -67,7 +67,7 @@ export const ComponentProvider = ({ children }) => {
     <ComponentContext.Provider value={value}>
       {children}
       {loadingCounter > 0 && (
-        <View style={styles.loaderContainer} pointerEvents="auto">
+        <View style={[styles.loaderContainer, { pointerEvents: 'auto' }]}>
           <ActivityIndicator size="large" color={themeController.colors.p500} />
         </View>
       )}

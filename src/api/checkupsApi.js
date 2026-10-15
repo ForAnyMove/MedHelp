@@ -9,5 +9,10 @@ export function createCheckupsApi(apiClient) {
       const data = await apiClient.get('/checkups/latest');
       return data;
     },
+
+    getAll: async () => {
+      const data = await apiClient.get('/checkups');
+      return data;
+    },
   };
 }

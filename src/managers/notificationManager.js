@@ -18,7 +18,7 @@ export default function notificationManager(setAppLoading, session, refreshSessi
     const prevIdsRef = useRef(new Set());
 
     const getNotifications = useCallback(async () => {
-        if (!session?.accessToken) return;
+        if (!session?.userId) return;
         try {
             const response = await api.get('/notifications');
             const data = response || [];
@@ -45,7 +45,7 @@ export default function notificationManager(setAppLoading, session, refreshSessi
         } catch (error) {
             console.error('Error fetching notifications:', error);
         }
-    }, [api, session?.accessToken]);
+    }, [api, session?.userId]);
 
     const markAsRead = useCallback(async (id) => {
         try {

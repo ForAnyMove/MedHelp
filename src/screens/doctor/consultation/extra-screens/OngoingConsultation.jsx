@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, AppState } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
@@ -72,19 +72,41 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
   const [isOtherUserInCall, setIsOtherUserInCall] = React.useState(!!consultation.is_other_user_in_video);
 
   React.useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const { createApiClient } = require('../../../../api/apiClient');
+        const { createConsultationsApi } = require('../../../../api/consultationsApi');
+        const api = createApiClient(session, refreshSessionToken);
+        const consultApi = createConsultationsApi(api);
+        
+        const res = await consultApi.getVideoStatus(consultation.id);
+        setIsOtherUserInCall(res.is_other_user_in_video);
+        
+        const consultInfo = await consultApi.getById(consultation.id);
+        if (consultInfo?.status === 'completed' || consultInfo?.status === 'canceled') {
+          onEndConsultation();
+        }
+      } catch (e) {
+        // Silent catch
+      }
+    };
+
     let interval;
     if (consultation?.id) {
-      interval = setInterval(async () => {
-        try {
-          const res = await consultApi.getVideoStatus(consultation.id);
-          setIsOtherUserInCall(res.is_other_user_in_video);
-        } catch (e) {
-          // Silent catch to prevent spamming logs on transient errors
-        }
-      }, 2000);
+      interval = setInterval(checkStatus, 5000);
     }
-    return () => clearInterval(interval);
-  }, [consultation?.id]);
+
+    const appStateSub = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active' && consultation?.id) {
+        checkStatus();
+      }
+    });
+
+    return () => {
+      clearInterval(interval);
+      appStateSub.remove();
+    };
+  }, [consultation?.id, session, refreshSessionToken, onEndConsultation]);
 
 
   const handleNotifyPress = async () => {

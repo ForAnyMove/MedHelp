@@ -90,8 +90,8 @@ const CustomChannelHeader = ({ onBack, onHeaderClick, isPortrait, colors, sizes,
           marginRight: sizes.spacing.s,
           overflow: 'hidden'
         }}>
-          {otherMember?.image ? (
-            <img src={otherMember.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+          {(otherMember?.image || otherMember?.avatar_url || otherMember?.avatar) ? (
+            <img src={otherMember.image || otherMember.avatar_url || otherMember.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
           ) : (
             <span style={{ color: colors.p500, ...getWebTypo(sizes.typography.bodyLarge), fontWeight: '700' }}>
               {(name || 'U')[0].toUpperCase()}
@@ -101,9 +101,14 @@ const CustomChannelHeader = ({ onBack, onHeaderClick, isPortrait, colors, sizes,
 
         {/* Name & Subtitle */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ ...getWebTypo(sizes.typography.h4), color: colors.n900 }}>
-            {name}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ ...getWebTypo(sizes.typography.h4), color: colors.n900 }}>
+              {name}
+            </span>
+            {otherMember?.isVerified && (
+              <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+            )}
+          </div>
           <span style={{ ...getWebTypo(sizes.typography.caption), color: online ? colors.success : colors.n500, marginTop: sizes.spacing.xs / 2 }}>
             {subtitle}
           </span>
@@ -401,8 +406,8 @@ export default function ChatListScreen() {
                         overflow: 'hidden',
                         flexShrink: 0,
                       }}>
-                        {otherMember?.image ? (
-                          <img src={otherMember.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                        {(otherMember?.image || otherMember?.avatar_url || otherMember?.avatar) ? (
+                          <img src={otherMember.image || otherMember.avatar_url || otherMember.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                         ) : (
                           <span style={{ color: colors.p500, ...getWebTypo(sizes.typography.h3), fontWeight: '700' }}>
                             {(otherMember?.name || otherMember?.id || 'U')[0].toUpperCase()}
@@ -413,9 +418,14 @@ export default function ChatListScreen() {
                       {/* Text area */}
                       <div style={{ flex: 1, minWidth: sizes.scale(0) }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sizes.spacing.xs / 2 }}>
-                          <span style={{ ...getWebTypo(sizes.typography.bodyLarge), fontWeight: '700', color: colors.n900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: sizes.spacing.xs }}>
-                            {otherMember?.name || otherMember?.id || 'User'}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', flex: 1, marginRight: sizes.spacing.xs, overflow: 'hidden' }}>
+                            <span style={{ ...getWebTypo(sizes.typography.bodyLarge), fontWeight: '700', color: colors.n900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {otherMember?.name || otherMember?.id || 'User'}
+                            </span>
+                            {otherMember?.isVerified && (
+                              <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4), flexShrink: 0 }} />
+                            )}
+                          </div>
                         </div>
                         <span style={{ ...getWebTypo(sizes.typography.bodyMedium), color: hasUnread ? colors.n900 : colors.n500, fontWeight: hasUnread ? '600' : '400', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
                           {lastMessage?.text || t('chat.no_messages')}
@@ -505,15 +515,20 @@ export default function ChatListScreen() {
                         <>
                           <div style={{ padding: `${sizes.spacing.xl}px ${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', flexDirection: 'column', alignItems: 'center', borderBottom: `1px solid ${colors.n200}` }}>
                             <div style={{ width: sizes.scale(96), height: sizes.scale(96), borderRadius: sizes.borderRadius.full, backgroundColor: colors.p100, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: sizes.spacing.m, overflow: 'hidden' }}>
-                              {otherMember?.image ? (
-                                <img src={otherMember.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                              {(otherMember?.image || otherMember?.avatar_url || otherMember?.avatar) ? (
+                                <img src={otherMember.image || otherMember.avatar_url || otherMember.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                               ) : (
                                 <span style={{ color: colors.p500, ...getWebTypo(sizes.typography.displayS), fontWeight: '700' }}>
                                   {(pName || 'U')[0].toUpperCase()}
                                 </span>
                               )}
                             </div>
-                            <span style={{ ...getWebTypo(sizes.typography.h3), textAlign: 'center', color: colors.n900 }}>{pName}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ ...getWebTypo(sizes.typography.h3), textAlign: 'center', color: colors.n900 }}>{pName}</span>
+                              {otherMember?.isVerified && (
+                                <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6) }} />
+                              )}
+                            </div>
                             <span style={{ ...getWebTypo(sizes.typography.bodyMedium), color: pOnline ? colors.success : colors.n500, marginTop: sizes.spacing.xs }}>
                               {pOnline ? t('chat.online') : formatLastActive(otherMember?.last_active, t)}
                             </span>

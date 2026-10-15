@@ -44,10 +44,8 @@ function PatientTabsInner({ currentTab }) {
     navigateToDashboard,
     scrollToTop,
     tabIndex: index,
-    setTabIndex: setIndex,
-    navigateToConsultationMain,
+    handleTabSwitchRequest,
     navigateToHistoryDetail,
-    navigateToHistorySummary,
     navigateToHistoryDoctorProfile,
     syncStateFromUrl
   } = usePatientDashboard();
@@ -86,10 +84,7 @@ function PatientTabsInner({ currentTab }) {
   // Sync index from URL natively
   useEffect(() => {
     if (currentTab && tabIndexMap[currentTab] !== undefined && tabIndexMap[currentTab] !== index) {
-      if (currentView !== 'dashboard') {
-        navigateToDashboard();
-      }
-      setIndex(tabIndexMap[currentTab]);
+      handleTabSwitchRequest(tabIndexMap[currentTab]);
     }
   }, [currentTab]);
 
@@ -105,27 +100,12 @@ function PatientTabsInner({ currentTab }) {
     }
   }, [initialDeepLinkProcessed, syncStateFromUrl]);
 
-  // Sync from Browser Back/Forward buttons perfectly without remounting Expo routes
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handlePopState = (e) => {
-      const path = window.location.pathname.replace('/', '');
-      if (tabIndexMap[path] !== undefined) {
-        setIndex(tabIndexMap[path]);
-        // Also sync sub-view state
-        const searchParams = new URLSearchParams(window.location.search);
-        syncStateFromUrl(searchParams, path);
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [setIndex, syncStateFromUrl]);
-
-  const handleIndexChange = (i) => {
-    if (currentView !== 'dashboard') {
-      navigateToDashboard();
+  const onIndexChangeWithSync = (i) => {
+    handleTabSwitchRequest(i);
+    // Explicitly reset doctor view if tapping doctors active tab
+    if (index === i && i === 1) {
+      doctorController.setCurrentDoctorView('list');
     }
-    setIndex(i);
 
     // Explicit URL push ONLY on manual user swipe / tab press
     const newTab = indexToTab[i];
@@ -136,6 +116,22 @@ function PatientTabsInner({ currentTab }) {
       }
     }
   };
+
+  // Sync from Browser Back/Forward buttons perfectly without remounting Expo routes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = (e) => {
+      const path = window.location.pathname.replace('/', '');
+      if (tabIndexMap[path] !== undefined) {
+        handleTabSwitchRequest(tabIndexMap[path]);
+        // Also sync sub-view state
+        const searchParams = new URLSearchParams(window.location.search);
+        syncStateFromUrl(searchParams, path);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [handleTabSwitchRequest, syncStateFromUrl]);
 
   const routes = useMemo(() => [
     { key: 'home', title: t('patient_tabs.home'), icon: 'home' },
@@ -155,26 +151,7 @@ function PatientTabsInner({ currentTab }) {
               key={route.key}
               style={styles.tabItem}
               activeOpacity={0.7}
-              onPress={() => {
-                if (index === i) {
-                  if (route.key === 'home') {
-                    if (currentView !== 'dashboard') {
-                      navigateToDashboard();
-                    } else {
-                      scrollToTop();
-                    }
-                  } else if (route.key === 'consultation') {
-                    navigateToConsultationMain();
-                  }
-                } else {
-                  // When switching tabs, reset sub-views if any
-                  if (currentView !== 'dashboard') {
-                    navigateToDashboard();
-                  }
-                  navigateToConsultationMain();
-                  handleIndexChange(i);
-                }
-              }}
+              onPress={() => onIndexChangeWithSync(i)}
             >
               <View>
                 <Icon
@@ -201,7 +178,7 @@ function PatientTabsInner({ currentTab }) {
         navigationState={{ index, routes }}
         renderScene={renderScene}
         renderTabBar={renderTabBar}
-        onIndexChange={handleIndexChange}
+        onIndexChange={onIndexChangeWithSync}
         initialLayout={{ width: layout.width }}
         swipeEnabled={isSwipeEnabled}
         tabBarPosition="bottom"

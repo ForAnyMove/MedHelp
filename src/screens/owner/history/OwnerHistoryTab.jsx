@@ -98,7 +98,12 @@ export function OwnerHistoryTab() {
                     <Text style={styles.dateText}>{dateStr}</Text>
                     <Text style={styles.timeText}>{timeStr}</Text>
                   </View>
-                  <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{c.doctorName}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={[styles.doctorName, { marginBottom: 0 }]}>{t('doctors.dr_prefix')}{c.doctorName}</Text>
+                    {c.doctorIsVerified && (
+                      <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                    )}
+                  </View>
                   <Text style={styles.patientName}>{t('owner_calendar.patient')}: {c.patientName}</Text>
                   <View style={styles.cardFooter}>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>

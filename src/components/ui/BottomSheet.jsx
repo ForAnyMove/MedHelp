@@ -179,10 +179,10 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
                     inputRange: [FULL_HEIGHT - 50, FULL_HEIGHT], 
                     outputRange: [0, 1], 
                     extrapolate: 'clamp' 
-                  }) 
+                  }),
+                  pointerEvents: 'box-none',
                 }
               ]}
-              pointerEvents="box-none"
             >
               <TouchableOpacity onPress={handleClose} style={styles.closeBtnInner}>
                 <Icon name="close" size={sizes.scale(24)} color={colors.n900} />

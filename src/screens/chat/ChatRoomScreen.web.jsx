@@ -41,6 +41,8 @@ export default function ChatRoomScreen() {
     );
   }
 
+  const otherMember = Object.values(channel.state.members).find(m => m.user_id !== chatClient.userID)?.user;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={[styles.header, {
@@ -53,9 +55,14 @@ export default function ChatRoomScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Icon name="arrow-back" size={sizes.scale(24)} color={colors.n900} />
         </TouchableOpacity>
-        <Text style={[{ color: colors.n900 }, sizes.typography.h3]}>
-          {channel.data?.name || t('actions.chat')}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[{ color: colors.n900 }, sizes.typography.h3]}>
+            {otherMember?.name || channel.data?.name || t('actions.chat')}
+          </Text>
+          {otherMember?.isVerified && (
+            <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6) }} />
+          )}
+        </View>
         <View style={{ width: sizes.scale(24) }} />
       </View>
 

@@ -5,6 +5,8 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import en from './en.json';
 import ru from './ru.json';
+import quizEn from './quiz_en.json';
+import quizRu from './quiz_ru.json';
 
 const LANG_KEY = 'medhelp_language';
 
@@ -26,8 +28,8 @@ i18n
   .init({
     compatibilityJSON: 'v3',
     resources: {
-      en: { translation: en },
-      ru: { translation: ru },
+      en: { translation: { ...en, ...quizEn } },
+      ru: { translation: { ...ru, ...quizRu } },
     },
     lng: 'en', // Will be overridden shortly
     fallbackLng: 'en',

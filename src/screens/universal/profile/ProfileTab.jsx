@@ -11,6 +11,7 @@ import { ProfileItem } from './components/ProfileItem';
 import { BottomSheet } from '../../../components/ui/BottomSheet';
 import { ProfileEditForm } from './components/ProfileEditForm';
 import { DocUploadSheet } from './components/DocUploadSheet';
+import { OrgEditForm } from './components/OrgEditForm';
 import { ProfileAboutForm } from './components/ProfileAboutForm';
 import { WorkplaceSelectScreen } from './components/WorkplaceSelectScreen';
 import { Alert } from 'react-native';
@@ -42,6 +43,7 @@ export function ProfileTab({ role = 'patient' }) {
 
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isDocSheetOpen, setIsDocSheetOpen] = useState(false);
+  const [isOrgEditSheetOpen, setIsOrgEditSheetOpen] = useState(false);
   const [isAboutSheetOpen, setIsAboutSheetOpen] = useState(false);
   const [isWorkplaceSheetOpen, setIsWorkplaceSheetOpen] = useState(false);
   const [isAboutSaving, setIsAboutSaving] = useState(false);
@@ -136,11 +138,43 @@ export function ProfileTab({ role = 'patient' }) {
     }
   };
 
+  const handleOrgRequestClose = () => {
+    if (isFormDirty) {
+      Alert.alert(
+        t('profile.unsaved_title'),
+        t('profile.unsaved_desc'),
+        [
+          { text: t('profile.cancel_btn'), style: 'cancel' },
+          {
+            text: t('profile.discard'),
+            style: 'destructive',
+            onPress: () => {
+              setIsFormDirty(false);
+              setIsOrgEditSheetOpen(false);
+            }
+          }
+        ]
+      );
+    } else {
+      setIsOrgEditSheetOpen(false);
+    }
+  };
+
   const handleSaveProfile = async (payload) => {
     const res = await registerProfile(payload);
     if (res?.success) {
       setIsFormDirty(false);
       setIsEditSheetOpen(false);
+    } else {
+      Alert.alert(t('common.error', 'Error'), res?.error || t('profile.failed_to_save', 'Failed to save profile'));
+    }
+  };
+
+  const handleSaveOrg = async (payload) => {
+    const res = await context.ownerController?.updateOrganization(payload);
+    if (res?.success) {
+      setIsFormDirty(false);
+      setIsOrgEditSheetOpen(false);
     } else {
       Alert.alert(t('common.error', 'Error'), res?.error || t('profile.failed_to_save', 'Failed to save profile'));
     }
@@ -189,6 +223,8 @@ export function ProfileTab({ role = 'patient' }) {
               handleRequestClose();
             } else if (isDocSheetOpen) {
               setIsDocSheetOpen(false);
+            } else if (isOrgEditSheetOpen) {
+              handleOrgRequestClose();
             } else if (isWorkplaceSheetOpen) {
               setIsWorkplaceSheetOpen(false);
             } else if (isAboutSheetOpen) {
@@ -205,8 +241,13 @@ export function ProfileTab({ role = 'patient' }) {
 
         {isDoctor && (
           <ProfileSection title={t('profile.professional_details')}>
-            {user.professionNames && user.professionNames.length > 0 && (
-              <ProfileItem label={t('auth.specialization_title')} value={user.professionNames.join(', ')} />
+            {(user.professionCodes?.length > 0 || user.professionNames?.length > 0) && (
+              <ProfileItem 
+                label={t('auth.specialization_title')} 
+                value={user.professionCodes?.length > 0 
+                  ? user.professionCodes.map(c => t(`specializations.${c}`)).join(', ') 
+                  : user.professionNames.map(n => n.startsWith('specializations.') ? t(n) : n).join(', ')} 
+              />
             )}
             <ProfileItem
               label={t('profile.experience')}
@@ -272,9 +313,62 @@ export function ProfileTab({ role = 'patient' }) {
 
         {isOwner && context.ownerController?.organization && (
           <ProfileSection title={t('profile.organization_details', 'Organization Details')}>
-            <ProfileItem label={t('profile.org_name', 'Name')} value={context.ownerController.organization.name} />
-            <ProfileItem label={t('profile.org_address', 'Address')} value={context.ownerController.organization.address} />
-            <ProfileItem label={t('profile.org_description', 'Description')} value={context.ownerController.organization.description || '--'} isLast />
+            <ProfileItem 
+              label={t('profile.org_name', 'Name')} 
+              value={context.ownerController.organization.name} 
+              onPress={() => setIsOrgEditSheetOpen(true)} 
+            />
+            <ProfileItem 
+              label={t('profile.org_address', 'Address')} 
+              value={context.ownerController.organization.address} 
+              onPress={() => setIsOrgEditSheetOpen(true)} 
+            />
+            {(() => {
+              const status = context.ownerController.organization.doc_verification_status || context.ownerController.organization.docVerificationStatus;
+              const colors = context.themeController.colors;
+              let val, icon, color;
+              switch (status) {
+                case 'verified':
+                  val = t('profile.license_verified', 'Verified');
+                  icon = 'shield-lock';
+                  color = colors.p500;
+                  break;
+                case 'pending':
+                  val = t('profile.license_pending', 'Under review');
+                  icon = 'time';
+                  color = colors.warning || colors.warning;
+                  break;
+                case 'canceled':
+                case 'rejected':
+                  val = t('profile.license_canceled', 'Rejected');
+                  icon = 'important';
+                  color = colors.danger;
+                  break;
+                case 'skipped':
+                case 'none':
+                default:
+                  val = t('profile.license_not_uploaded', 'Not uploaded');
+                  icon = 'important';
+                  color = colors.danger;
+                  break;
+              }
+              return (
+                <ProfileItem
+                  label={t('profile.verification', 'Verification')}
+                  value={val}
+                  type="status"
+                  statusIcon={icon}
+                  statusColor={color}
+                  onPress={() => setIsDocSheetOpen(true)}
+                />
+              );
+            })()}
+            <ProfileItem 
+              label={t('profile.org_description', 'Description')} 
+              value={context.ownerController.organization.description || '--'} 
+              isLast 
+              onPress={() => setIsOrgEditSheetOpen(true)} 
+            />
           </ProfileSection>
         )}
 
@@ -432,7 +526,21 @@ export function ProfileTab({ role = 'patient' }) {
             if (saved && doctorProfileController?.reloadProfile) {
               doctorProfileController.reloadProfile();
             }
+            if (saved && isOwner && context.ownerController?.loadOrganization) {
+              context.ownerController.loadOrganization();
+            }
           }}
+        />
+      </BottomSheet>
+
+      <BottomSheet
+        visible={isOrgEditSheetOpen}
+        onClose={handleOrgRequestClose}
+      >
+        <OrgEditForm
+          organization={context.ownerController?.organization}
+          onSave={handleSaveOrg}
+          setDirty={setIsFormDirty}
         />
       </BottomSheet>
 

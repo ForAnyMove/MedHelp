@@ -6,7 +6,9 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test:quiz": "node ../../quiz_test_suite/run_scenario_tests.cjs",
+    "test:quiz:regen": "node ../../quiz_test_suite/all_93_scenarios.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

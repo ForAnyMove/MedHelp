@@ -33,7 +33,12 @@ export function VIPDoctorCard({ doctor, onPress }) {
           />
         </View>
         <View style={styles.rightSection}>
-          <Text style={styles.name}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.name}>{t('doctors.dr_prefix')}{doctor.firstName} {doctor.lastName}</Text>
+            {doctor.isVerified && (
+              <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.white} style={{ marginLeft: sizes.scale(4) }} />
+            )}
+          </View>
           <Text style={styles.specialization}>{t(doctor.specialization)}</Text>
           <Text style={styles.description} numberOfLines={3}>
             {doctor.description}

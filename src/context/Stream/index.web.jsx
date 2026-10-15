@@ -8,25 +8,32 @@ import { useSession } from '../SessionContext';
 const StreamContext = createContext(null);
 
 const getApiUrl = () => {
-  let url = process.env.EXPO_PUBLIC_API_URL;
-  if (url) return url.endsWith('/api') ? url : url + '/api';
   if (__DEV__) {
     if (Platform.OS === 'web') return 'http://localhost:3000/api';
     const hostUri = Constants.expoConfig?.hostUri;
     if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
     return 'http://10.0.2.2:3000/api';
   }
+  let url = process.env.EXPO_PUBLIC_API_URL;
+  if (url) return url.endsWith('/api') ? url : url + '/api';
   return '/api';
 };
+
 
 const API_URL = getApiUrl();
 
 export function StreamProvider({ children }) {
-  const { session } = useSession();
+  const { session, refreshSessionToken } = useSession();
   const [videoClient, setVideoClient] = useState(null);
   const [chatClient, setChatClient] = useState(null);
   const [activeCall, setActiveCall] = useState(null);
   const [isMinimized, setIsMinimized] = useState(false);
+
+  // Keep a ref to the latest session to avoid stale closures in tokenProvider
+  const sessionRef = React.useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
     const apiKey = process.env.EXPO_PUBLIC_STREAM_API_KEY;
@@ -52,24 +59,50 @@ export function StreamProvider({ children }) {
 
     const setupStream = async () => {
       try {
-        const tokenProvider = async () => {
-          const res = await fetch(`${API_URL}/stream/token`, {
-            method: 'POST',
-            headers: {
+        const fetchStreamTokens = async () => {
+          const makeRequest = async (token) => {
+            const headers = {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.accessToken || 'mock-token'}`,
-              'X-Mock-User-Id': session.userId,
-            },
-          });
-          if (!res.ok) throw new Error('Failed to fetch stream token');
+              'X-Mock-User-Id': sessionRef.current?.userId || session.userId,
+            };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            return fetch(`${API_URL}/stream/token`, {
+              method: 'POST',
+              credentials: 'include',
+              headers,
+            });
+          };
+
+          let currentToken = sessionRef.current?.accessToken || session.accessToken;
+          let res = await makeRequest(currentToken);
+
+          if (res.status === 401 && refreshSessionToken) {
+            const refreshed = await refreshSessionToken();
+            if (refreshed?.accessToken) {
+              res = await makeRequest(refreshed.accessToken);
+            }
+          }
+
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Failed to fetch stream token (${res.status})`);
+          }
+
           const data = await res.json();
-          return data.data.videoToken;
+          return data.data;
+        };
+
+        const tokenProvider = async () => {
+          const data = await fetchStreamTokens();
+          return data.videoToken;
         };
 
         const userName = [session.firstName, session.lastName].filter(Boolean).join(' ') || session.email || 'User';
         const user = {
           id: session.userId,
           name: userName,
+          image: session.avatarUrl || undefined,
         };
 
         // 1. Init Stream Video for Web
@@ -81,29 +114,25 @@ export function StreamProvider({ children }) {
         if (isMounted) setVideoClient(vClient);
 
         // 2. Init Chat Client
-        const res = await fetch(`${API_URL}/stream/token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.accessToken || 'mock-token'}`,
-            'X-Mock-User-Id': session.userId,
-          },
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          
+        try {
+          const chatTokenProvider = async () => {
+            const data = await fetchStreamTokens();
+            return data.chatToken;
+          };
+
           if (cClient.userID !== user.id) {
             if (cClient.userID) {
               await cClient.disconnectUser();
             }
-            await cClient.connectUser(user, data.data.chatToken);
+            await cClient.connectUser(user, chatTokenProvider);
           }
           if (isMounted) setChatClient(cClient);
+        } catch (chatError) {
+          console.warn("Could not connect Stream Chat client:", chatError?.message || chatError);
         }
 
       } catch (error) {
-        console.error("Error setting up Stream Clients for Web:", error);
+        console.warn("Error setting up Stream Clients for Web:", error?.message || error);
       }
     };
 

@@ -8,6 +8,8 @@ const lightColors = {
   p300: '#84F2E8',
   p200: '#CEF9F1',
   p100: '#E6FAF8',
+  primary: '#23D3C2',
+  primaryLight: '#E6FAF8',
   sCoral: '#FF7062',
   sYell: '#FFCF65',
   sBlue: '#47A4FF',

@@ -44,6 +44,7 @@ export function createApiClient(session, refreshSessionToken = null) {
       if (newSession) {
         // Retry with new headers (maintain isMultipart flag implicitly by preserving options except session token headers)
         options.headers = buildHeaders(newSession, !options.headers['Content-Type']);
+        options.credentials = 'include';
         res = await fetch(url, options);
       }
     }
@@ -65,13 +66,14 @@ export function createApiClient(session, refreshSessionToken = null) {
     Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
     // Cache buster for web
     url.searchParams.set('_t', Date.now().toString());
-    return executeRequest(url.toString(), { method: 'GET', headers: buildHeaders() });
+    return executeRequest(url.toString(), { method: 'GET', headers: buildHeaders(), credentials: 'include' });
   };
 
   const post = (path, body = {}) =>
     executeRequest(`${BASE_URL}${path}`, {
       method: 'POST',
       headers: buildHeaders(),
+      credentials: 'include',
       body: JSON.stringify(body),
     });
 
@@ -79,6 +81,7 @@ export function createApiClient(session, refreshSessionToken = null) {
     executeRequest(`${BASE_URL}${path}`, {
       method: 'POST',
       headers: buildHeaders(session, true),
+      credentials: 'include',
       body: formData,
     });
 
@@ -86,6 +89,7 @@ export function createApiClient(session, refreshSessionToken = null) {
     executeRequest(`${BASE_URL}${path}`, {
       method: 'PATCH',
       headers: buildHeaders(),
+      credentials: 'include',
       body: JSON.stringify(body),
     });
 
@@ -93,11 +97,12 @@ export function createApiClient(session, refreshSessionToken = null) {
     executeRequest(`${BASE_URL}${path}`, {
       method: 'PUT',
       headers: buildHeaders(),
+      credentials: 'include',
       body: JSON.stringify(body),
     });
 
   const del = (path) =>
-    executeRequest(`${BASE_URL}${path}`, { method: 'DELETE', headers: buildHeaders() });
+    executeRequest(`${BASE_URL}${path}`, { method: 'DELETE', headers: buildHeaders(), credentials: 'include' });
 
   return { get, post, postForm, patch, put, del };
 }

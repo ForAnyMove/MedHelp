@@ -12,14 +12,14 @@ const SessionContext = createContext(null);
 
 // ---- API auth helpers ----
 const getApiUrl = () => {
-  let url = process.env.EXPO_PUBLIC_API_URL;
-  if (url) return url.endsWith('/api') ? url : url + '/api';
   if (__DEV__) {
     if (Platform.OS === 'web') return 'http://localhost:3000/api';
     const hostUri = Constants.expoConfig?.hostUri;
     if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
     return 'http://10.0.2.2:3000/api';
   }
+  let url = process.env.EXPO_PUBLIC_API_URL;
+  if (url) return url.endsWith('/api') ? url : url + '/api';
   return '/api';
 };
 
@@ -43,10 +43,12 @@ async function loadSessionFromStorage() {
 
 async function saveSessionToStorage(session) {
   try {
-    const serialized = JSON.stringify(session);
     if (Platform.OS === 'web') {
+      const { accessToken, refreshToken, access_token, refresh_token, ...safeSession } = session;
+      const serialized = JSON.stringify(safeSession);
       localStorage.setItem(SESSION_KEY, serialized);
     } else {
+      const serialized = JSON.stringify(session);
       await SecureStore.setItemAsync(SESSION_KEY, serialized);
     }
   } catch (e) {
@@ -127,7 +129,35 @@ export function SessionProvider({ children }) {
       try {
         const saved = await loadSessionFromStorage();
         if (saved) {
-          setSession(saved);
+          // Verify that stored session is still valid and fetch fresh accessToken
+          // BEFORE setting session state, preventing child components from firing
+          // unauthenticated API calls during startup.
+          try {
+            const currentRefreshToken = saved.refreshToken || saved.refresh_token;
+            const res = await fetch(`${API_URL}/auth/refresh-token`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(currentRefreshToken ? { refreshToken: currentRefreshToken } : {})
+            });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && json.success && json.data?.session) {
+              setSession(json.data.session);
+              await saveSessionToStorage(json.data.session);
+            } else if (res.status === 401 || res.status === 400) {
+              console.log('[SessionContext] Stored session expired or invalid, logging out.');
+              setSession(null);
+              await clearSessionFromStorage();
+              await clearDocSkipFlag();
+            } else {
+              // Server error (e.g. 500) fallback to saved session
+              setSession(saved);
+            }
+          } catch (err) {
+            console.warn('[SessionContext] Could not verify session on boot:', err);
+            // Offline fallback to saved session
+            setSession(saved);
+          }
         }
         
         const skipped = await getDocSkipFlag();
@@ -165,6 +195,11 @@ export function SessionProvider({ children }) {
    * Sign out.
    */
   const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch (e) {
+      // ignore
+    }
     setSession(null);
     setDocUploadHandledThisSession(false);
     await clearSessionFromStorage();
@@ -178,7 +213,10 @@ export function SessionProvider({ children }) {
    */
   const refreshSessionToken = useCallback(async () => {
     const currentRefreshToken = session?.refreshToken || session?.refresh_token;
-    if (!currentRefreshToken) {
+    const isWeb = Platform.OS === 'web';
+    
+    // On web, the refresh token is stored in HttpOnly cookies, so it's normal to not have it in session state.
+    if (!currentRefreshToken && !isWeb) {
       await logout();
       return null;
     }
@@ -191,15 +229,19 @@ export function SessionProvider({ children }) {
       try {
         const response = await fetch(`${API_URL}/auth/refresh-token`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: currentRefreshToken })
+          body: JSON.stringify(currentRefreshToken ? { refreshToken: currentRefreshToken } : {})
         });
         const json = await response.json();
         if (json.success && json.data?.session) {
           await login(json.data.session, true);
           return json.data.session;
         } else {
-          await logout();
+          // ONLY log out if the server explicitly tells us the refresh token is invalid (401 or 400)
+          if (response.status === 401 || response.status === 400) {
+            await logout();
+          }
           return null;
         }
       } catch (e) {
@@ -211,7 +253,7 @@ export function SessionProvider({ children }) {
     })();
 
     return refreshPromise;
-  }, [session?.refreshToken, login, logout]);
+  }, [session?.refreshToken, session?.refresh_token, login, logout]);
 
   /**
    * Send OTP via Express API.
@@ -220,6 +262,7 @@ export function SessionProvider({ children }) {
     try {
       const response = await fetch(`${API_URL}/auth/send-otp`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: contact })
       });
@@ -239,6 +282,7 @@ export function SessionProvider({ children }) {
     try {
       const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: contact, code })
       });

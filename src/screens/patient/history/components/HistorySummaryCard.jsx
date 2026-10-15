@@ -7,7 +7,7 @@ import { SegmentedControl } from '../../../../components/ui/SegmentedControl';
 import { formatIsoDate } from '../../../../utils/dateUtils';
 import { useTheme } from '../../../../theme/ThemeContext';
 
-export function HistorySummaryCard({ activeSegment, onSegmentChange, summary, onConsultationsPress }) {
+export function HistorySummaryCard({ activeSegment, onSegmentChange, summary, onConsultationsPress, onCheckupsPress }) {
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
 
@@ -35,6 +35,11 @@ export function HistorySummaryCard({ activeSegment, onSegmentChange, summary, on
           icon="stethoscope"
           label={t('history.consultations_count', { count: summary.consultationsCount })}
           onPress={onConsultationsPress}
+        />
+        <SummaryItem
+          icon="list"
+          label={t('history.checkups_count', { count: summary.checkupsCount || 0, defaultValue: 'Результаты опросов' })}
+          onPress={onCheckupsPress}
         />
       </View>
     </View>

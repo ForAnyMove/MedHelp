@@ -129,7 +129,7 @@ const CustomVideoLayout = ({ onMinimize, onLeave, callId }) => {
           </View>
         ) : (
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.n900, justifyContent: 'center', alignItems: 'center' }]}>
-            <Icon name="person" size={sizes.scale(80)} color={colors.n500} />
+            <Icon name="User" size={sizes.scale(80)} color={colors.n500} />
             <Text style={{ color: colors.white, marginTop: sizes.scale(16) }}>{t('call.waiting_for_others', 'Waiting for others...')}</Text>
           </View>
         )}
@@ -184,10 +184,21 @@ const CustomVideoLayout = ({ onMinimize, onLeave, callId }) => {
               <Text style={{ color: /* TODO: color */ '#26C6DA', marginLeft: sizes.spacing.xs, ...sizes.typography.bodyMedium }}>{t('call.minimize', 'Minimize')}</Text>
             </TouchableOpacity>
 
-            <View style={{ backgroundColor: /* TODO: color */ 'rgba(38,198,218,0.2)', paddingHorizontal: sizes.spacing.m, paddingVertical: sizes.spacing.xs, borderRadius: sizes.scale(20) }}>
-              <Text style={{ color: /* TODO: color */ '#26C6DA', ...sizes.typography.bodyMedium }}>Room ID: {callId.slice(-8)}</Text>
-            </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: sizes.spacing.s }}>
+          <TouchableOpacity onPress={() => {
+            const { Share } = require('react-native');
+            Share.share({ url: `medapp://call/${callId}`, message: `Join my MedHelp call: medapp://call/${callId}` })
+              .catch(err => console.error(err));
+          }} style={{ backgroundColor: /* TODO: color */ 'rgba(38,198,218,0.2)', paddingHorizontal: sizes.spacing.m, paddingVertical: sizes.spacing.xs, borderRadius: sizes.scale(20), flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="share" size={sizes.scale(16)} color={/* TODO: color */ '#26C6DA'} />
+            <Text style={{ color: /* TODO: color */ '#26C6DA', ...sizes.typography.bodyMedium, marginLeft: sizes.spacing.xs }}>{t('call.share_link', 'Share Link')}</Text>
+          </TouchableOpacity>
+
+          <View style={{ backgroundColor: /* TODO: color */ 'rgba(38,198,218,0.2)', paddingHorizontal: sizes.spacing.m, paddingVertical: sizes.spacing.xs, borderRadius: sizes.scale(20) }}>
+            <Text style={{ color: /* TODO: color */ '#26C6DA', ...sizes.typography.bodyMedium }}>Room ID: {callId.slice(-8)}</Text>
           </View>
+        </View>
+      </View>
 
           {/* Bottom Bar */}
           <View style={{ position: 'absolute', bottom: sizes.scale(0), left: sizes.scale(0), right: sizes.scale(0), flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: sizes.spacing.m, paddingBottom: sizes.spacing.xl, backgroundColor: colors.bg, borderTopLeftRadius: sizes.scale(24), borderTopRightRadius: sizes.scale(24) }}>
@@ -320,7 +331,17 @@ export default function CallScreen() {
 
   const handleMinimize = () => {
     setIsMinimized(true);
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      const callIdStr = String(id);
+      if (callIdStr.startsWith('medhelp-consult-')) {
+        const consultationId = callIdStr.replace('medhelp-consult-', '');
+        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+      } else {
+        router.replace('/home');
+      }
+    }
   };
 
   const handleLeave = async () => {
@@ -339,7 +360,17 @@ export default function CallScreen() {
       setActiveCall(null);
       setIsMinimized(false);
     }
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      const callIdStr = String(id);
+      if (callIdStr.startsWith('medhelp-consult-')) {
+        const consultationId = callIdStr.replace('medhelp-consult-', '');
+        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+      } else {
+        router.replace('/home');
+      }
+    }
   };
 
   if (!call) {

@@ -10,8 +10,8 @@ export function createConsultationsApi(apiClient) {
     getById: (id) => apiClient.get(`/consultations/${id}`),
 
     /** Patient books a consultation */
-    create: ({ slot_id, doctor_id, purpose }) =>
-      apiClient.post('/consultations', { slot_id, doctor_id, purpose }),
+    create: ({ slot_id, doctor_id, purpose, checkup_id }) =>
+      apiClient.post('/consultations', { slot_id, doctor_id, purpose, checkup_id }),
 
     /** Update status, purpose, or reschedule (new slot_id) */
     update: (id, fields) => apiClient.patch(`/consultations/${id}`, fields),

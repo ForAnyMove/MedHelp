@@ -23,10 +23,22 @@ function hexToRgba(hex, opacity) {
  * @param {object}   wrapperStyle   - Additional wrapper styles
  */
 export function Icon({ name, size = 24, color = "black", style, onPress, wrapped, wrapperColor, wrapperOpacity = 0.2, wrapperSize, wrapperRadius, wrapperStyle, spin, ...rest }) {
+  // Resolve common icon aliases and casing
+  const ALIASES = {
+    person: 'User',
+    user: 'User',
+    pencil: 'Pencil',
+  };
+
+  const resolvedName = (name && ALIASES[name]) ? ALIASES[name] : name;
+  const pascalName = (typeof resolvedName === 'string' && resolvedName.length > 0)
+    ? resolvedName.charAt(0).toUpperCase() + resolvedName.slice(1)
+    : resolvedName;
+
   // Resolve the icon component
   let iconNode = null;
-  const CustomIconCmp = CustomIcons[name];
-  const LucideCmp = !CustomIconCmp ? LucideIcons[name] : null;
+  const CustomIconCmp = CustomIcons[name] || CustomIcons[resolvedName];
+  const LucideCmp = !CustomIconCmp ? (LucideIcons[name] || LucideIcons[resolvedName] || LucideIcons[pascalName]) : null;
 
   if (CustomIconCmp) {
     iconNode = (

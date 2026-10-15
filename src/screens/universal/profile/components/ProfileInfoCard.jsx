@@ -20,7 +20,14 @@ export function ProfileInfoCard({ user }) {
       )}
       {user.role === 'doctor' && (
         <>
-          <InfoRow label={t('profile.specializations')} value={user.professionNames?.length > 0 ? user.professionNames.join(', ') : (user.professionCodes ? user.professionCodes.map(code => t(`specializations.${code}`)).join(', ') : '--')} />
+          <InfoRow 
+            label={t('profile.specializations')} 
+            value={
+              user.professionCodes?.length > 0 
+                ? user.professionCodes.map(c => t(`specializations.${c}`)).join(', ') 
+                : (user.professionNames?.length > 0 ? user.professionNames.map(n => n.startsWith('specializations.') ? t(n) : n).join(', ') : '--')
+            } 
+          />
         </>
       )}
     </View>

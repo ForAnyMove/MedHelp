@@ -199,8 +199,18 @@
     "dermatologist": "Dermatologist",
     "surgeon": "Surgeon",
     "dentist": "Dentist",
+    "dentist_therapist": "Dentist",
     "ophthalmologist": "Ophthalmologist",
-    "psychiatrist": "Psychiatrist"
+    "psychiatrist": "Psychiatrist",
+    "ent": "ENT (Otolaryngologist)",
+    "urologist": "Urologist",
+    "gynaecologist": "Gynecologist",
+    "orthopedist": "Orthopedist",
+    "rheumatologist": "Rheumatologist",
+    "pulmonologist": "Pulmonologist",
+    "gastroenterologist": "Gastroenterologist",
+    "family_doctor": "Family Doctor",
+    "therapist": "Therapist"
   },
   "dashboard": {
     "greeting": "Hi, {{name}}",
@@ -425,7 +435,7 @@
     "notify_when_ready": "We'll notify you the moment it's ready — feel free to close the app.",
     "back_to_home": "Back to home",
     "notes": "Notes",
-    "no_consultations_day": "No consultations on this day",
+    "no_consultations_day": "No available slots",
     "timer": "Timer",
     "waiting_for_connection": "Waiting for connection...",
     "call_error_msg": "Something with call was wrong",
@@ -601,6 +611,17 @@
     "last_overview": "Last overview",
     "analyses_count": "{{count}} analyses",
     "consultations_count": "{{count}} consultations",
+    "checkups_count": "{{count}} checkups",
+    "all_checkups": "Survey Results",
+    "search_checkup": "Search results...",
+    "no_checkups": "No symptom assessments completed yet",
+    "no_checkups_desc": "Take an assessment to check your symptoms and get tailored recommendations.",
+    "start_checkup_btn": "Start assessment",
+    "view_checkup_btn": "View result & recommendations",
+    "linked_consultation_title": "Linked Consultation",
+    "go_to_consultation": "Go to Consultation",
+    "booking_with_doctor": "Doctor appointment",
+    "specialty_mismatch_notice": "Assessment was recommended for another specialist",
     "analyses_title": "Analyses",
     "total_count": "{{count}} total",
     "analyses_list": {
@@ -815,6 +836,7 @@
     "reviews_count": "{{count}} reviews"
   },
   "doctors": {
+    "general": "General Practitioner",
     "recommended_title": "Recommended Doctors",
     "all_doctors": "All Doctors",
     "profile_title": "Doctor Profile",
@@ -866,9 +888,9 @@
     "last_active_minutes_ago": "Last seen {{count}} min ago",
     "last_active_today": "Last seen today at {{time}}",
     "last_active_date": "Last seen {{date}} at {{time}}",
-    "search_by_name": "chat.search_by_name",
-    "write_message": "chat.write_message",
-    "offline": "chat.offline",
+    "search_by_name": "Search by name",
+    "write_message": "Write a message",
+    "offline": "Offline",
     "connecting_call": "Connecting to call..."
   },
   "notifications": {
@@ -917,7 +939,21 @@
     "doctor_join_rejected": "Join request rejected",
     "doctor_join_rejected_desc": "Your request to join \"{{orgName}}\" has been rejected.",
     "org_removed": "Removed from organization",
-    "org_removed_desc": "You have been removed from {{orgName}}."
+    "org_removed_desc": "You have been removed from {{orgName}}.",
+    "consultation_started_desc": "Your consultation has started.",
+    "consultation_resumed_desc": "The doctor resumed the consultation. Please return to the call.",
+    "consultation_completed_desc": "The doctor has completed the consultation.",
+    "new_message_desc": "You have a new message.",
+    "new_appointment": "New booking",
+    "new_appointment_desc": "A patient booked a consultation.",
+    "canceled_appointment": "Booking canceled",
+    "canceled_appointment_desc": "The consultation has been canceled.",
+    "rescheduled_appointment": "Booking rescheduled",
+    "rescheduled_appointment_desc": "The consultation date or time has been changed.",
+    "test_results_ready": "Test results ready",
+    "test_results_ready_desc": "Your medical test results are ready for review.",
+    "additional_lab_requested": "Additional tests requested",
+    "additional_lab_requested_desc": "The doctor requested additional medical tests for your consultation."
   },
   "no_data": "No data available",
   "errors": {
@@ -1029,5 +1065,9 @@
     "success_msg": "Your report has been submitted. Our moderators will review it shortly.",
     "error_msg": "Failed to submit report. You may have already reported this content.",
     "submit": "Submit Report"
+  },
+  "quiz": {
+    "attach_to_consultation": "Attach assessment results",
+    "attach_desc": "The doctor will be able to review your symptoms and recommendations before the visit"
   }
 }

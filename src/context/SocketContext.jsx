@@ -7,13 +7,13 @@ import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 
 const getSocketUrl = () => {
-  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL.replace('/api', '');
   if (__DEV__) {
     if (Platform.OS === 'web') return 'http://localhost:3000';
     const hostUri = Constants.expoConfig?.hostUri;
     if (hostUri) return `http://${hostUri.split(':')[0]}:3000`;
     return 'http://10.0.2.2:3000';
   }
+  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL.replace('/api', '');
   return ''; // fallback for production web
 };
 
@@ -31,7 +31,11 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     const token = session?.accessToken || session?.token;
-    if (!token || !session?.userId) {
+    const isWeb = Platform.OS === 'web';
+
+    // On Web, accessToken is stored in HttpOnly cookies and will be undefined after page reload.
+    // The browser will automatically send the cookie via withCredentials.
+    if (!session?.userId || (!token && !isWeb)) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -44,8 +48,9 @@ export function SocketProvider({ children }) {
 
     const newSocket = io(backendUrl, {
       auth: {
-        token: token || 'mock-token'
-      }
+        token: token || undefined
+      },
+      withCredentials: true // Ensure cookies are sent on web
     });
 
     newSocket.on('connect', () => {
@@ -118,6 +123,7 @@ export function SocketProvider({ children }) {
       });
       DeviceEventEmitter.emit('reload_notifications');
       DeviceEventEmitter.emit('consultation_started', data);
+      DeviceEventEmitter.emit('consultation_updated', { consultationId: data?.consultation_id, status: 'in_progress' });
     });
 
     newSocket.on('consultation_sync', (data) => {
@@ -136,6 +142,11 @@ export function SocketProvider({ children }) {
       DeviceEventEmitter.emit('patient_ready', { timer_started_at: data.timer_started_at });
     });
 
+    newSocket.on('user_status_changed', (data) => {
+      console.log('[Socket.io] user_status_changed', data);
+      DeviceEventEmitter.emit('user_status_changed', data);
+    });
+
     newSocket.on('call_joined', (data) => {
       console.log('[Socket.io] call_joined', data);
       DeviceEventEmitter.emit('call_joined', { userId: data.user_id });
@@ -151,16 +162,38 @@ export function SocketProvider({ children }) {
       DeviceEventEmitter.emit('patient_joined', { consultationId: data.consultation_id });
     });
 
-    newSocket.on('notification', (data) => {
-      console.log('[Socket.io] notification', data);
+    const handleGenericNotification = (data) => {
+      console.log('[Socket.io] notification received', data);
       addNotification({
-        title: data.title || t('notifications.new_notification', 'New notification'),
-        body: data.description || data.body || '',
+        title: data?.title || t('notifications.new_notification', 'New notification'),
+        body: data?.description || data?.body || '',
         targetRoute: '/profile',
         type: 'system'
       });
       DeviceEventEmitter.emit('reload_notifications');
       DeviceEventEmitter.emit('notification_received', data);
+    };
+
+    newSocket.on('notification', handleGenericNotification);
+    newSocket.on('notification_received', handleGenericNotification);
+
+    newSocket.on('doc_verification_updated', (data) => {
+      console.log('[Socket.io] doc_verification_updated', data);
+      if (updateSession && data?.status) {
+        updateSession({ docVerificationStatus: data.status });
+      }
+      DeviceEventEmitter.emit('doc_verification_updated', data);
+    });
+
+    newSocket.on('profile_updated', (data) => {
+      console.log('[Socket.io] profile_updated', data);
+      if (updateSession) {
+        const patch = {};
+        if (data?.avatarUrl) patch.avatarUrl = data.avatarUrl;
+        if (data?.about) patch.about = data.about;
+        if (Object.keys(patch).length > 0) updateSession(patch);
+      }
+      DeviceEventEmitter.emit('profile_updated', data);
     });
 
     newSocket.on('join_request_cancelled', (data) => {

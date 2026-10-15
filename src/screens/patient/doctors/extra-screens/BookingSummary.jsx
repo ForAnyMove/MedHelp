@@ -7,6 +7,7 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 import { formatIsoDate } from '../../../../utils/dateUtils';
+import { isSpecialtyMatching } from '../../../../utils/specialtyMapper';
 
 export function BookingSummary() {
   const { t } = useTranslation();
@@ -18,7 +19,12 @@ export function BookingSummary() {
     goBack
   } = doctorController;
 
-  const { navigateToConsultation, updateUrlParams } = usePatientDashboard();
+  const { 
+    navigateToConsultation, 
+    updateUrlParams, 
+    pendingCheckupForBooking, 
+    setPendingCheckupForBooking 
+  } = usePatientDashboard();
 
   const handleBack = () => {
     goBack();
@@ -26,7 +32,23 @@ export function BookingSummary() {
   };
 
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [attachCheckup, setAttachCheckup] = React.useState(true);
   const styles = useStyles(themeStyles);
+
+  const doctorProfession = selectedDoctor?.profession_code 
+    || selectedDoctor?.professionCode 
+    || (selectedDoctor?.specialization?.startsWith('professions.') ? selectedDoctor.specialization.replace('professions.', '') : '')
+    || null;
+
+  const checkupSpec = pendingCheckupForBooking?.recommendations?.recommendedSpecialty 
+    || pendingCheckupForBooking?.recommendedSpecialty 
+    || null;
+
+  // Level 1: Clinical matching guard
+  const isEligibleCheckup = Boolean(
+    pendingCheckupForBooking?.id &&
+    isSpecialtyMatching(checkupSpec, doctorProfession)
+  );
 
   const handleConfirm = async () => {
     setIsProcessing(true);
@@ -35,9 +57,15 @@ export function BookingSummary() {
       // For now, simulate a network delay for confirmation
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const res = await confirmBooking();
-      if (res && navigateToConsultation) {
-        navigateToConsultation();
+      const checkupIdToAttach = (isEligibleCheckup && attachCheckup) ? pendingCheckupForBooking.id : null;
+      const res = await confirmBooking(null, checkupIdToAttach);
+      if (res) {
+        if (setPendingCheckupForBooking) {
+          setPendingCheckupForBooking(null);
+        }
+        if (navigateToConsultation) {
+          navigateToConsultation();
+        }
       }
     } catch (err) {
       console.error("Booking error:", err.message);
@@ -105,6 +133,30 @@ export function BookingSummary() {
           </View>
           <Text style={styles.valueText}>${selectedDoctor.price}</Text>
         </View>
+
+        {/* Level 2 Guard: UI Checkup Confirmation Card */}
+        {isEligibleCheckup && (
+          <>
+            <View style={styles.divider} />
+            <TouchableOpacity 
+              style={styles.attachCard}
+              onPress={() => setAttachCheckup(prev => !prev)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkboxCircle, attachCheckup && styles.checkboxCircleActive]}>
+                {attachCheckup && <Icon name="check" size={sizes.scale(14)} color={colors.white} />}
+              </View>
+              <View style={styles.attachTextContainer}>
+                <Text style={styles.attachTitle}>
+                  {t('quiz.attach_to_consultation', 'Прикрепить результаты опроса')}
+                </Text>
+                <Text style={styles.attachSubtitle}>
+                  {t('quiz.attach_desc', 'Врач сможет заранее ознакомиться с вашими симптомами и рекомендациями')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </>
+        )}
 
         <View style={styles.buttonsContainer}>
           <Button
@@ -203,5 +255,46 @@ const themeStyles = (theme) => ({
   },
   payButtonText: {
     ...theme.sizes.typography.h3,
+  },
+  attachCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary + '10',
+    borderRadius: theme.sizes.borderRadius.medium,
+    padding: theme.sizes.spacing.s,
+    marginTop: theme.sizes.spacing.s,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '30',
+  },
+  checkboxCircle: {
+    width: theme.sizes.scale(22),
+    height: theme.sizes.scale(22),
+    borderRadius: theme.sizes.scale(11),
+    borderWidth: 2,
+    borderColor: theme.colors.n400,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.sizes.spacing.s,
+    backgroundColor: theme.colors.white,
+  },
+  checkboxCircleActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  attachTextContainer: {
+    flex: 1,
+  },
+  attachTitle: {
+    ...theme.sizes.typography.bodyMedium,
+    fontSize: theme.sizes.scale(14),
+    fontWeight: '700',
+    color: theme.colors.n900,
+  },
+  attachSubtitle: {
+    ...theme.sizes.typography.caption,
+    color: theme.colors.n600,
+    fontSize: theme.sizes.scale(12),
+    marginTop: 2,
+    lineHeight: 16,
   }
 });

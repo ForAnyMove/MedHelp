@@ -99,7 +99,12 @@ export function DoctorProfile() {
               size={sizes.scale(78)}
             />
             <View style={styles.profileMainInfo}>
-              <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{selectedDoctor.firstName} {selectedDoctor.lastName}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{selectedDoctor.firstName} {selectedDoctor.lastName}</Text>
+                {selectedDoctor.isVerified && (
+                  <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6), marginBottom: sizes.scale(4) }} />
+                )}
+              </View>
               <Text style={styles.doctorSpec}>{t(selectedDoctor.specialization)}</Text>
             </View>
           </View>

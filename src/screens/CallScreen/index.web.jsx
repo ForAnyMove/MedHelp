@@ -89,7 +89,17 @@ export default function CallScreenWeb() {
 
   const handleMinimize = () => {
     setIsMinimized(true);
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      const callIdStr = String(id);
+      if (callIdStr.startsWith('medhelp-consult-')) {
+        const consultationId = callIdStr.replace('medhelp-consult-', '');
+        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+      } else {
+        router.replace('/home');
+      }
+    }
   };
 
   const handleLeave = async () => {
@@ -105,12 +115,21 @@ export default function CallScreenWeb() {
         } catch (e) { }
       }
 
-      // 2. Disconnect locally
       await call.leave().catch(() => { });
       setActiveCall(null);
       setIsMinimized(false);
     }
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      const callIdStr = String(id);
+      if (callIdStr.startsWith('medhelp-consult-')) {
+        const consultationId = callIdStr.replace('medhelp-consult-', '');
+        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+      } else {
+        router.replace('/home');
+      }
+    }
   };
 
   if (!call) {
@@ -306,8 +325,20 @@ function CustomWebLayout({ onMinimize, onLeave, callId }) {
           <Text style={{ color: colors.p500, marginLeft: sizes.spacing.xs, ...sizes.typography.h4 }}>{t('call.minimize', 'Minimize')}</Text>
         </TouchableOpacity>
 
-        <View style={{ backgroundColor: colors.p500 + 32, paddingHorizontal: sizes.spacing.m, paddingVertical: sizes.spacing.s, borderRadius: sizes.scale(20) }}>
-          <Text style={{ color: colors.p500, ...sizes.typography.bodyMedium }}>Room ID: {callId.slice(-8)}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: sizes.spacing.s }}>
+          <TouchableOpacity onPress={() => {
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(window.location.href);
+              alert(t('call.link_copied', 'Link copied to clipboard!'));
+            }
+          }} style={{ backgroundColor: colors.p500 + 32, paddingHorizontal: sizes.spacing.m, paddingVertical: sizes.spacing.s, borderRadius: sizes.scale(20), flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="copy" size={sizes.scale(16)} color={colors.p500} />
+            <Text style={{ color: colors.p500, ...sizes.typography.bodyMedium, marginLeft: sizes.spacing.xs }}>{t('call.copy_link', 'Copy Link')}</Text>
+          </TouchableOpacity>
+
+          <View style={{ backgroundColor: colors.p500 + 32, paddingHorizontal: sizes.spacing.m, paddingVertical: sizes.spacing.s, borderRadius: sizes.scale(20) }}>
+            <Text style={{ color: colors.p500, ...sizes.typography.bodyMedium }}>Room ID: {callId.slice(-8)}</Text>
+          </View>
         </View>
       </View>
 

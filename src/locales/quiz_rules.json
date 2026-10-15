@@ -1,0 +1,1260 @@
+{
+  "schedules": {
+    "B01": [
+      "Q_B01_MAIN",
+      "Q_B01_TIME",
+      "Q_COURSE",
+      "Q_BREATH",
+      "Q_B01_SWALLOW",
+      "Q_B01_NOISE",
+      "Q_CHEST",
+      "Q_B01_COMBO",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_IMMUNE",
+      "Q_FUNCTION",
+      "Q_B01_ITCH",
+      "Q_B01_TRIGGER",
+      "Q_B01_CONTROL",
+      "Q_B01_COLD",
+      "Q_B01_PERSIST"
+    ],
+    "B02": [
+      "Q_B02_ONSET",
+      "Q_B02_PATTERN",
+      "Q_PAIN_SEVERITY",
+      "Q_NEURO",
+      "Q_VISION",
+      "Q_B02_INJURY",
+      "Q_FEVER",
+      "Q_B02_NECK",
+      "Q_B02_JAW",
+      "Q_B02_TRIGGER",
+      "Q_VOMIT",
+      "Q_HEAD_VOMIT_PERSIST",
+      "Q_PREGNANCY",
+      "Q_IMMUNE",
+      "Q_B02_RISK",
+      "Q_B02_AURA",
+      "Q_B02_AURA_TIME",
+      "Q_B02_LENGTH",
+      "Q_B02_SIDE",
+      "Q_B02_FEEL",
+      "Q_B02_ACTIVITY",
+      "Q_B02_SENSE",
+      "Q_B02_DIAG",
+      "Q_B02_FREQUENCY",
+      "Q_FUNCTION",
+      "Q_COURSE"
+    ],
+    "B03": [
+      "Q_B03_MAIN",
+      "Q_B03_SITE",
+      "Q_B03_PAIN",
+      "Q_B03_ONSET",
+      "Q_B03_TOUCH",
+      "Q_B03_COURSE",
+      "Q_B03_PASSAGE",
+      "Q_BLEED_STOOL",
+      "Q_VOMIT",
+      "Q_DIABETES",
+      "Q_PREGNANCY",
+      "Q_GENITAL_ASSOC",
+      "Q_B03_URINARY",
+      "Q_CHEST",
+      "Q_B03_SWALLOW",
+      "Q_B03_WEIGHT",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_SURGERY",
+      "Q_B03_STOOL",
+      "Q_B03_CONST_COURSE",
+      "Q_B03_REFLUX",
+      "Q_B03_REFLUX_FREQ",
+      "Q_FUNCTION",
+      "Q_COURSE"
+    ],
+    "B04": [
+      "Q_B04_MAIN",
+      "Q_B04_STOOL",
+      "Q_B04_TIME",
+      "Q_VOMIT",
+      "Q_VOMIT_TIME",
+      "Q_HYDRATION",
+      "Q_URINE_OUTPUT",
+      "Q_BLEED_STOOL",
+      "Q_B04_PAIN",
+      "Q_B04_HEAD",
+      "Q_B04_EXPOSURE",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_B04_TREATMENT",
+      "Q_IMMUNE",
+      "Q_PREGNANCY",
+      "Q_B04_FLUID_RISK",
+      "Q_COURSE",
+      "Q_FUNCTION"
+    ],
+    "B05": [
+      "Q_B05_MAIN",
+      "Q_URINE_OUTPUT",
+      "Q_ALERT",
+      "Q_B05_FLANK",
+      "Q_B05_BLOOD",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_B05_ANATOMY",
+      "Q_PREGNANCY",
+      "Q_DIABETES",
+      "Q_B05_CATHETER",
+      "Q_IMMUNE",
+      "Q_B05_RECUR",
+      "Q_B05_RESPONSE",
+      "Q_GENITAL_ASSOC",
+      "Q_B05_KEY",
+      "Q_B05_SEVERITY",
+      "Q_B05_LOOK",
+      "Q_COURSE"
+    ],
+    "B06": [
+      "Q_B06_LOOK",
+      "Q_B06_INFECTION_FEATURES",
+      "Q_B06_SWELL",
+      "Q_B06_THROAT",
+      "Q_BREATH",
+      "Q_B06_SURFACE",
+      "Q_B06_SPREAD",
+      "Q_B06_TIME",
+      "Q_B06_EPISODE_DURATION",
+      "Q_COURSE",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_B06_MED",
+      "Q_B06_EYE",
+      "Q_IMMUNE",
+      "Q_SURGERY",
+      "Q_B06_CHRONIC",
+      "Q_PLAN",
+      "Q_B06_CONTROL",
+      "Q_B06_CONTACT",
+      "Q_B06_AVOID",
+      "Q_FUNCTION"
+    ],
+    "B07": [
+      "Q_B07_SITE",
+      "Q_B07_START",
+      "Q_B07_BLADDER",
+      "Q_B07_SADDLE",
+      "Q_B07_LEGS",
+      "Q_BACK_LEG_WEAK",
+      "Q_BACK_RADIATION",
+      "Q_B03_URINARY",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_IMMUNE",
+      "Q_B07_RISK",
+      "Q_B03_WEIGHT",
+      "Q_B07_SHAPE",
+      "Q_B07_REST",
+      "Q_B07_TIME",
+      "Q_COURSE",
+      "Q_PAIN_SEVERITY",
+      "Q_FUNCTION",
+      "Q_SURGERY"
+    ],
+    "B08": [
+      "Q_B08_SITE",
+      "Q_B08_CAUSE",
+      "Q_B08_USE",
+      "Q_B08_SHAPE",
+      "Q_B08_SENSE",
+      "Q_B08_COLOUR",
+      "Q_B08_SWELL",
+      "Q_SWELL_LATERAL",
+      "Q_B08_HEAT",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_IMMUNE",
+      "Q_B08_STIFF",
+      "Q_B08_SMALL",
+      "Q_JOINT_PERSIST",
+      "Q_B08_TIME",
+      "Q_COURSE",
+      "Q_PAIN_SEVERITY",
+      "Q_FUNCTION",
+      "Q_SURGERY"
+    ],
+    "L01": [
+      "Q_L01_MAIN",
+      "Q_BREATH",
+      "Q_CHEST",
+      "Q_CHEST_TIME",
+      "Q_CHEST_ASSOC",
+      "Q_CHEST_EXERTION",
+      "Q_L01_PALP",
+      "Q_L01_PALP_ASSOC",
+      "Q_L01_RECOVERY",
+      "Q_L01_FAINT_CONTEXT",
+      "Q_NEURO",
+      "Q_ALERT",
+      "Q_L01_LEG",
+      "Q_PREGNANCY",
+      "Q_COURSE",
+      "Q_FUNCTION"
+    ],
+    "L02": [
+      "Q_L02_MAIN",
+      "Q_NEURO",
+      "Q_NEURO_TIME",
+      "Q_ALERT",
+      "Q_L02_STAND",
+      "Q_L02_SEVERITY",
+      "Q_L02_BASELINE",
+      "Q_VISION",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_COURSE"
+    ],
+    "L03": [
+      "Q_FEVER",
+      "Q_L03_TIME",
+      "Q_COURSE",
+      "Q_ILLNESS",
+      "Q_FUNCTION",
+      "Q_BREATH",
+      "Q_ALERT",
+      "Q_SKIN_COLOUR",
+      "Q_URINE_OUTPUT",
+      "Q_HYDRATION",
+      "Q_IMMUNE",
+      "Q_PREGNANCY",
+      "Q_SURGERY",
+      "Q_L03_FOCUS",
+      "Q_L03_GUT",
+      "Q_L03_LOCAL",
+      "Q_L03_TRAVEL"
+    ],
+    "L04": [
+      "Q_VISION",
+      "Q_L04_PAIN",
+      "Q_L04_RED",
+      "Q_L04_INJURY",
+      "Q_COURSE"
+    ],
+    "L05": [
+      "Q_L05_MAIN",
+      "Q_L05_EAR_TIME",
+      "Q_L05_EAR_CHANGE",
+      "Q_L05_HEARING_SPEED",
+      "Q_L05_HEARING_TIME",
+      "Q_L05_DENTAL_SWELL",
+      "Q_L05_MOUTH",
+      "Q_L05_DENTAL_INFECTION",
+      "Q_FEVER",
+      "Q_ILLNESS"
+    ],
+    "L06": [
+      "Q_L06_MAIN",
+      "Q_L06_TESTICLE",
+      "Q_L06_TESTICLE_ASSOC",
+      "Q_L06_PELVIC_PAIN",
+      "Q_L06_PELVIC_ASSOC",
+      "Q_PREGNANCY",
+      "Q_L06_BLEED_AMOUNT",
+      "Q_L06_BLEED_CONTEXT",
+      "Q_GENITAL_ASSOC",
+      "Q_L06_BOWEL_URINE",
+      "Q_VOMIT",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_L06_CHRONIC",
+      "Q_PLAN",
+      "Q_COURSE"
+    ],
+    "L07": [
+      "Q_L07_EXPOSURE",
+      "Q_L07_HARM"
+    ],
+    "L08": [
+      "Q_L08_SITE",
+      "Q_L08_EVENT",
+      "Q_L08_HEAD",
+      "Q_NEURO",
+      "Q_ALERT",
+      "Q_L08_BLOODMED",
+      "Q_L08_WOUND",
+      "Q_L08_BLEED",
+      "Q_B08_SHAPE",
+      "Q_B08_SENSE",
+      "Q_B08_COLOUR",
+      "Q_B08_USE",
+      "Q_L08_SWELL",
+      "Q_L08_BONE",
+      "Q_PAIN_SEVERITY",
+      "Q_FEVER",
+      "Q_ILLNESS",
+      "Q_COURSE"
+    ],
+    "L09": [
+      "Q_L09_SAFETY",
+      "Q_L09_HARM",
+      "Q_L09_NEED"
+    ],
+    "L10": [
+      "Q_L10_RECOGNISE",
+      "Q_L10_TIMING",
+      "Q_FUNCTION",
+      "Q_COURSE"
+    ]
+  },
+  "branchActivation": [
+    {
+      "condition": "Q_CHEST = NOW/STOPPED, or Q_BREATH = NEW/FAST",
+      "effect": "L01"
+    },
+    {
+      "condition": "Q_NEURO = WEAKNESS/SPEECH/NUMB/BALANCE; Q_ALERT = SPEECH; Q_B08_SENSE = WEAK; Q_BACK_LEG_WEAK = ONE/BOTH",
+      "effect": "L02"
+    },
+    {
+      "condition": "Q_B02_INJURY = YES",
+      "effect": "L08; establish injury site HEAD"
+    },
+    {
+      "condition": "Q_B03_SITE = PELVIC / CHEST",
+      "effect": "L06 / L01 respectively"
+    },
+    {
+      "condition": "Q_B03_URINARY = YES",
+      "effect": "B05"
+    },
+    {
+      "condition": "Q_B04_PAIN = FOCAL/SEVERE",
+      "effect": "B03"
+    },
+    {
+      "condition": "Q_B04_HEAD = YES",
+      "effect": "B02"
+    },
+    {
+      "condition": "Q_B04_EXPOSURE = YES",
+      "effect": "L07"
+    },
+    {
+      "condition": "Q_GENITAL_ASSOC contains PAIN/BLEED",
+      "effect": "L06; BLEED also establishes vaginal bleeding"
+    },
+    {
+      "condition": "Q_B07_START = MINOR_INJURY/MAJOR or Q_B08_CAUSE = INJURY",
+      "effect": "L08"
+    },
+    {
+      "condition": "Q_B08_SWELL = LIMB",
+      "effect": "Q_SWELL_LATERAL, Q_CHEST, Q_BREATH"
+    },
+    {
+      "condition": "Q_L03_FOCUS = AIRWAY / URINE / GUT / LOCAL",
+      "effect": "B01 / B05 / Q_L03_GUT / Q_L03_LOCAL"
+    },
+    {
+      "condition": "Q_L03_GUT = PAIN / DIARRHOEA/VOMITING/BOTH",
+      "effect": "B03 / B04 respectively"
+    },
+    {
+      "condition": "Q_L03_LOCAL = SKIN / JOINT / WOUND",
+      "effect": "B06 / B08 / L08 respectively; WOUND establishes open injury and inserts Q_SURGERY"
+    },
+    {
+      "condition": "Q_L04_INJURY = CHEMICAL/IRRITANT/HIGH_SPEED/PENETRATING/OTHER",
+      "effect": "L08; establish injury site EYE"
+    },
+    {
+      "condition": "Q_L07_EXPOSURE = FOOD",
+      "effect": "B04, retain L07 only if a separate harmful exposure is explicitly reported"
+    },
+    {
+      "condition": "Q_L08_SITE = EYE",
+      "effect": "L04"
+    },
+    {
+      "condition": "Q_L08_SITE = TORSO",
+      "effect": "Keep L08 limited assessment; do not infer the affected organ"
+    },
+    {
+      "condition": "Q_L09_HARM = OTHER",
+      "effect": "L08; keep L09 active"
+    },
+    {
+      "condition": "Q_L10_RECOGNISE = BODY/CHANGE/EVENT",
+      "effect": "One assisted return to Q_ENTRY_PAIN/Q_ENTRY_ILL/Q_ENTRY_EVENT. A second unsupported choice ends at R_UNSUPPORTED_COMPLAINT."
+    },
+    {
+      "condition": "Q_L10_RECOGNISE = NONE/UNKNOWN",
+      "effect": "Q_L10_TIMING; no second routing attempt"
+    }
+  ],
+  "applicability": {
+    "Q_HEAD_DIZZY": "Q_L08_SITE = HEAD",
+    "Q_FAINT_HEART": "Q_L01_MAIN = FAINT",
+    "Q_B05_BREASTFEED": "active(B05) AND URINARY_SYMPTOMS",
+    "Q_B01_MAIN": "active(B01)",
+    "Q_B01_TIME": "active(B01)",
+    "Q_B01_SWALLOW": "active(B01)",
+    "Q_B01_NOISE": "active(B01)",
+    "Q_B01_COMBO": "active(B01)",
+    "Q_B01_ITCH": "Q_B01_MAIN = NOSE OR Q_B01_COMBO contains NOSE",
+    "Q_B01_TRIGGER": "Q_B01_ITCH = YES",
+    "Q_B01_COLD": "Q_B01_MAIN = COUGH OR Q_B01_COMBO contains COUGH",
+    "Q_B01_PERSIST": "active(B01)",
+    "Q_B02_ONSET": "active(B02)",
+    "Q_B02_PATTERN": "active(B02)",
+    "Q_B02_INJURY": "active(B02)",
+    "Q_B02_NECK": "active(B02)",
+    "Q_B02_JAW": "active(B02)",
+    "Q_B02_TRIGGER": "active(B02)",
+    "Q_B02_RISK": "active(B02)",
+    "Q_B02_LENGTH": "active(B02)",
+    "Q_B02_SIDE": "active(B02)",
+    "Q_B02_FEEL": "active(B02)",
+    "Q_B02_ACTIVITY": "active(B02)",
+    "Q_B02_SENSE": "active(B02)",
+    "Q_B02_AURA": "active(B02)",
+    "Q_B02_AURA_TIME": "Q_B02_AURA = USUAL/NEW",
+    "Q_B02_DIAG": "active(B02)",
+    "Q_B02_FREQUENCY": "active(B02)",
+    "Q_B03_MAIN": "active(B03)",
+    "Q_B03_SITE": "active(B03)",
+    "Q_B03_ONSET": "active(B03) AND Q_B03_PAIN = MILD/MODERATE/SEVERE",
+    "Q_B03_PAIN": "active(B03)",
+    "Q_B03_TOUCH": "active(B03) AND Q_B03_PAIN = MILD/MODERATE/SEVERE",
+    "Q_B03_COURSE": "active(B03) AND Q_B03_PAIN = MILD/MODERATE/SEVERE",
+    "Q_B03_PASSAGE": "active(B03)",
+    "Q_B03_STOOL": "Q_B03_MAIN = CONSTIPATION",
+    "Q_B03_CONST_COURSE": "Q_B03_MAIN = CONSTIPATION",
+    "Q_B03_REFLUX": "Q_B03_MAIN = BURN",
+    "Q_B03_REFLUX_FREQ": "Q_B03_REFLUX = YES",
+    "Q_B03_SWALLOW": "active(B03)",
+    "Q_B03_WEIGHT": "active(B03/B07)",
+    "Q_B03_URINARY": "active(B03/B07)",
+    "Q_B04_MAIN": "active(B04)",
+    "Q_B04_STOOL": "Q_B04_MAIN = DIARRHOEA/BOTH",
+    "Q_B04_TIME": "Q_B04_MAIN = DIARRHOEA/BOTH",
+    "Q_B04_PAIN": "active(B04)",
+    "Q_B04_HEAD": "active(B04)",
+    "Q_B04_EXPOSURE": "active(B04)",
+    "Q_B04_TREATMENT": "Q_B04_MAIN = DIARRHOEA/BOTH",
+    "Q_B04_FLUID_RISK": "active(B04)",
+    "Q_B05_MAIN": "active(B05)",
+    "Q_B05_ANATOMY": "active(B05) AND URINARY_SYMPTOMS",
+    "Q_B05_KEY": "active(B05)",
+    "Q_B05_FLANK": "active(B05)",
+    "Q_B05_BLOOD": "active(B05)",
+    "Q_B05_CATHETER": "active(B05) AND URINARY_SYMPTOMS",
+    "Q_B05_RECUR": "active(B05) AND URINARY_SYMPTOMS",
+    "Q_B05_RESPONSE": "active(B05) AND URINARY_SYMPTOMS",
+    "Q_B05_SEVERITY": "active(B05) AND URINARY_SYMPTOMS",
+    "Q_B05_LOOK": "Q_B05_MAIN = LOOK",
+    "Q_B06_LOOK": "active(B06)",
+    "Q_B06_SWELL": "active(B06)",
+    "Q_B06_THROAT": "active(B06)",
+    "Q_B06_SURFACE": "active(B06)",
+    "Q_B06_SPREAD": "active(B06)",
+    "Q_B06_TIME": "active(B06)",
+    "Q_B06_MED": "active(B06)",
+    "Q_B06_EYE": "active(B06)",
+    "Q_B06_CONTACT": "Q_B06_LOOK = DRY",
+    "Q_B06_AVOID": "Q_B06_CONTACT = YES",
+    "Q_B06_CHRONIC": "active(B06)",
+    "Q_B06_CONTROL": "Q_B06_CHRONIC = UNCHANGED",
+    "Q_B07_SITE": "active(B07)",
+    "Q_B07_START": "active(B07)",
+    "Q_B07_BLADDER": "active(B07)",
+    "Q_B07_SADDLE": "active(B07)",
+    "Q_B07_LEGS": "active(B07)",
+    "Q_B07_RISK": "active(B07)",
+    "Q_B07_REST": "active(B07)",
+    "Q_B07_SHAPE": "active(B07)",
+    "Q_B07_TIME": "active(B07)",
+    "Q_B08_SITE": "active(B08)",
+    "Q_B08_CAUSE": "active(B08)",
+    "Q_B08_USE": "active(B08) OR Q_L08_SITE = LIMB",
+    "Q_B08_SHAPE": "active(B08) OR Q_L08_SITE = LIMB",
+    "Q_B08_SENSE": "active(B08) OR Q_L08_SITE = LIMB",
+    "Q_B08_COLOUR": "active(B08) OR Q_L08_SITE = LIMB",
+    "Q_B08_SWELL": "active(B08)",
+    "Q_B08_HEAT": "Q_B08_SWELL = JOINT/MULTIPLE OR Q_B08_SITE = JOINT/MULTIPLE",
+    "Q_B08_STIFF": "Q_B08_SITE = JOINT/MULTIPLE OR Q_B08_SWELL = JOINT/MULTIPLE",
+    "Q_B08_SMALL": "Q_B08_SITE = JOINT/MULTIPLE OR Q_B08_SWELL = JOINT/MULTIPLE",
+    "Q_B08_TIME": "active(B08)",
+    "Q_L01_MAIN": "active(L01)",
+    "Q_L01_PALP": "Q_L01_MAIN = PALPITATIONS",
+    "Q_L01_PALP_ASSOC": "Q_L01_MAIN = PALPITATIONS",
+    "Q_L01_RECOVERY": "Q_L01_MAIN = FAINT",
+    "Q_L01_FAINT_CONTEXT": "Q_L01_MAIN = FAINT",
+    "Q_L01_LEG": "active(L01)",
+    "Q_L02_MAIN": "active(L02)",
+    "Q_L02_STAND": "Q_L02_MAIN = DIZZY OR Q_NEURO contains BALANCE",
+    "Q_L02_SEVERITY": "Q_L02_MAIN = DIZZY OR Q_NEURO contains BALANCE",
+    "Q_L02_BASELINE": "active(L02)",
+    "Q_L03_TIME": "active(L03)",
+    "Q_L03_FOCUS": "active(L03)",
+    "Q_L03_LOCAL": "Q_L03_FOCUS = LOCAL",
+    "Q_L03_TRAVEL": "active(L03) OR Q_FEVER = MILD/HIGH/RIGORS",
+    "Q_L04_PAIN": "active(L04)",
+    "Q_L04_RED": "active(L04)",
+    "Q_L04_INJURY": "active(L04)",
+    "Q_L05_MAIN": "active(L05)",
+    "Q_L05_EAR_TIME": "Q_L05_MAIN = EAR",
+    "Q_L05_EAR_CHANGE": "Q_L05_MAIN = EAR/HEARING",
+    "Q_L05_HEARING_SPEED": "Q_L05_MAIN = HEARING OR Q_L05_EAR_CHANGE contains HEARING",
+    "Q_L05_HEARING_TIME": "Q_L05_HEARING_SPEED = SUDDEN",
+    "Q_L05_DENTAL_SWELL": "Q_L05_MAIN = DENTAL",
+    "Q_L05_MOUTH": "Q_L05_MAIN = DENTAL",
+    "Q_L05_DENTAL_INFECTION": "Q_L05_MAIN = DENTAL",
+    "Q_L06_MAIN": "active(L06)",
+    "Q_L06_TESTICLE": "Q_L06_MAIN = TESTICLE",
+    "Q_L06_TESTICLE_ASSOC": "Q_L06_MAIN = TESTICLE",
+    "Q_L06_PELVIC_PAIN": "Q_L06_MAIN = PELVIC OR Q_B03_SITE = PELVIC",
+    "Q_L06_PELVIC_ASSOC": "active(L06) OR (active(B03) AND Q_PREGNANCY = PREGNANT/POSSIBLE)",
+    "Q_L06_BOWEL_URINE": "active(L06)",
+    "Q_L06_BLEED_AMOUNT": "Q_L06_MAIN = BLEED OR Q_GENITAL_ASSOC contains BLEED",
+    "Q_L06_BLEED_CONTEXT": "Q_L06_MAIN = BLEED OR Q_GENITAL_ASSOC contains BLEED",
+    "Q_L06_CHRONIC": "Q_L06_MAIN = PELVIC",
+    "Q_L07_EXPOSURE": "active(L07)",
+    "Q_L07_HARM": "Q_L07_EXPOSURE = CHEMICAL/UNCERTAIN/OVERDOSE",
+    "Q_L08_SITE": "active(L08)",
+    "Q_L08_EVENT": "active(L08)",
+    "Q_L08_HEAD": "Q_L08_SITE = HEAD",
+    "Q_L08_BLOODMED": "active(L08)",
+    "Q_L08_WOUND": "Q_L08_SITE = SKIN OR Q_INJURY_OPEN = YES",
+    "Q_L08_BLEED": "active(L08)",
+    "Q_L08_SWELL": "Q_L08_SITE = LIMB",
+    "Q_L08_BONE": "Q_L08_SITE = LIMB",
+    "Q_L09_SAFETY": "active(L09)",
+    "Q_L09_HARM": "active(L09)",
+    "Q_L09_NEED": "active(L09)",
+    "Q_L10_RECOGNISE": "active(L10) AND assisted routing has not been attempted",
+    "Q_L10_TIMING": "active(L10) AND assisted routing did not establish a supported branch",
+    "Q_B01_CONTROL": "Q_B01_MAIN = NOSE OR Q_B01_COMBO contains NOSE",
+    "Q_B06_INFECTION_FEATURES": "active(B06)",
+    "Q_B06_EPISODE_DURATION": "Q_B06_TIME = RECURRENT",
+    "Q_L03_GUT": "Q_L03_FOCUS = GUT",
+    "Q_B06_SYSTEMIC": "active(B06)",
+    "Q_B06_EXPOSURE": "active(B06)",
+    "Q_L06_GUT": "Q_L06_MAIN = PELVIC",
+    "Q_L06_BLEED_COURSE": "Q_L06_MAIN = BLEED OR Q_GENITAL_ASSOC contains BLEED",
+    "Q_B05_LOWER_PAIN": "active(B05)",
+    "Q_COURSE": "physical OR active(L10)",
+    "Q_FUNCTION": "physical OR active(L10)",
+    "Q_FUNCTION_CHANGE": "Q_FUNCTION = SEVERE/BASELINE",
+    "Q_BREATH": "physical",
+    "Q_ALERT": "physical",
+    "Q_CHEST": "active(B01/B03/B04/L01) OR Q_B08_SWELL = LIMB",
+    "Q_CHEST_TIME": "Q_CHEST = NOW/STOPPED",
+    "Q_CHEST_ASSOC": "Q_CHEST = NOW/STOPPED",
+    "Q_CHEST_EXERTION": "Q_CHEST = NOW/STOPPED",
+    "Q_FEVER": "infection_domains OR active(B02/L02)",
+    "Q_ILLNESS": "infection_domains OR active(B02/L02)",
+    "Q_SKIN_COLOUR": "infection_domains OR active(B02/L02)",
+    "Q_HYDRATION": "infection_domains",
+    "Q_URINE_OUTPUT": "infection_domains",
+    "Q_POSTURAL": "Q_URINE_OUTPUT = LESS",
+    "Q_IMMUNE": "infection_domains OR active(B02)",
+    "Q_PREGNANCY": "active(B02/B03/B04/B05/L01/L03/L06) OR Q_FEVER = MILD/HIGH/RIGORS",
+    "Q_POSTPARTUM": "Q_PREGNANCY = RECENT",
+    "Q_MATERNITY": "Q_PREGNANCY = PREGNANT/POSSIBLE/RECENT",
+    "Q_SURGERY": "active(B03/B05/B06/B07/B08/L03/L06/L08)",
+    "Q_RECOVERY": "Q_SURGERY = YES",
+    "Q_NEURO": "active(B02/B07/B08/L01/L02/L08)",
+    "Q_NEURO_TIME": "Q_NEURO contains WEAKNESS/SPEECH/NUMB/BALANCE OR Q_ALERT = SPEECH OR Q_B08_SENSE = WEAK OR Q_BACK_LEG_WEAK = ONE/BOTH",
+    "Q_VISION": "active(B02/L02/L04) OR Q_MATERNITY contains VISION",
+    "Q_BLEED_STOOL": "active(B03/B04) OR Q_L06_BOWEL_URINE contains BLOOD",
+    "Q_VOMIT": "active(B02/B03/B04/L06)",
+    "Q_VOMIT_TIME": "Q_VOMIT = ORDINARY",
+    "Q_DIABETES": "active(B03/B04/B05)",
+    "Q_GENITAL_ASSOC": "active(B03/B05/L06)",
+    "Q_PLAN": "physical",
+    "Q_UNCERTAIN": "Once for a contradictory pair of active answers; not for a plain UNKNOWN",
+    "Q_PAIN_SEVERITY": "active(B02/B07/B08) OR Q_L08_SITE = LIMB/HEAD/TORSO/SKIN OR Q_B05_SEVERITY = SEVERE",
+    "Q_PAIN_ACUTE": "Q_PAIN_SEVERITY = SEVERE",
+    "Q_SWELL_LATERAL": "Q_B08_SWELL = LIMB",
+    "Q_BACK_LEG_WEAK": "Q_B07_LEGS = ONE/BOTH/WEAK",
+    "Q_BACK_RADIATION": "Q_B07_LEGS = ONE",
+    "Q_RASH_EYE_PAIN": "Q_B06_EYE = YES",
+    "Q_HEAD_VOMIT_PERSIST": "active(B02) AND Q_VOMIT = ORDINARY",
+    "Q_URINARY_DISCHARGE": "Q_GENITAL_ASSOC contains DISCHARGE",
+    "Q_JOINT_PERSIST": "Q_B08_SWELL = JOINT/MULTIPLE",
+    "Q_FAINT_KIND": "Q_L01_MAIN = FAINT",
+    "Q_CARDIAC_HISTORY": "active(L01)",
+    "Q_INJURY_OPEN": "active(L08)",
+    "Q_HEAD_FEATURES": "Q_L08_SITE = HEAD",
+    "Q_HEAD_MECHANISM": "Q_L08_SITE = HEAD",
+    "Q_HEAD_INTOX": "Q_L08_SITE = HEAD",
+    "Q_EYE_AFTER_INJURY": "Q_L04_INJURY = CHEMICAL/IRRITANT/HIGH_SPEED/PENETRATING/OTHER",
+    "Q_EYE_INJURY_COURSE": "Q_L04_INJURY = IRRITANT/OTHER",
+    "Q_COUGH_BLOOD": "active(B01)",
+    "Q_COUGH_BLOOD_ASSOC": "Q_COUGH_BLOOD = SMALL/MORE",
+    "Q_WEAKNESS_PROGRESS": "Q_NEURO contains WEAKNESS OR Q_B08_SENSE = WEAK OR Q_BACK_LEG_WEAK = ONE/BOTH"
+  },
+  "sharedUrgent": [
+    {
+      "id": "SH01",
+      "condition": "Q_BREATH = SEVERE OR Q_ALERT = CONFUSED/UNRESPONSIVE",
+      "effect": "U1"
+    },
+    {
+      "id": "SH02",
+      "condition": "NEW_NEURO AND Q_NEURO_TIME = NOW_SUDDEN/LAST24/OLDER_ONGOING",
+      "effect": "U1"
+    },
+    {
+      "id": "SH03",
+      "condition": "NEW_NEURO AND Q_NEURO_TIME = OLDER_RESOLVED",
+      "effect": "U2; general urgent clinical assessment"
+    },
+    {
+      "id": "SH04",
+      "condition": "Q_CHEST = NOW AND (Q_CHEST_TIME = SUDDEN_PERSISTENT OR CHEST_ASSOC)",
+      "effect": "U1"
+    },
+    {
+      "id": "SH05",
+      "condition": "Q_B06_SWELL = AIRWAY OR Q_B06_THROAT = YES OR Q_B06_SYSTEMIC = YES",
+      "effect": "U1"
+    },
+    {
+      "id": "SH06",
+      "condition": "Q_VOMIT = BLOOD/GREEN OR (active(B03) AND Q_BLEED_STOOL = RED/BLACK) OR (Q_L06_BLEED_AMOUNT = HEAVY) OR Q_L08_BLEED = NO",
+      "effect": "U1"
+    },
+    {
+      "id": "SH07",
+      "condition": "INF AND (Q_BREATH = FAST OR Q_SKIN_COLOUR = MOTTLED/NONFADING OR Q_URINE_OUTPUT = NONE18)",
+      "effect": "U1; SH01 applies independently"
+    },
+    {
+      "id": "SH08",
+      "condition": "INF AND Q_IMMUNE = CANCER",
+      "effect": "U1; immediate oncology emergency service if the person already has one, otherwise emergency department"
+    },
+    {
+      "id": "SH09",
+      "condition": "INF AND (Q_IMMUNE = SUPPRESSED OR (Q_FUNCTION = SEVERE/BASELINE AND Q_FUNCTION_CHANGE = YES) OR ((PREG OR POST6) AND (Q_FEVER = MILD/HIGH/RIGORS OR Q_ILLNESS = MARKED/DECLINING)))",
+      "effect": "U2"
+    },
+    {
+      "id": "SH10",
+      "condition": "Q_HYDRATION = NO OR (Q_URINE_OUTPUT = LESS AND (Q_POSTURAL = YES OR Q_ILLNESS = MARKED/DECLINING))",
+      "effect": "U2"
+    },
+    {
+      "id": "SH11",
+      "condition": "PREG AND ((active(B03) AND Q_B03_PAIN = MILD/MODERATE/SEVERE) OR PELVIC OR VAGINAL_BLEED)",
+      "effect": "Maternity U2, immediate contact; severe pain, faintness/shoulder pain/breathlessness or heavy bleeding invokes U1"
+    },
+    {
+      "id": "SH12",
+      "condition": "Q_PREGNANCY = PREGNANT/POSSIBLE/RECENT AND (Q_PAIN_SEVERITY = SEVERE AND active(B02) OR Q_MATERNITY contains VISION/UPPER/SWELL)",
+      "effect": "Maternity U2, immediate contact; shared U1 remains higher"
+    },
+    {
+      "id": "SH13",
+      "condition": "Q_URINE_OUTPUT = RETENTION OR Q_B05_MAIN = RETENTION",
+      "effect": "U1"
+    },
+    {
+      "id": "SH14",
+      "condition": "(Q_B08_SWELL = LIMB AND Q_SWELL_LATERAL = ONE OR Q_L01_LEG = YES) AND (Q_CHEST = NOW OR Q_BREATH = NEW/FAST/SEVERE)",
+      "effect": "U1; limb-only case uses B08 U2"
+    },
+    {
+      "id": "SH15",
+      "condition": "Q_SURGERY = YES AND Q_RECOVERY = PAIN/WOUND/DECLINE",
+      "effect": "U2; contact responsible team or general urgent care"
+    },
+    {
+      "id": "SH16",
+      "condition": "(Q_FUNCTION = SEVERE AND Q_FUNCTION_CHANGE = YES) OR (Q_PAIN_SEVERITY = SEVERE AND Q_PAIN_ACUTE = YES) OR Q_L10_TIMING = YES",
+      "effect": "U2; no cause label"
+    }
+  ],
+  "branchUrgent": {
+    "B01": [
+      "Q_B01_SWALLOW = CANNOT/DROOL",
+      "Q_B01_NOISE = YES",
+      "Q_COUGH_BLOOD = MORE",
+      "Q_COUGH_BLOOD = SMALL AND Q_COUGH_BLOOD_ASSOC contains BREATH/HEART/PAIN"
+    ],
+    "B02": [
+      "Q_B02_ONSET = THUNDER",
+      "Q_NEURO contains SEIZURE",
+      "Q_VISION = LOSS",
+      "Q_FEVER = MILD/HIGH/RIGORS AND Q_B02_NECK = YES",
+      "HEAD_INJURY AND (Q_L08_EVENT = MAJOR/PENETRATING OR Q_L08_HEAD contains BLACKOUT/VOMIT/HEADACHE OR Q_HEAD_FEATURES contains SKULL/WAKE/NEURO OR Q_HEAD_MECHANISM = YES OR Q_L08_BLOODMED = ANTICOAG/ANTIPLATELET)"
+    ],
+    "B03": [
+      "Q_B03_ONSET = SUDDEN_SEVERE (label means very sudden, not necessarily severe)",
+      "Q_B03_PAIN = SEVERE",
+      "Q_B03_TOUCH = YES",
+      "Q_B03_PASSAGE = NEITHER",
+      "Q_B03_SWALLOW = BLOCKED",
+      "Q_DIABETES = YES AND Q_VOMIT = ORDINARY/BLOOD/GREEN"
+    ],
+    "B04": [
+      "Q_B04_PAIN = SEVERE",
+      "Q_B04_HEAD = YES",
+      "Q_VOMIT = BLOOD/GREEN",
+      "Q_DIABETES = YES AND Q_VOMIT = ORDINARY/BLOOD/GREEN",
+      "positive L07 exposure emergency"
+    ],
+    "B05": [
+      "Q_ALERT = SPEECH/CONFUSED/UNRESPONSIVE",
+      "retention under SH13"
+    ],
+    "B06": [
+      "Q_B06_SURFACE = BOTH",
+      "Q_B06_MED = YES AND Q_B06_SPREAD = SPREAD/WIDESPREAD AND Q_ILLNESS = MARKED/DECLINING",
+      "SKIN_INF AND (Q_FEVER = HIGH/RIGORS OR Q_BREATH = FAST/SEVERE OR Q_B06_SYSTEMIC = YES OR Q_SKIN_COLOUR = MOTTLED/NONFADING)",
+      "Q_B06_EYE = YES AND Q_RASH_EYE_PAIN = YES"
+    ],
+    "B07": [
+      "Q_B07_START = MAJOR",
+      "Q_B07_BLADDER contains URINE/BOWEL/SEX",
+      "Q_B07_SADDLE = YES",
+      "Q_B07_LEGS = BOTH",
+      "Q_BACK_LEG_WEAK = BOTH",
+      "NEW_NEURO AND Q_NEURO_TIME = NOW_SUDDEN/LAST24/OLDER_ONGOING"
+    ],
+    "B08": [
+      "Q_B08_USE = CANNOT",
+      "Q_B08_SHAPE = YES",
+      "Q_B08_CAUSE = INJURY AND (Q_PAIN_SEVERITY = SEVERE OR Q_B08_SENSE = NEW/WEAK)",
+      "Q_B08_COLOUR = YES AND (Q_B08_SENSE = NEW/WEAK OR Q_B08_USE = CANNOT)"
+    ],
+    "L01": [
+      "Q_L01_PALP = CONTINUOUS",
+      "Q_L01_PALP = EPISODIC AND PALP_ASSOC",
+      "Q_L01_RECOVERY = NOT_FULL/UNRESPONSIVE",
+      "Q_FAINT_KIND = FAINT AND (Q_L01_FAINT_CONTEXT = EXERCISE/LYING/INJURY OR Q_FAINT_HEART = YES OR Q_CHEST = NOW)",
+      "shared predicates"
+    ],
+    "L02": [
+      "Q_WEAKNESS_PROGRESS = YES",
+      "Q_NEURO contains SEIZURE",
+      "Q_L02_STAND = NO",
+      "shared neurological predicates"
+    ],
+    "L04": [
+      "Q_VISION = LOSS",
+      "Q_L04_PAIN = SEVERE",
+      "Q_L04_INJURY = CHEMICAL/HIGH_SPEED/PENETRATING",
+      "EYE_INJURY AND Q_EYE_AFTER_INJURY contains SIGHT/SICK/OPEN/BLOOD/HEAD"
+    ],
+    "L05": [
+      "Q_L05_DENTAL_SWELL = LARGE/EYE",
+      "Q_L05_MOUTH = OPEN/SWALLOW/BREATH"
+    ],
+    "L06": [
+      "Q_L06_TESTICLE = SUDDEN/REST",
+      "Q_L06_MAIN = TESTICLE AND Q_L06_TESTICLE_ASSOC = YES",
+      "Q_L06_PELVIC_PAIN = SEVERE/TOUCH",
+      "Q_L06_PELVIC_ASSOC contains FAINT/SHOULDER/BREATH",
+      "Q_L06_BLEED_AMOUNT = HEAVY"
+    ],
+    "L07": [
+      "Q_L07_EXPOSURE = OVERDOSE",
+      "Q_L07_HARM = HARMFUL/SYMPTOMS"
+    ],
+    "L08": [
+      "Q_L08_EVENT = MAJOR/PENETRATING",
+      "Q_L08_BLEED = NO",
+      "HEAD_INJURY AND (Q_L08_HEAD contains BLACKOUT/VOMIT/HEADACHE OR Q_NEURO contains SEIZURE/WEAKNESS/SPEECH/NUMB/BALANCE OR Q_HEAD_FEATURES contains SKULL/WAKE/NEURO OR Q_HEAD_MECHANISM = YES OR Q_L08_BLOODMED = ANTICOAG/ANTIPLATELET)",
+      "(Q_L08_SITE = LIMB AND (Q_B08_USE = CANNOT OR Q_B08_SHAPE = YES OR (Q_B08_COLOUR = YES AND Q_B08_SENSE = NEW/WEAK))) OR (Q_L08_SITE = EYE AND (Q_L04_INJURY = CHEMICAL/HIGH_SPEED/PENETRATING OR Q_EYE_AFTER_INJURY contains SIGHT/SICK/OPEN/BLOOD/HEAD OR Q_VISION = LOSS))"
+    ],
+    "L09": [
+      "Q_L09_SAFETY = UNSAFE",
+      "Q_L09_HARM = SERIOUS"
+    ]
+  },
+  "nonEmergency": [
+    {
+      "id": "R_B01_EXAM_U2",
+      "condition": "Q_BREATH = NEW OR Q_COUGH_BLOOD = SMALL OR Q_CHEST = NOW OR Q_COURSE = RAPID OR Q_ILLNESS = MARKED/DECLINING OR Q_FEVER = HIGH/RIGORS OR (Q_B01_MAIN = THROAT AND (Q_HYDRATION = LESS OR Q_URINE_OUTPUT = LESS OR Q_IMMUNE = SUPPRESSED))",
+      "note": ""
+    },
+    {
+      "id": "R_B01_PERSISTENT_U3",
+      "condition": "Q_B01_PERSIST contains LUMP/ULCER/WEIGHT",
+      "note": ""
+    },
+    {
+      "id": "R_B01_PERSISTENT_U4",
+      "condition": "(Q_B01_MAIN = COUGH AND Q_B01_TIME = GT21) OR (Q_B01_MAIN = THROAT AND (Q_B01_TIME = D8_21/GT21 AND Q_COURSE != IMPROVING OR Q_COURSE = RECURRENT))",
+      "note": ""
+    },
+    {
+      "id": "R_B01_ALLERGY_U5",
+      "condition": "ALLERGY AND Q_B01_CONTROL = MILD",
+      "note": ""
+    },
+    {
+      "id": "R_B01_ALLERGY_U4",
+      "condition": "ALLERGY AND Q_B01_CONTROL = SLEEP/UNCONTROLLED",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B01_URI_U5",
+      "condition": "NOT ALLERGY AND Q_B01_COMBO contains all NOSE/THROAT AND Q_B01_TIME = LE7 AND Q_B01_SWALLOW = NORMAL/PAINFUL",
+      "note": ""
+    },
+    {
+      "id": "R_B01_THROAT_U5",
+      "condition": "Q_B01_MAIN = THROAT AND Q_B01_COMBO = THROAT AND Q_B01_TIME = LE7 AND Q_B01_SWALLOW = NORMAL/PAINFUL",
+      "note": ""
+    },
+    {
+      "id": "R_B01_RESOLVING_COUGH_U5",
+      "condition": "Q_B01_MAIN = COUGH AND Q_B01_COLD = YES AND Q_B01_TIME = LE7/D8_21 AND Q_COURSE = IMPROVING AND Q_BREATH = NORMAL AND Q_FEVER = NO AND Q_ILLNESS = WELL",
+      "note": ""
+    },
+    {
+      "id": "R_B01_UNCLEAR_U3",
+      "condition": "Fallback after no specific B01 row",
+      "note": ""
+    },
+    {
+      "id": "R_B02_EXAM_U2",
+      "condition": "Q_B02_JAW = JAW/SCALP OR Q_B02_TRIGGER = YES OR Q_HEAD_VOMIT_PERSIST = YES OR Q_VISION = BLUR/FLASH OR Q_B02_AURA = NEW OR Q_B02_AURA_TIME = GT60 OR Q_B02_LENGTH = GT72 OR (Q_B02_PATTERN = FIRST/CHANGED AND (Q_IMMUNE = SUPPRESSED/CANCER OR Q_B02_RISK contains CANCER/ANTICOAG)) OR (Q_PREGNANCY = PREGNANT/POSSIBLE/RECENT AND NOT PREG_MILD_HEAD)",
+      "note": ""
+    },
+    {
+      "id": "R_B02_EXAM_U3_24H",
+      "condition": "PREG_MILD_HEAD",
+      "note": "no named condition"
+    },
+    {
+      "id": "R_B02_EXAM_U3_48H",
+      "condition": "Q_B02_PATTERN = FIRST AND Q_ENTRY_AGE = A50_64/A65_74/A75PLUS",
+      "note": "no named condition"
+    },
+    {
+      "id": "R_B02_MIGRAINE_U5",
+      "condition": "MIGRAINE AND Q_B02_DIAG = MIGRAINE AND Q_B02_FREQUENCY = OCCASIONAL",
+      "note": ""
+    },
+    {
+      "id": "R_B02_MIGRAINE_U3",
+      "condition": "MIGRAINE AND Q_B02_DIAG != MIGRAINE",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B02_MIGRAINE_U4",
+      "condition": "MIGRAINE AND Q_B02_DIAG = MIGRAINE AND Q_B02_FREQUENCY = FREQUENT/DISRUPT",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B02_TENSION_U5",
+      "condition": "TENSION AND Q_B02_FREQUENCY = OCCASIONAL",
+      "note": ""
+    },
+    {
+      "id": "R_B02_TENSION_U4",
+      "condition": "TENSION AND Q_B02_FREQUENCY = FREQUENT/DISRUPT",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B02_UNCLEAR_U3",
+      "condition": "Fallback after no specific B02 row",
+      "note": ""
+    },
+    {
+      "id": "R_B03_EXAM_U2",
+      "condition": "(Q_B03_PAIN = MILD/MODERATE AND (Q_B03_COURSE = PERSISTENT/RECURRENT/PROGRESS OR Q_B03_URINARY = YES OR Q_GENITAL_ASSOC contains DISCHARGE/BLEED)) OR Q_B03_SWALLOW = SOME",
+      "note": ""
+    },
+    {
+      "id": "R_B03_EXAM_U3",
+      "condition": "Q_B03_WEIGHT = YES",
+      "note": ""
+    },
+    {
+      "id": "R_B03_CONSTIPATION_U5",
+      "condition": "CONSTIPATION AND Q_B03_CONST_COURSE = RECENT",
+      "note": ""
+    },
+    {
+      "id": "R_B03_CONSTIPATION_U4",
+      "condition": "CONSTIPATION AND Q_B03_CONST_COURSE = RECURRENT/NO7",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B03_REFLUX_U5",
+      "condition": "REFLUX AND Q_B03_REFLUX_FREQ = OCCASIONAL",
+      "note": ""
+    },
+    {
+      "id": "R_B03_REFLUX_U4",
+      "condition": "REFLUX AND Q_B03_REFLUX_FREQ = MOST/PERSIST",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B03_UNCLEAR_U3_24_48H",
+      "condition": "Q_B03_PAIN = MILD AND Q_B03_SITE = DIFFUSE AND Q_B03_COURSE = BRIEF AND Q_COURSE = IMPROVING/STABLE",
+      "note": ""
+    },
+    {
+      "id": "R_B03_UNCLEAR_U3_24H",
+      "condition": "Q_B03_PAIN = MILD/MODERATE AND Q_B03_COURSE = BRIEF AND Q_COURSE = IMPROVING/STABLE AND NOT (Q_B03_SITE = DIFFUSE AND Q_B03_PAIN = MILD)",
+      "note": "excludes preceding milder diffuse selector"
+    },
+    {
+      "id": "R_B03_UNCLEAR_U3",
+      "condition": "Q_B03_PAIN = NONE",
+      "note": "other unmatched B03 presentations use unsupported navigation"
+    },
+    {
+      "id": "R_B04_EXAM_U2",
+      "condition": "Q_HYDRATION = NO OR Q_BLEED_STOOL = RED/BLACK OR Q_VOMIT_TIME = GT48 OR Q_B04_TIME = GT7 OR (DIARRHOEA AND Q_B04_TREATMENT = ANTIBIOTICS/INPATIENT) OR Q_IMMUNE = SUPPRESSED OR (PREG AND Q_VOMIT = ORDINARY AND Q_VOMIT_TIME = EQ48/GT48) OR (Q_B04_FLUID_RISK = KIDNEY/HEART/RESTRICT AND (Q_HYDRATION = LESS/NO OR Q_URINE_OUTPUT = LESS/NONE18))",
+      "note": ""
+    },
+    {
+      "id": "R_B04_GASTROENTERITIS_U5",
+      "condition": "DIARRHOEA AND Q_B04_STOOL = ACUTE AND Q_B04_TIME = LE7 AND Q_VOMIT = NO/ORDINARY AND (Q_VOMIT = NO OR Q_VOMIT_TIME = LT48/EQ48) AND Q_BLEED_STOOL = NONE AND Q_B04_PAIN = NONE/MILD AND Q_B04_EXPOSURE = NO/FOOD AND Q_B04_TREATMENT = NONE AND Q_IMMUNE = NO AND Q_PREGNANCY = NO/NA AND Q_B04_FLUID_RISK = NONE AND Q_FEVER = NO/MILD",
+      "note": ""
+    },
+    {
+      "id": "R_B04_RECURRENT_U4",
+      "condition": "Q_B04_STOOL = RECURRENT AND Q_VOMIT = NO AND Q_HYDRATION = NORMAL AND Q_BLEED_STOOL = NONE AND Q_B04_PAIN = NONE AND Q_COURSE = STABLE/RECURRENT",
+      "note": ""
+    },
+    {
+      "id": "R_B04_UNCLEAR_U3",
+      "condition": "Fallback after no specific B04 row",
+      "note": ""
+    },
+    {
+      "id": "R_B05_COMPLICATED_U2",
+      "condition": "URINARY_SYMPTOMS AND (Q_FEVER = HIGH/RIGORS OR Q_B05_FLANK = YES OR Q_B05_LOWER_PAIN = YES OR Q_B05_BLOOD = YES OR PREG OR Q_ENTRY_AGE = A65_74/A75PLUS OR Q_B05_ANATOMY = MALE/ALTERED OR Q_DIABETES = YES OR Q_B05_CATHETER = YES OR Q_IMMUNE = SUPPRESSED/CANCER OR Q_COURSE = RAPID)",
+      "note": ""
+    },
+    {
+      "id": "R_B05_RECURRENT_U2",
+      "condition": "URINARY_SYMPTOMS AND (Q_B05_RECUR = TWO6/THREE12 OR Q_B05_RESPONSE = NO48)",
+      "note": ""
+    },
+    {
+      "id": "R_B05_LOWER_UTI_U3_24H",
+      "condition": "UTI AND Q_B05_SEVERITY = MILD/MODERATE",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B05_OTHER_U3",
+      "condition": "Q_GENITAL_ASSOC contains DISCHARGE AND NOT (Q_GENITAL_ASSOC contains PAIN/BLEED)",
+      "note": "contact primary care or sexual-health service; not a UTI label"
+    },
+    {
+      "id": "R_B05_UNCLEAR_U3_24H",
+      "condition": "URINARY_SYMPTOMS",
+      "note": "any risk-population uncertainty is resolved under the uncertainty policy before this selector; a known population with an insufficient symptom pattern may use this no-condition 24h record"
+    },
+    {
+      "id": "R_B05_UNCLEAR_U3",
+      "condition": "NOT URINARY_SYMPTOMS AND NOT ISOLATED_URINE",
+      "note": "unexplained appearance only, no active pain/illness"
+    },
+    {
+      "id": "R_B05_ISOLATED_URINE_CHANGE_U5",
+      "condition": "ISOLATED_URINE",
+      "note": "no condition; age/anatomy alone is not an infection trigger"
+    },
+    {
+      "id": "R_B06_INFECTION_U2",
+      "condition": "SKIN_INF",
+      "note": "pattern label allowed at U2, no supportive-care block"
+    },
+    {
+      "id": "R_B06_EXAM_U2",
+      "condition": "Q_B06_MED = YES OR Q_B06_SURFACE = BLISTERS/MUCOUS OR (Q_B06_LOOK = HIVES AND NOT CHRONIC_SKIN AND (Q_B06_SPREAD = SPREAD/WIDESPREAD OR Q_B06_SWELL = DEEP OR (DURATION48 AND Q_COURSE != IMPROVING) OR Q_B06_TIME = RECURRENT)) OR (Q_B06_SPREAD = SPREAD/WIDESPREAD AND Q_B06_INFECTION_FEATURES contains PAIN/HOT/SWOLLEN)",
+      "note": ""
+    },
+    {
+      "id": "R_B06_HIVES_U5",
+      "condition": "Q_B06_LOOK = HIVES AND Q_B06_SPREAD = LOCAL/MOVING AND Q_B06_TIME = LT48 AND Q_B06_SWELL = NO AND Q_B06_SURFACE = NO AND Q_B06_INFECTION_FEATURES = NONE AND Q_B06_MED = NO AND Q_B06_SYSTEMIC = NO AND Q_FEVER = NO",
+      "note": ""
+    },
+    {
+      "id": "R_B06_DERMATITIS_U5",
+      "condition": "DERMATITIS AND Q_B06_AVOID = BETTER",
+      "note": ""
+    },
+    {
+      "id": "R_B06_DERMATITIS_U4",
+      "condition": "DERMATITIS AND Q_B06_AVOID = NO7/RECURRENT",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B06_CHRONIC_REVIEW_U4",
+      "condition": "CHRONIC_SKIN AND Q_B06_LOOK = HIVES AND Q_B06_CONTROL = PLANNED",
+      "note": ""
+    },
+    {
+      "id": "R_B06_CHRONIC_REVIEW_U3",
+      "condition": "CHRONIC_SKIN AND Q_B06_LOOK = HIVES AND Q_B06_CONTROL = SOON",
+      "note": ""
+    },
+    {
+      "id": "R_B06_UNCLEAR_U4",
+      "condition": "CHRONIC_SKIN AND Q_B06_LOOK != HIVES AND Q_B06_CONTROL = PLANNED",
+      "note": ""
+    },
+    {
+      "id": "R_B06_UNCLEAR_U3",
+      "condition": "Fallback after no specific B06 row",
+      "note": ""
+    },
+    {
+      "id": "R_B07_EXAM_U2",
+      "condition": "Q_B07_START = SUDDEN_SEVERE OR Q_COURSE = RAPID OR Q_FEVER = MILD/HIGH/RIGORS OR (Q_B07_START = NO_TRIGGER AND (Q_IMMUNE = SUPPRESSED/CANCER OR Q_B07_RISK contains CANCER)) OR (Q_B07_START = MINOR_INJURY AND Q_B07_RISK contains BONES/STEROIDS) OR Q_BACK_LEG_WEAK = ONE",
+      "note": ""
+    },
+    {
+      "id": "R_B07_EXAM_U3",
+      "condition": "Q_B03_WEIGHT = YES OR Q_B07_REST = REST OR Q_B07_SHAPE = YES OR Q_B07_SITE = UPPER/OTHER/FLANK",
+      "note": ""
+    },
+    {
+      "id": "R_B07_RADIATING_U3",
+      "condition": "Q_B07_SITE = LOW AND Q_B07_LEGS = ONE AND Q_BACK_RADIATION = YES AND Q_BACK_LEG_WEAK = NO AND Q_B07_BLADDER = NONE AND Q_B07_SADDLE = NO AND Q_FEVER = NO AND Q_B07_RISK = NONE",
+      "note": "allow function MODERATE"
+    },
+    {
+      "id": "R_B07_MECHANICAL_U5",
+      "condition": "Q_B07_SITE = LOW AND Q_B07_START = ACTIVITY AND Q_B07_REST = MOVE AND Q_B07_LEGS = NO AND Q_B07_TIME = LE14 AND Q_COURSE = IMPROVING AND Q_B07_RISK = NONE AND Q_FEVER = NO AND Q_B07_BLADDER = NONE AND Q_B07_SADDLE = NO AND Q_B03_WEIGHT = NO AND Q_B07_SHAPE = NO",
+      "note": ""
+    },
+    {
+      "id": "R_B07_PERSISTENT_U4",
+      "condition": "Q_B07_SITE = LOW AND Q_B07_TIME = GT14/RECURRENT AND Q_COURSE = STABLE/IMPROVING/RECURRENT",
+      "note": ""
+    },
+    {
+      "id": "R_B07_UNCLEAR_U3",
+      "condition": "Fallback after no specific B07 row",
+      "note": ""
+    },
+    {
+      "id": "R_B08_ACUTE_JOINT_U2",
+      "condition": "(Q_B08_SWELL = JOINT/MULTIPLE AND Q_B08_HEAT = YES) OR (Q_B08_SITE = JOINT/MULTIPLE AND (Q_FEVER = MILD/HIGH/RIGORS OR Q_ILLNESS = MARKED/DECLINING))",
+      "note": ""
+    },
+    {
+      "id": "R_B08_LIMB_SWELLING_U2",
+      "condition": "Q_B08_SWELL = LIMB AND Q_SWELL_LATERAL = ONE",
+      "note": ""
+    },
+    {
+      "id": "R_B08_INFLAMMATORY_PATTERN_U3",
+      "condition": "Q_B08_SWELL = JOINT/MULTIPLE AND (Q_JOINT_PERSIST = YES OR Q_B08_SWELL = MULTIPLE OR Q_B08_SMALL = YES OR Q_B08_STIFF = GT30)",
+      "note": "no diagnosis"
+    },
+    {
+      "id": "R_B08_OVERUSE_U5",
+      "condition": "Q_B08_SITE = MUSCLE AND Q_B08_CAUSE = OVERUSE AND Q_B08_USE = NORMAL AND Q_B08_SWELL = NONE AND Q_B08_SENSE = NO AND Q_B08_COLOUR = NO AND Q_B08_TIME = LT14 AND Q_COURSE = IMPROVING AND Q_FEVER = NO",
+      "note": ""
+    },
+    {
+      "id": "R_B08_PERSISTENT_U4",
+      "condition": "Q_B08_CAUSE = OVERUSE AND Q_B08_TIME = GE14/RECURRENT AND Q_COURSE = STABLE/IMPROVING/RECURRENT",
+      "note": ""
+    },
+    {
+      "id": "R_B08_UNCLEAR_U3",
+      "condition": "Fallback after no specific B08 row",
+      "note": ""
+    },
+    {
+      "id": "R_L01_ASSESSMENT_U2",
+      "condition": "Q_BREATH = NEW/FAST OR Q_CHEST = NOW OR Q_CHEST_EXERTION = YES OR (Q_CHEST = STOPPED AND CHEST_ASSOC) OR (Q_L01_PALP = STOPPED AND PALP_ASSOC) OR (Q_L01_MAIN = FAINT AND (Q_CARDIAC_HISTORY = YES OR Q_COURSE = WORSE/RAPID OR Q_FAINT_KIND = NEAR AND Q_L01_FAINT_CONTEXT = EXERCISE/LYING))",
+      "note": ""
+    },
+    {
+      "id": "R_L01_ASSESSMENT_U3_48H",
+      "condition": "Q_CHEST = STOPPED AND Q_CHEST_TIME = BRIEF AND Q_CHEST_EXERTION = NO AND Q_CHEST_ASSOC = NONE AND Q_CARDIAC_HISTORY = NO AND Q_COURSE = STABLE/IMPROVING",
+      "note": ""
+    },
+    {
+      "id": "R_L01_ASSESSMENT_U3",
+      "condition": "(Q_L01_MAIN = FAINT AND Q_L01_RECOVERY = FULL AND Q_L01_FAINT_CONTEXT = NONE AND Q_FAINT_HEART = NO AND Q_CARDIAC_HISTORY = NO AND Q_CHEST = NONE AND Q_BREATH = NORMAL/USUAL) OR (Q_L01_MAIN = PALPITATIONS AND Q_L01_PALP = EPISODIC/STOPPED AND Q_L01_PALP_ASSOC = NONE AND Q_COURSE = STABLE/IMPROVING/RECURRENT)",
+      "note": "otherwise unsupported"
+    },
+    {
+      "id": "R_L02_ASSESSMENT_U2",
+      "condition": "(NEW_NEURO AND Q_NEURO_TIME = GRADUAL) OR Q_L02_SEVERITY = SEVERE OR Q_L02_BASELINE = WORSE",
+      "note": ""
+    },
+    {
+      "id": "R_L02_ASSESSMENT_U3",
+      "condition": "Q_L02_BASELINE = NEW/OLD AND Q_COURSE = STABLE/IMPROVING/RECURRENT",
+      "note": "no named cause"
+    },
+    {
+      "id": "R_L03_ASSESSMENT_U2",
+      "condition": "Q_ILLNESS = MARKED/DECLINING OR Q_COURSE = WORSE/RAPID OR (Q_L03_TIME = GE48 AND Q_COURSE != IMPROVING) OR Q_L03_TRAVEL = YES/UNKNOWN",
+      "note": ""
+    },
+    {
+      "id": "R_L03_ASSESSMENT_U3_48H",
+      "condition": "Q_L03_FOCUS = NONE AND Q_L03_TIME = LT24/H24_48 AND Q_FEVER = MILD AND Q_IMMUNE = NO AND Q_PREGNANCY = NO/NA AND Q_HYDRATION = NORMAL AND Q_URINE_OUTPUT = NORMAL AND Q_L03_TRAVEL = NO AND WELL",
+      "note": "only if continuing"
+    },
+    {
+      "id": "R_L04_ASSESSMENT_U2",
+      "condition": "Q_VISION = BLUR/FLASH OR Q_L04_RED = RED/LIGHT OR Q_EYE_INJURY_COURSE = PERSIST",
+      "note": ""
+    },
+    {
+      "id": "R_L04_ASSESSMENT_U3",
+      "condition": "Q_L04_PAIN = NONE/MILD AND Q_VISION = NONE/OLD",
+      "note": "Q_L04_PAIN = NONE/MILD AND Q_VISION = NONE/OLD; stable unexplained symptom, no condition"
+    },
+    {
+      "id": "R_L05_EAR_ASSESSMENT_U2",
+      "condition": "Q_L05_EAR_CHANGE contains DISCHARGE/SWELL OR Q_L05_EAR_TIME = GT3 OR Q_FEVER = HIGH/RIGORS OR Q_ILLNESS = MARKED/DECLINING",
+      "note": "hearing-only cases use the hearing selectors"
+    },
+    {
+      "id": "R_L05_HEARING_ASSESSMENT_U2_24H",
+      "condition": "Q_L05_HEARING_SPEED = SUDDEN AND Q_L05_HEARING_TIME = LE30",
+      "note": ""
+    },
+    {
+      "id": "R_L05_HEARING_ASSESSMENT_U3_ENT14D",
+      "condition": "(Q_L05_HEARING_SPEED = SUDDEN AND Q_L05_HEARING_TIME = GT30 AND Q_COURSE = STABLE) OR Q_L05_HEARING_SPEED = RAPID",
+      "note": ""
+    },
+    {
+      "id": "R_L05_EAR_ASSESSMENT_U3",
+      "condition": "Q_L05_MAIN = EAR/HEARING AND (Q_L05_HEARING_SPEED = SLOW OR Q_L05_MAIN = EAR)",
+      "note": "gradual hearing loss must have Q_L05_HEARING_SPEED = SLOW"
+    },
+    {
+      "id": "R_L05_DENTAL_ASSESSMENT_U2",
+      "condition": "Q_L05_DENTAL_SWELL = LOCAL OR Q_L05_DENTAL_INFECTION = PUS/SWELL OR Q_FEVER = HIGH/RIGORS OR Q_ILLNESS = MARKED/DECLINING",
+      "note": "dental domain only"
+    },
+    {
+      "id": "R_L05_DENTAL_ASSESSMENT_U3",
+      "condition": "Q_L05_MAIN = DENTAL AND Q_L05_DENTAL_SWELL = NO AND Q_L05_MOUTH = NORMAL AND Q_L05_DENTAL_INFECTION = NONE",
+      "note": ""
+    },
+    {
+      "id": "R_L06_MATERNITY_ASSESSMENT_U2",
+      "condition": "SH11 OR SH12",
+      "note": "this selector takes destination precedence over general pelvic U2"
+    },
+    {
+      "id": "R_L06_PELVIC_ASSESSMENT_U2",
+      "condition": "(PELVIC AND (Q_L06_BOWEL_URINE contains DIFFICULT/PAINFUL/BLOOD OR Q_GENITAL_ASSOC contains DISCHARGE/BLEED OR Q_L06_GUT = YES OR Q_FEVER = MILD/HIGH/RIGORS OR Q_VOMIT = ORDINARY)) OR (VAGINAL_BLEED AND (Q_L06_BLEED_AMOUNT = MORE OR Q_L06_BLEED_COURSE = YES))",
+      "note": "general urgent clinical service, no inferred anatomy"
+    },
+    {
+      "id": "R_L06_TESTICLE_ASSESSMENT_U2",
+      "condition": "Q_L06_MAIN = TESTICLE AND Q_L06_TESTICLE = ACHE/LUMP",
+      "note": ""
+    },
+    {
+      "id": "R_L06_PELVIC_ASSESSMENT_U4",
+      "condition": "PELVIC AND Q_L06_CHRONIC = UNCHANGED AND Q_PLAN = ASSESSED AND Q_COURSE = STABLE/RECURRENT",
+      "note": ""
+    },
+    {
+      "id": "R_L06_PELVIC_ASSESSMENT_U3",
+      "condition": "PELVIC AND Q_L06_PELVIC_PAIN = MILD/MODERATE AND NOT (Q_L06_CHRONIC = UNCHANGED AND Q_PLAN = ASSESSED AND Q_COURSE = STABLE/RECURRENT)",
+      "note": ""
+    },
+    {
+      "id": "R_L06_BLEED_ASSESSMENT_U3",
+      "condition": "VAGINAL_BLEED AND Q_L06_BLEED_AMOUNT = LIGHT AND Q_L06_BLEED_COURSE = NO AND Q_L06_BLEED_CONTEXT = BETWEEN AND Q_PREGNANCY = NO/NA",
+      "note": ""
+    },
+    {
+      "id": "R_L06_POSTMENOPAUSE_ASSESSMENT_U3_GYN14D",
+      "condition": "VAGINAL_BLEED AND Q_L06_BLEED_CONTEXT = MENOPAUSE AND Q_L06_BLEED_AMOUNT = LIGHT AND Q_L06_BLEED_COURSE = NO",
+      "note": ""
+    },
+    {
+      "id": "R_L06_DISCHARGE_ASSESSMENT_U3",
+      "condition": "Q_L06_MAIN = DISCHARGE AND Q_GENITAL_ASSOC = DISCHARGE AND Q_L06_BOWEL_URINE = NONE AND Q_FEVER = NO AND Q_ILLNESS = WELL/TIRED",
+      "note": ""
+    },
+    {
+      "id": "R_L07_ASSESSMENT_U2",
+      "condition": "Q_L07_EXPOSURE = CHEMICAL/UNCERTAIN AND Q_L07_HARM = UNKNOWN",
+      "note": "immediate poison-information/urgent clinical contact"
+    },
+    {
+      "id": "R_L08_ASSESSMENT_U2",
+      "condition": "No U1 AND (Q_L08_SITE = TORSO OR Q_L08_WOUND = DEEP/BITE/BURN OR Q_L08_SWELL = LARGE/WORSE OR Q_B08_USE = LIMITED OR Q_L08_BONE = YES OR (HEAD_INJURY AND (Q_HEAD_INTOX = YES OR Q_HEAD_DIZZY = YES OR Q_L08_BLOODMED = DISORDER/ASPIRIN)) OR Q_COURSE = WORSE/RAPID OR Q_FEVER = HIGH/RIGORS OR Q_ILLNESS = MARKED/DECLINING)",
+      "note": ""
+    },
+    {
+      "id": "R_L08_ASSESSMENT_U3_48H",
+      "condition": "Q_L08_SITE = LIMB AND Q_L08_EVENT = MINOR AND Q_INJURY_OPEN = NO AND Q_L08_BLOODMED = NO AND Q_L08_SWELL = MILD AND Q_L08_BONE = NO AND Q_B08_USE = NORMAL AND Q_B08_SHAPE = NO AND Q_B08_SENSE = NO AND Q_B08_COLOUR = NO AND Q_PAIN_SEVERITY = MILD AND Q_COURSE = STABLE/IMPROVING",
+      "note": "no fracture exclusion"
+    },
+    {
+      "id": "R_L09_ASSESSMENT_U2",
+      "condition": "Q_L09_SAFETY = SAFE AND Q_L09_HARM = NO/OTHER AND Q_L09_NEED = NOW/UNKNOWN",
+      "note": "immediate crisis contact, never a generic routine booking"
+    },
+    {
+      "id": "R_L09_ASSESSMENT_U3",
+      "condition": "Q_L09_SAFETY = SAFE AND Q_L09_HARM = NO AND Q_L09_NEED = SOON",
+      "note": ""
+    },
+    {
+      "id": "R_URGENT_ASSESSMENT_U2",
+      "condition": "A shared U2 predicate is TRUE and no more specific U2 record matches",
+      "note": ""
+    },
+    {
+      "id": "R_CRITICAL_UNCERTAINTY_U2",
+      "condition": "Only same-day (U2) predicates remain UNKNOWN after collection",
+      "note": "no TRUE U1 and no UNKNOWN U1 predicate; immediate human clinical triage"
+    },
+    {
+      "id": "R_EMERGENCY_ASSESSMENT_U1",
+      "condition": "Any TRUE shared or branch U1 predicate",
+      "note": ""
+    },
+    {
+      "id": "R_IMMEDIATE_UNCERTAINTY",
+      "condition": "No TRUE U1",
+      "note": "at least one active U1 predicate remains UNKNOWN after collection; no waiting-time verdict"
+    }
+  ],
+  "patterns": {
+    "ALLERGY": "(B01 main NOSE OR combo contains NOSE) AND itch YES AND trigger EXPOSURE/SEASON AND fever NO AND illness WELL AND immune NO",
+    "MIGRAINE": "B02 pattern FAMILIAR, onset GRADUAL, length H4_72, at least two of side ONE / feel PULSE / pain MODERATE or SEVERE / activity YES, and (sense contains NAUSEA OR both LIGHT and SOUND); aura NO or USUAL with aura-time LE60; pregnancy NO/NA; neuro NONE; vision NONE/OLD; neck NO; jaw NONE; trigger NO; injury NO; risk NONE; immune NO; fever NO. Moderate function is allowed for U3/U4, not U5.",
+    "TENSION": "B02 pattern FAMILIAR, onset GRADUAL, side BOTH, feel PRESS, pain MILD/MODERATE, length M30_H4/H4_72, activity NO, sense NONE, vomit NO, neuro NONE, vision NONE, aura NO, pregnancy NO/NA, injury NO, risk NONE, immune NO, fever NO.",
+    "PREG_MILD_HEAD": "Pregnancy PREGNANT/POSSIBLE/RECENT, pain MILD, course IMPROVING, headache length LT30/M30_H4, aura NO, vision NONE, neuro NONE, maternity NONE, fever NO, vomit NO; no migraine pattern. This restricted 24h review is authored policy requiring CR-B approval.",
+    "CONSTIPATION": "B03 main CONSTIPATION, stool contains STRAIN and at least one HARD/LESS, passage BOTH/WIND, pain NONE/MILD, vomit NO, stool-bleeding NONE, weight NO; if active pain meets B03.02, U2 overrides the pattern.",
+    "REFLUX": "B03 main BURN, reflux YES, pain NONE/MILD, chest NONE, swallow NO, vomit NO, stool-bleeding NONE, weight NO, pregnancy NO/NA; no competing constipation main domain.",
+    "UTI": "Age A18_49/A50_64, anatomy FEMALE, pregnancy NO/NA, catheter NO, diabetes NO, immune NO, fever NO, flank NO, lower-abdominal pain NO, visible blood NO, recurrence NO, response EARLY/BETTER, genital association NONE; key checklist contains at least two DYSURIA/NOCTURIA/CLOUDY. Breastfeeding YES prohibits pharmacy destination: use primary care. This label is a possible pattern, not a confirmed infection.",
+    "ISOLATED_URINE": "B05 main LOOK, look ONLY, key NONE, lower-abdominal pain NO, flank NO, blood NO, genital association NONE, fever NO, illness WELL, urine-output NORMAL. Existing anatomy/age risk alone does not convert isolated odour into infection.",
+    "DERMATITIS": "Skin look DRY, contact YES, infection checklist NONE, surface NO, swell NO, medicine NO, systemic NO, fever NO, spread LOCAL.",
+    "CHRONIC_SKIN": "Skin chronic UNCHANGED, plan ASSESSED, medicine NO, exposure NO, swell NO, surface NO, systemic NO, infection checklist NONE, fever NO, illness WELL, spread LOCAL/MOVING, course STABLE/RECURRENT, function MILD/MODERATE. This exception is a bounded authoring policy; clinical approval required."
+  },
+  "macros": {
+    "INF": "active B01/B04/B05/L03, OR fever is MILD/HIGH/RIGORS, OR illness is MARKED/DECLINING, OR skin infection features contain all PAIN/HOT/SWOLLEN, OR a joint is swollen and hot, OR recovery is WOUND/DECLINE. This is a routing applicability definition, not a diagnosis of infection.",
+    "PREG": "pregnancy PREGNANT/POSSIBLE; `POST6` = pregnancy RECENT AND postpartum LE6. Maternity symptom rules also apply when pregnancy RECENT with an unknown postpartum interval; do not infer a safe interval.",
+    "NEW_NEURO": "neuro checklist contains WEAKNESS/SPEECH/NUMB/BALANCE, OR alert SPEECH, OR limb sense WEAK, OR back-leg weakness ONE/BOTH.",
+    "WELL": "illness WELL/TIRED, alert NONE, breath NORMAL/USUAL, skin-colour NONE, function MILD/MODERATE, course IMPROVING/STABLE/RECURRENT. Only include a component when its applicability is true; explicitly collected positive concerns remain active.",
+    "SAFE(branch)": "every applicable safety question for that active branch is answered, every active shared/branch U1/U2 predicate is FALSE or NOT_APPLICABLE, and no unresolved safety conflict exists. “Safety question” means every question except the cause-only list below. U3 restrictions still apply before U4/U5.",
+    "LOW(branch)": "SAFE(branch), WELL, course IMPROVING/STABLE, function MILD, plan is not CHANGED, and all applicable hydration/urine-output answers are NORMAL. Named conditions also require their exact pattern predicate. No low leaf is selected with a user-uncertain safety answer. An unchanged chronic condition may use U4 only where explicitly listed.",
+    "DIARRHOEA": "B04 main DIARRHOEA/BOTH. `URINARY_SYMPTOMS` = B05 main PAIN/FREQUENCY/RETENTION, OR key checklist has DYSURIA/NOCTURIA/CLOUDY, OR look CLOUDY/FREQUENCY, OR flank/blood/lower-abdominal pain YES. Colour/odour alone is not suspected infection.",
+    "CHEST_ASSOC": "chest association contains SPREAD/SWEAT_NAUSEA/BREATH_FAINT. `PALP_ASSOC` = palpitation association contains CHEST/BREATH/FAINT.",
+    "PELVIC": "L06 main PELVIC or B03 site PELVIC. `VAGINAL_BLEED` = L06 main BLEED or genital association contains BLEED. `SKIN_INF` = skin infection checklist contains all PAIN, HOT and SWOLLEN. Spreading is not a required condition for this urgent predicate.",
+    "HEAD_INJURY": "injury site HEAD or headache injury YES. `EYE_INJURY` = eye injury CHEMICAL/IRRITANT/HIGH_SPEED/PENETRATING/OTHER. `DURATION48` = skin time GE48, or time RECURRENT and episode duration GE48."
+  }
+}

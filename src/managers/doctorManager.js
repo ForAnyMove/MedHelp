@@ -25,7 +25,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
   // ── Fetch all doctors ──────────────────────────────────────────────────────
 
   const fetchDoctors = useCallback(async () => {
-    if (!session?.accessToken && !session?.access_token) return;
+    if (!session?.userId) return;
     setAppLoading(true);
     try {
       const data = await doctorsApi.listAll();
@@ -115,7 +115,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
 
   // ── Confirm booking ───────────────────────────────────────────────────────
 
-  const confirmBooking = useCallback(async (purpose) => {
+  const confirmBooking = useCallback(async (purpose, checkup_id = null) => {
     if (!selectedSlot.slotId || !selectedDoctor) return;
     setAppLoading(true);
     try {
@@ -123,6 +123,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
         slot_id:   selectedSlot.slotId,
         doctor_id: selectedDoctor.id,
         purpose:   purpose ?? null,
+        checkup_id: checkup_id ?? null,
       });
 
       // Refresh consultations in the consultation manager

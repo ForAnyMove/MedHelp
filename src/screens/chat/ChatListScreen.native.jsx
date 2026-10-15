@@ -18,7 +18,7 @@ const CustomListItem = ({ channel, onSelect }) => {
   );
   const otherUser = otherMembers.length > 0 ? otherMembers[0].user : null;
   const name = otherUser?.name || 'Unknown';
-  const avatar = otherUser?.image;
+  const avatar = otherUser?.image || otherUser?.avatar_url || otherUser?.avatar;
 
   // Last message text
   const lastMessage = channel.state.messages[channel.state.messages.length - 1];
@@ -43,20 +43,29 @@ const CustomListItem = ({ channel, onSelect }) => {
         width: sizes.scale(48),
         height: sizes.scale(48),
         borderRadius: sizes.scale(24),
-        backgroundColor: colors.n200,
+        backgroundColor: colors.p100,
         overflow: 'hidden',
         marginRight: sizes.spacing.m,
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
         {avatar ? (
           <Image source={{ uri: avatar }} style={{ width: '100%', height: '100%' }} />
         ) : (
-          <Icon name="person" size={sizes.scale(24)} color={colors.n500} style={{ alignSelf: 'center', marginTop: sizes.scale(12) }} />
+          <Text style={{ color: colors.p500, ...sizes.typography.h4, fontFamily: 'Manrope_700Bold' }}>
+            {(name || 'U')[0]?.toUpperCase()}
+          </Text>
         )}
       </View>
       <View style={{ flex: 1, paddingBottom: sizes.spacing.s }}>
-        <Text style={{ ...sizes.typography.bodyLarge, color: colors.n900, fontFamily: 'Manrope_600SemiBold' }}>
-          {name}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ ...sizes.typography.bodyLarge, color: colors.n900, fontFamily: 'Manrope_600SemiBold', flexShrink: 1 }} numberOfLines={1}>
+            {name}
+          </Text>
+          {otherUser?.isVerified && (
+            <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+          )}
+        </View>
         <Text style={{ ...sizes.typography.bodyMedium, color: colors.n500, marginTop: sizes.scale(4) }} numberOfLines={1}>
           {lastMessageText}
         </Text>
