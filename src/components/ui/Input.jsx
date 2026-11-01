@@ -3,16 +3,38 @@ import { View, TextInput, Text, Platform } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 
-export function Input({ placeholder, value, onChangeText, label, error, secureTextEntry, style, containerStyle, inputContainerStyle, rounded, rightElement, ...props }) {
+export function Input({ 
+  placeholder, 
+  value, 
+  onChangeText, 
+  label, 
+  error, 
+  secureTextEntry, 
+  style, 
+  containerStyle, 
+  inputContainerStyle, 
+  rounded, 
+  rightElement, 
+  accessibilityLabel,
+  accessibilityHint,
+  ...props 
+}) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const [isFocused, setIsFocused] = useState(false);
   const isMultiline = props.multiline;
   const linesCount = props.numberOfLines || 4;
 
+  const resolvedAccessibilityLabel = accessibilityLabel || label || placeholder;
+  const resolvedAccessibilityHint = accessibilityHint || (error ? `Ошибка валидации: ${error}` : undefined);
+
   return (
     <View style={[styles.container, containerStyle]}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
+      {label ? (
+        <Text style={styles.label} accessibilityRole="none" allowFontScaling={true}>
+          {label}
+        </Text>
+      ) : null}
       <View 
         style={[
           styles.inputContainer,
@@ -39,11 +61,24 @@ export function Input({ placeholder, value, onChangeText, label, error, secureTe
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           numberOfLines={linesCount}
+          accessibilityLabel={resolvedAccessibilityLabel}
+          accessibilityHint={resolvedAccessibilityHint}
+          accessibilityInvalid={!!error}
+          allowFontScaling={true}
           {...props}
         />
         {rightElement ? <View style={styles.rightElement}>{rightElement}</View> : null}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text 
+          style={styles.errorText} 
+          accessibilityRole="alert" 
+          accessibilityLiveRegion="polite"
+          allowFontScaling={true}
+        >
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -69,7 +104,8 @@ const themeStyles = (theme) => {
       borderRadius: sizes.borderRadius.medium,
       backgroundColor: colors.white,
       paddingHorizontal: sizes.scale(16),
-      height: sizes.scale(50),
+      paddingVertical: sizes.scale(4),
+      minHeight: sizes.scale(50), // WCAG 1.4.4: expands gracefully up to 200% text scale
     },
     inputFocused: {
       borderColor: colors.p500,
@@ -80,7 +116,8 @@ const themeStyles = (theme) => {
     input: {
       flex: 1,
       color: colors.n900,
-      height: '100%',
+      minHeight: sizes.scale(36),
+      paddingVertical: sizes.scale(4),
       ...Platform.select({
         web: {
           outlineStyle: 'none',

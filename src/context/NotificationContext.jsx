@@ -7,9 +7,6 @@ import Constants from 'expo-constants';
 import { useRouter, useRootNavigationState } from 'expo-router';
 import { useSession } from './SessionContext';
 import { registerDevice } from '../api/devicesApi';
-import { supabase } from '../api/apiClient'; // or wherever supabase is exported. Let's assume there's a supabase client in utils or apiClient.
-
-// We will use standard fetch for supabase if it's not exported. Wait, I should import supabase from the right place.
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -124,12 +121,11 @@ export function NotificationProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (session?.user?.id && expoPushToken) {
-      registerDevice(expoPushToken, Platform.OS).catch(err => {
+    const userId = session?.userId || session?.user?.id;
+    if (userId && expoPushToken) {
+      registerDevice(expoPushToken, Platform.OS, session).catch(err => {
         console.error('Failed to register device push token:', err);
       });
-      
-      // The realtime subscription is handled here if needed, but for now we focus on Expo push token registration
     }
   }, [session, expoPushToken]);
 

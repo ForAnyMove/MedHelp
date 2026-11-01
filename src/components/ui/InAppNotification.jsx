@@ -8,6 +8,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Icon } from '../ui/Icon';
 import { useChatNotifications } from '../../context/ChatNotificationContext';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { getHitSlopForSize } from '../../utils/accessibility';
 
 const TOAST_WIDTH_LANDSCAPE = 340;
 const SWIPE_THRESHOLD = 80;
@@ -114,31 +115,53 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
       ];
 
   return (
-    <Animated.View style={containerStyle} {...panResponder.panHandlers}>
+    <Animated.View 
+      style={containerStyle} 
+      {...panResponder.panHandlers}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="assertive"
+    >
       <TouchableOpacity
         style={styles.content}
         onPress={() => { onPress(notification); dismiss(); }}
         activeOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={`${notification.title || 'Новое уведомление'}: ${preview}`}
+        accessibilityHint="Дважды коснитесь для перехода к уведомлению"
       >
         {/* Avatar */}
-        <View style={[styles.avatar, { backgroundColor: colors.p100 }]}>
-          <Text style={{ color: colors.p500, fontSize: sizes.scale(18), fontWeight: '700' }}>
+        <View style={[styles.avatar, { backgroundColor: colors.p100 }]} accessible={false}>
+          <Text style={{ color: colors.p500, fontSize: sizes.scale(18), fontWeight: '700' }} allowFontScaling={true}>
             {(notification.title || '?')[0].toUpperCase()}
           </Text>
         </View>
 
         {/* Text */}
         <View style={styles.textContainer}>
-          <Text style={[styles.toastTitle, { color: colors.n900, fontSize: sizes.scale(14) }]} numberOfLines={1}>
+          <Text 
+            style={[styles.toastTitle, { color: colors.n900, fontSize: sizes.scale(14) }]} 
+            numberOfLines={1}
+            allowFontScaling={true}
+          >
             {notification.title}
           </Text>
-          <Text style={[styles.toastBody, { color: colors.n500, fontSize: sizes.scale(13) }]} numberOfLines={1}>
+          <Text 
+            style={[styles.toastBody, { color: colors.n500, fontSize: sizes.scale(13) }]} 
+            numberOfLines={1}
+            allowFontScaling={true}
+          >
             {preview}
           </Text>
         </View>
 
         {/* Close button */}
-        <TouchableOpacity onPress={dismiss} style={styles.closeBtn} hitSlop={{ top: sizes.scale(8), bottom: sizes.scale(8), left: sizes.scale(8), right: sizes.scale(8) }}>
+        <TouchableOpacity 
+          onPress={dismiss} 
+          style={styles.closeBtn} 
+          hitSlop={getHitSlopForSize(sizes.scale(16), sizes.scale(16))}
+          accessibilityRole="button"
+          accessibilityLabel="Закрыть уведомление"
+        >
           <Icon name="x" size={sizes.scale(16)} color={colors.n500} />
         </TouchableOpacity>
       </TouchableOpacity>

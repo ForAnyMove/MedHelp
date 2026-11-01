@@ -104,23 +104,36 @@ export function DoctorConsultationForm({ consultation }) {
     } else {
       setIsLoading(false);
     }
-  }, [consultation?.id, session]);
+  }, [consultation?.id, session, refreshSessionToken]);
+
+  const draftRef = React.useRef();
+  draftRef.current = {
+    overview,
+    diagnosis_icd10: diagnosisIcd10,
+    diagnosis_name: diagnosisName,
+    patient_has: patientHas,
+    next_steps: nextSteps,
+    recommendations: recommendations,
+    prescriptions
+  };
+
+  // Immediate draft flush on component unmount to prevent data loss
+  useEffect(() => {
+    return () => {
+      if (consultation?.id && !isSent && draftRef.current) {
+        AsyncStorage.setItem(`draft_consultation_${consultation.id}`, JSON.stringify(draftRef.current)).catch(() => {});
+      }
+    };
+  }, [consultation?.id, isSent]);
 
   // Debounced auto-save to local storage
   useEffect(() => {
     if (isLoading || isSent || !consultation?.id) return;
     const saveDraftLocally = async () => {
       try {
-        const draft = {
-          overview,
-          diagnosis_icd10: diagnosisIcd10,
-          diagnosis_name: diagnosisName,
-          patient_has: patientHas,
-          next_steps: nextSteps,
-          recommendations: recommendations,
-          prescriptions
-        };
-        await AsyncStorage.setItem(`draft_consultation_${consultation.id}`, JSON.stringify(draft));
+        if (draftRef.current) {
+          await AsyncStorage.setItem(`draft_consultation_${consultation.id}`, JSON.stringify(draftRef.current));
+        }
       } catch (e) {
         // Ignore local storage errors
       }
@@ -176,8 +189,10 @@ export function DoctorConsultationForm({ consultation }) {
       const { DeviceEventEmitter } = require('react-native');
       DeviceEventEmitter.emit('consultation_completed');
 
-      // Clear local draft on successful save
-      await AsyncStorage.removeItem(`draft_consultation_${consultation.id}`).catch(() => {});
+      // Clear local draft only on final submission, preserve on draft save
+      if (!isDraft) {
+        await AsyncStorage.removeItem(`draft_consultation_${consultation.id}`).catch(() => {});
+      }
 
       setIsSaving(false);
 

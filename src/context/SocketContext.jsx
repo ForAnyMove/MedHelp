@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import { Platform, DeviceEventEmitter } from 'react-native';
+import { Platform, DeviceEventEmitter, AppState } from 'react-native';
 import { useSession } from './SessionContext';
 import { useChatNotifications } from './ChatNotificationContext';
 import { useTranslation } from 'react-i18next';
@@ -260,7 +260,19 @@ export function SocketProvider({ children }) {
 
     setSocket(newSocket);
 
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'active') {
+        if (!newSocket.connected) {
+          console.log('[Socket.io] App returned to active state, reconnecting socket...');
+          newSocket.connect();
+        }
+      }
+    };
+
+    const appStateSub = AppState.addEventListener('change', handleAppStateChange);
+
     return () => {
+      appStateSub.remove();
       newSocket.disconnect();
     };
   }, [session?.accessToken, session?.token, session?.userId]);

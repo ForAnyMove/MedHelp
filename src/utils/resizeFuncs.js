@@ -11,13 +11,14 @@ export const MOBILE_DESIGN_HEIGHT = 844;
  * @param {number} [baseHeight=BASE_DESIGN_HEIGHT] - Базовая высота макета (по умолчанию 1024).
  * @param {Object} [options]
  * @param {boolean} [options.round=true] - Округлять до ближайшего пикселя.
+ * @param {number|null} [options.maxScale=null] - Максимальный коэффициент масштабирования (для планшетов).
  * @returns {number} Масштабированное значение.
  */
 export function scaleByHeight(
   designValue,
   currentHeight = Dimensions.get('window').height,
   baseHeight = BASE_DESIGN_HEIGHT,
-  { round = true } = {}
+  { round = true, maxScale = null } = {}
 ) {
   if (typeof designValue !== 'number' || !isFinite(designValue)) return 0;
   if (typeof currentHeight !== 'number' || currentHeight <= 0) {
@@ -25,7 +26,10 @@ export function scaleByHeight(
   }
   if (typeof baseHeight !== 'number' || baseHeight <= 0) baseHeight = BASE_DESIGN_HEIGHT;
 
-  const scale = currentHeight / baseHeight;
+  let scale = currentHeight / baseHeight;
+  if (typeof maxScale === 'number' && maxScale > 0) {
+    scale = Math.min(scale, maxScale);
+  }
   
   let resizeKef;
   if (baseHeight === MOBILE_DESIGN_HEIGHT) {
@@ -40,6 +44,22 @@ export function scaleByHeight(
   return round ? PixelRatio.roundToNearestPixel(result) : result;
 }
 
-export function scaleByHeightMobile(designValue, currentHeight = Dimensions.get('window').height, { round = true } = {}) {
-  return scaleByHeight(designValue, currentHeight, MOBILE_DESIGN_HEIGHT, { round });
+export function scaleByHeightMobile(designValue, currentHeight = Dimensions.get('window').height, { round = true, maxScale = 1.2 } = {}) {
+  return scaleByHeight(designValue, currentHeight, MOBILE_DESIGN_HEIGHT, { round, maxScale });
+}
+
+/**
+ * Масштабирует размер шрифта с учётом системного масштабирования текста (Font Size / Display Size).
+ * Ограничивает максимальный коэффициент шрифта безопасным порогом для предотвращения поломки верстки.
+ */
+export function scaleFontSize(designValue, currentHeight = Dimensions.get('window').height, baseHeight = BASE_DESIGN_HEIGHT, { round = true, maxFontScale = 1.5 } = {}) {
+  const baseSize = scaleByHeight(designValue, currentHeight, baseHeight, { round: false });
+  const rawFontScale = PixelRatio.getFontScale() || 1;
+  const safeFontScale = Math.min(rawFontScale, maxFontScale);
+  const result = baseSize * safeFontScale;
+  return round ? PixelRatio.roundToNearestPixel(result) : result;
+}
+
+export function scaleFontSizeMobile(designValue, currentHeight = Dimensions.get('window').height, { round = true, maxFontScale = 1.5 } = {}) {
+  return scaleFontSize(designValue, currentHeight, MOBILE_DESIGN_HEIGHT, { round, maxFontScale });
 }

@@ -121,15 +121,24 @@ export default function ChatRoomScreen() {
   const [channel, setChannel] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     if (!chatClient || !id) return;
 
     const fetchChannel = async () => {
-      const c = chatClient.channel('messaging', id);
-      await c.watch();
-      setChannel(c);
+      try {
+        const c = chatClient.channel('messaging', id);
+        await c.watch({ state: true, messages: { limit: 50 } });
+        if (isMounted) setChannel(c);
+      } catch (err) {
+        console.error('Failed to watch channel:', err);
+      }
     };
 
     fetchChannel();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, chatClient]);
 
   if (!channel) return null;

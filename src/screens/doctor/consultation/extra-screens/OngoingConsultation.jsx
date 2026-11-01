@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, AppState, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
@@ -33,24 +33,16 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
     consultation?.is_patient_joined
   );
       
+  const [isOvertime, setIsOvertime] = React.useState(false);
+
   React.useEffect(() => {
     const duration = consultation.slot?.duration || consultation.duration;
     if (duration && timerSeconds >= duration * 60) {
-      const endAutomatically = async () => {
-        try {
-          const { createApiClient } = require('../../../../api/apiClient');
-          const { createConsultationsApi } = require('../../../../api/consultationsApi');
-          const api = createApiClient(session, refreshSessionToken);
-          const consultApi = createConsultationsApi(api);
-          await consultApi.update(consultation.id, { status: 'completed' });
-        } catch (e) {
-          console.error('Failed to update consultation status:', e);
-        }
-        onEndConsultation();
-      };
-      endAutomatically();
+      if (!isOvertime) {
+        setIsOvertime(true);
+      }
     }
-  }, [timerSeconds, consultation, session, refreshSessionToken, onEndConsultation]);
+  }, [timerSeconds, consultation, isOvertime]);
 
   const formatTimer = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -146,7 +138,7 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
     }
   };
 
-  const handleEndConsultation = async () => {
+  const performEndConsultation = async () => {
     try {
       const { createApiClient } = require('../../../../api/apiClient');
       const { createConsultationsApi } = require('../../../../api/consultationsApi');
@@ -158,6 +150,17 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
       console.error('Failed to update consultation status:', e);
     }
     onEndConsultation();
+  };
+
+  const handleEndConsultation = () => {
+    Alert.alert(
+      t('consultation.end_confirm_title', 'Завершить приём?'),
+      t('consultation.end_confirm_desc', 'Вы уверены, что хотите завершить консультацию и перейти к сохранению протокола?'),
+      [
+        { text: t('common.cancel', 'Отмена'), style: 'cancel' },
+        { text: t('consultation.end_btn', 'Завершить'), style: 'destructive', onPress: performEndConsultation }
+      ]
+    );
   };
 
   return (
@@ -241,6 +244,26 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
               <Text style={styles.timerTitle}>{t('consultation.timer')}</Text>
             </View>
             <View style={styles.timerDivider} />
+            {isOvertime && (
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: colors.warning + '20',
+                borderWidth: 1,
+                borderColor: colors.warning,
+                borderRadius: sizes.scale(8),
+                paddingHorizontal: sizes.spacing.m,
+                paddingVertical: sizes.scale(6),
+                marginHorizontal: sizes.spacing.m,
+                marginBottom: sizes.spacing.s,
+                alignSelf: 'center',
+              }}>
+                <Icon name="info" size={sizes.scale(16)} color={colors.warning} style={{ marginRight: sizes.scale(6) }} />
+                <Text style={{ color: colors.warning, ...sizes.typography.caption, fontWeight: '600' }}>
+                  {t('consultation.time_exceeded', 'Время консультации истекло. Вы можете продолжить приём или завершить его.')}
+                </Text>
+              </View>
+            )}
             {(isDoctorJoined && isPatientJoined) || timerSeconds > 0 ? (
               <View style={styles.timerGrid}>
                 <View style={styles.digitBox}><Text style={styles.digit}>{digits[0]}</Text></View>
@@ -286,12 +309,13 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
         <View style={styles.footer}>
           <TouchableOpacity
             onPress={handleEndConsultation}
-            hitSlop={{ top: sizes.scale(20), bottom: sizes.scale(20), left: sizes.scale(50), right: sizes.scale(50) }}
             style={styles.endButton}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('consultation.end_btn')}
           >
             <View style={styles.endTextContainer}>
-              <Text style={styles.endText}>{t('consultation.end_btn')}</Text>
+              <Text style={styles.endText} allowFontScaling={true}>{t('consultation.end_btn')}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -561,15 +585,19 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   endButton: {
-    padding: theme.sizes.spacing.m,
+    minHeight: theme.sizes.scale(44),
+    minWidth: theme.sizes.scale(120),
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.spacing.s,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   endTextContainer: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.p500,
+    borderBottomColor: theme.colors.danger,
   },
   endText: {
     ...theme.sizes.typography.h3,
-    lineHeight: theme.sizes.scale(16),
-    color: theme.colors.p500,
+    color: theme.colors.danger,
   }
 });

@@ -47,7 +47,11 @@ export function SearchableDropdown({
 
   return (
     <View style={styles.container}>
-      {!!label && <Text style={styles.label}>{label}</Text>}
+      {!!label && (
+        <Text style={styles.label} accessibilityRole="none" allowFontScaling={true}>
+          {label}
+        </Text>
+      )}
       
       <TouchableOpacity 
         activeOpacity={0.8}
@@ -57,6 +61,10 @@ export function SearchableDropdown({
           !!error && styles.inputContainerError
         ]}
         onPress={() => setIsOpen(!isOpen)}
+        accessibilityRole="combobox"
+        accessibilityLabel={label || placeholder}
+        accessibilityState={{ expanded: isOpen }}
+        accessibilityHint={displayValue ? `Текущее значение: ${displayValue}. Нажмите для изменения` : "Нажмите для открытия списка вариантов"}
       >
         <TextInput
           style={styles.input}
@@ -68,6 +76,8 @@ export function SearchableDropdown({
           pointerEvents={isOpen ? 'auto' : 'none'}
           editable={isOpen}
           autoCorrect={false}
+          accessibilityLabel={isOpen ? t('common.search', 'Поиск по списку') : (label || placeholder)}
+          allowFontScaling={true}
         />
         <Icon 
           name={isOpen ? "ChevronUp" : "ChevronDown"} 
@@ -76,10 +86,19 @@ export function SearchableDropdown({
         />
       </TouchableOpacity>
 
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
+      {!!error && (
+        <Text 
+          style={styles.errorText} 
+          accessibilityRole="alert" 
+          accessibilityLiveRegion="polite"
+          allowFontScaling={true}
+        >
+          {error}
+        </Text>
+      )}
 
       {isOpen && (
-        <View style={styles.dropdown}>
+        <View style={styles.dropdown} accessibilityRole="menu">
           <FlatList
             data={filteredData}
             keyExtractor={item => item.code}
@@ -87,20 +106,29 @@ export function SearchableDropdown({
             keyboardShouldPersistTaps="handled"
             renderItem={({ item }) => (
               <TouchableOpacity 
-                style={styles.item}
+                style={[styles.item, { minHeight: sizes.scale(44), justifyContent: 'center' }]}
                 onPress={() => handleSelect(item)}
+                accessibilityRole="menuitem"
+                accessibilityLabel={item.name}
+                accessibilityState={{ selected: item.code === value }}
+                accessibilityHint={item.code === value ? "Выбрано" : "Нажмите для выбора"}
               >
-                <Text style={[
-                  styles.itemText,
-                  item.code === value && styles.itemTextActive
-                ]}>
+                <Text 
+                  style={[
+                    styles.itemText,
+                    item.code === value && styles.itemTextActive
+                  ]}
+                  allowFontScaling={true}
+                >
                   {item.name}
                 </Text>
               </TouchableOpacity>
             )}
             ListEmptyComponent={
               <View style={styles.emptyItem}>
-                <Text style={styles.emptyText}>{t('common.no_results', 'Нет результатов')}</Text>
+                <Text style={styles.emptyText} allowFontScaling={true}>
+                  {t('common.no_results', 'Нет результатов')}
+                </Text>
               </View>
             }
           />
@@ -129,7 +157,8 @@ const themeStyles = (theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.n300,
     paddingHorizontal: theme.sizes.spacing.m,
-    height: theme.sizes.scale(48),
+    paddingVertical: theme.sizes.scale(4),
+    minHeight: theme.sizes.scale(48), // WCAG 1.4.4: allows graceful expansion on large text
   },
   inputContainerActive: {
     borderColor: theme.colors.p500,

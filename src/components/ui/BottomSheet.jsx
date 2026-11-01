@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from './Icon';
+import { getHitSlopForSize } from '../../utils/accessibility';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -143,6 +144,8 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
       visible={visible}
       animationType="none"
       onRequestClose={handleClose}
+      accessibilityViewIsModal={true}
+      aria-modal={true}
     >
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -152,6 +155,9 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
           style={styles.backdrop}
           activeOpacity={1}
           onPress={handleClose}
+          accessibilityRole="button"
+          accessibilityLabel="Закрыть модальное окно"
+          accessibilityHint="Дважды коснитесь для закрытия окна"
         />
 
         <Animated.View
@@ -166,7 +172,13 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
           ]}
         >
           {/* Top Drag Indicator Area */}
-          <View style={styles.handleContainer} {...panResponder.panHandlers}>
+          <View 
+            style={styles.handleContainer} 
+            {...panResponder.panHandlers}
+            accessibilityRole="adjustable"
+            accessibilityLabel="Элемент перетаскивания шторки"
+            accessibilityHint="Проведите пальцем вверх или вниз для изменения высоты окна"
+          >
             <View style={styles.handle} />
           </View>
 
@@ -184,7 +196,13 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
                 }
               ]}
             >
-              <TouchableOpacity onPress={handleClose} style={styles.closeBtnInner}>
+              <TouchableOpacity 
+                onPress={handleClose} 
+                style={styles.closeBtnInner}
+                accessibilityRole="button"
+                accessibilityLabel="Закрыть"
+                hitSlop={getHitSlopForSize(sizes.scale(24), sizes.scale(24))}
+              >
                 <Icon name="close" size={sizes.scale(24)} color={colors.n900} />
               </TouchableOpacity>
             </Animated.View>

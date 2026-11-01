@@ -9,11 +9,15 @@ import { useStyles } from '../../theme/useStyles';
  * @param {function} onChange - Callback on selection
  * @param {object} style - Custom container style
  */
-export function SegmentedControl({ options, value, onChange, style }) {
+export function SegmentedControl({ options, value, onChange, style, accessibilityLabel }) {
   const styles = useStyles(themeStyles);
 
   return (
-    <View style={[styles.container, style]}>
+    <View 
+      style={[styles.container, style]} 
+      accessibilityRole="tablist"
+      accessibilityLabel={accessibilityLabel || "Переключатель вкладок"}
+    >
       {options.map((option) => {
         const isActive = option.value === value;
         return (
@@ -22,8 +26,14 @@ export function SegmentedControl({ options, value, onChange, style }) {
             style={[styles.segment, isActive && styles.activeSegment]}
             onPress={() => onChange(option.value)}
             activeOpacity={0.8}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            accessibilityLabel={option.accessibilityLabel || option.label}
           >
-            <Text style={[styles.segmentText, isActive && styles.activeSegmentText]}>
+            <Text 
+              style={[styles.segmentText, isActive && styles.activeSegmentText]}
+              allowFontScaling={true}
+            >
               {option.label}
             </Text>
           </TouchableOpacity>
@@ -42,6 +52,7 @@ const themeStyles = (theme) => ({
   },
   segment: {
     flex: 1,
+    minHeight: theme.sizes.scale(44), // WCAG 2.5.5 minimum touch target
     paddingVertical: theme.sizes.spacing.s,
     paddingHorizontal: theme.sizes.spacing.xs,
     alignItems: 'center',

@@ -517,7 +517,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.xl,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: theme.sizes.scale(400),
     alignItems: 'center',
   },
   modalTitle: {

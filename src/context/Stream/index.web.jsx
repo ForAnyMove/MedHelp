@@ -63,7 +63,6 @@ export function StreamProvider({ children }) {
           const makeRequest = async (token) => {
             const headers = {
               'Content-Type': 'application/json',
-              'X-Mock-User-Id': sessionRef.current?.userId || session.userId,
             };
             if (token) headers['Authorization'] = `Bearer ${token}`;
 

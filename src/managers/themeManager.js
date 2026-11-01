@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useWindowDimensions, Platform } from 'react-native';
+import { useWindowDimensions, Platform, PixelRatio } from 'react-native';
 import { scaleByHeight, scaleByHeightMobile } from '../utils/resizeFuncs';
 
 const lightColors = {
@@ -39,33 +39,35 @@ const lightColors = {
 };
 
 export default function themeManager() {
-  const { height, width } = useWindowDimensions();
+  const { height, width, fontScale: systemFontScale } = useWindowDimensions();
   const [isDark, setIsDark] = useState(false);
 
   // Simple check for web landscape oriented screens, otherwise treat as mobile
   const isWebLandscape = Platform.OS === 'web' && width > height;
+  const fontScale = systemFontScale || PixelRatio.getFontScale() || 1;
 
   const sizes = useMemo(() => {
     const webScale = (size) => scaleByHeight(size, height);
     const mobileScale = (size) => scaleByHeightMobile(size, height);
     const scale = isWebLandscape ? webScale : mobileScale;
+    const lh = (size) => Math.round(scale(size) * fontScale);
 
     return {
       height,
       width,
       scale,
       typography: {
-        displayL: { fontFamily: 'Manrope_700Bold', fontSize: scale(52), lineHeight: scale(60), letterSpacing: -0.25 },
-        displayM: { fontFamily: 'Manrope_700Bold', fontSize: scale(42), lineHeight: scale(52) },
-        displayS: { fontFamily: 'Manrope_700Bold', fontSize: scale(32), lineHeight: scale(40) },
-        h1: { fontFamily: 'Manrope_700Bold', fontSize: scale(28), lineHeight: scale(36) },
-        h2: { fontFamily: 'Manrope_600SemiBold', fontSize: scale(24), lineHeight: scale(32) },
-        h3: { fontFamily: 'Manrope_600SemiBold', fontSize: scale(20), lineHeight: scale(28) },
-        h4: { fontFamily: 'Manrope_600SemiBold', fontSize: scale(18), lineHeight: scale(24) },
-        bodyLarge: { fontFamily: 'Manrope_500Medium', fontSize: scale(16), lineHeight: scale(20) },
-        bodyMedium: { fontFamily: 'Manrope_500Medium', fontSize: scale(14), lineHeight: scale(18), letterSpacing: 0.1 },
-        bodySmall: { fontFamily: 'Manrope_400Regular', fontSize: scale(12), lineHeight: scale(14), letterSpacing: 0.2 },
-        caption: { fontFamily: 'Manrope_400Regular', fontSize: scale(12), lineHeight: scale(16), letterSpacing: 0.4 },
+        displayL: { fontFamily: 'Manrope_700Bold', fontSize: scale(52), lineHeight: lh(60), letterSpacing: -0.25 },
+        displayM: { fontFamily: 'Manrope_700Bold', fontSize: scale(42), lineHeight: lh(52) },
+        displayS: { fontFamily: 'Manrope_700Bold', fontSize: scale(32), lineHeight: lh(40) },
+        h1: { fontFamily: 'Manrope_700Bold', fontSize: scale(28), lineHeight: lh(36) },
+        h2: { fontFamily: 'Manrope_600SemiBold', fontSize: scale(24), lineHeight: lh(32) },
+        h3: { fontFamily: 'Manrope_600SemiBold', fontSize: scale(20), lineHeight: lh(28) },
+        h4: { fontFamily: 'Manrope_600SemiBold', fontSize: scale(18), lineHeight: lh(24) },
+        bodyLarge: { fontFamily: 'Manrope_500Medium', fontSize: scale(16), lineHeight: lh(20) },
+        bodyMedium: { fontFamily: 'Manrope_500Medium', fontSize: scale(14), lineHeight: lh(18), letterSpacing: 0.1 },
+        bodySmall: { fontFamily: 'Manrope_400Regular', fontSize: scale(12), lineHeight: lh(14), letterSpacing: 0.2 },
+        caption: { fontFamily: 'Manrope_400Regular', fontSize: scale(12), lineHeight: lh(16), letterSpacing: 0.4 },
       },
       spacing: {
         xs: scale(4),
@@ -82,7 +84,7 @@ export default function themeManager() {
         full: 9999,
       }
     };
-  }, [height, width, isWebLandscape]);
+  }, [height, width, isWebLandscape, fontScale]);
 
   const current = useMemo(() => ({
     colors: lightColors, // Future: add darkColors and toggle

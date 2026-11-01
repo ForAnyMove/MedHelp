@@ -9,6 +9,14 @@ import {
   Manrope_700Bold 
 } from '@expo-google-fonts/manrope';
 import * as SplashScreen from 'expo-splash-screen';
+import { Text, TextInput } from 'react-native';
+
+// Safe accessibility font scaling ceiling (WCAG 1.4.4 / SI 5568-1)
+if (Text.defaultProps == null) Text.defaultProps = {};
+Text.defaultProps.maxFontSizeMultiplier = 1.5;
+
+if (TextInput.defaultProps == null) TextInput.defaultProps = {};
+TextInput.defaultProps.maxFontSizeMultiplier = 1.5;
 
 import { ComponentProvider } from '../src/context/GlobalContext';
 import { SessionProvider } from '../src/context/SessionContext';

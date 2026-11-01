@@ -67,7 +67,7 @@ export default function LabResultDetailsScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: 100 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xxl || 48 }}>
         {flaggedCount > 0 && (
           <View style={[styles.warningBanner, { backgroundColor: 'rgba(250, 173, 20, 0.1)', borderColor: 'rgba(250, 173, 20, 0.3)', borderWidth: 1, borderRadius: sizes.radius.lg, padding: spacing.md, marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center' }]}>
             <Icon name="important" size={24} color=/* TODO: color */ "#faad14" />
@@ -130,7 +130,7 @@ export default function LabResultDetailsScreen() {
                 </View>
                 <Text style={{ flex: 1, fontFamily: fonts.bold, fontSize: sizes.font.md, color: colors.text }}>{marker.value}</Text>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                  <View style={{ backgroundColor: statusBg, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: sizes.radius.md }}>
+                  <View style={{ backgroundColor: statusBg, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs || 4, borderRadius: sizes.radius.md }}>
                     <Text style={{ fontFamily: fonts.medium, fontSize: sizes.font.xs, color: statusColor }}>
                       {statusIcon}{marker.status || 'Normal'}
                     </Text>

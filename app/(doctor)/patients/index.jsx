@@ -248,7 +248,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.medium,
     padding: theme.sizes.spacing.m,
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: theme.sizes.spacing.xs,
     shadowColor: /* TODO: color */ '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -264,7 +264,7 @@ const themeStyles = (theme) => ({
     fontFamily: 'Manrope_500Medium',
     fontSize: theme.sizes.scale(12),
     color: theme.colors.n400,
-    marginTop: 2,
+    marginTop: theme.sizes.scale(2),
   },
   sectionTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -310,13 +310,13 @@ const themeStyles = (theme) => ({
     fontFamily: 'Manrope_700Bold',
     fontSize: theme.sizes.scale(16),
     color: theme.colors.n900,
-    marginBottom: 4,
+    marginBottom: theme.sizes.spacing.xs,
   },
   patientSubtext: {
     fontFamily: 'Manrope_500Medium',
     fontSize: theme.sizes.scale(13),
     color: theme.colors.n500,
-    marginBottom: 2,
+    marginBottom: theme.sizes.scale(2),
   },
   cardRight: {
     alignItems: 'flex-end',
@@ -326,7 +326,7 @@ const themeStyles = (theme) => ({
   visitsBadge: {
     backgroundColor: theme.colors.p100,
     paddingHorizontal: theme.sizes.spacing.s,
-    paddingVertical: 4,
+    paddingVertical: theme.sizes.spacing.xs,
     borderRadius: theme.sizes.borderRadius.full,
   },
   visitsText: {

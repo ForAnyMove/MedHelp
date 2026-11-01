@@ -32,7 +32,7 @@ export function ProfileAboutForm({ user, onSave, loading }) {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: sizes.spacing.s }}>
           <Text style={styles.subtitle}>{t('profile.description', 'Description')}</Text>
           {isPending && (
-            <View style={{ backgroundColor: colors.warning, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 }}>
+            <View style={{ backgroundColor: colors.warning, paddingHorizontal: sizes.spacing.s, paddingVertical: sizes.scale(2), borderRadius: sizes.borderRadius.medium }}>
               <Text style={{ color: colors.white, fontSize: sizes.typography.caption.fontSize, fontWeight: '600' }}>
                 {t('profile.pending_moderation', 'Pending Moderation')}
               </Text>

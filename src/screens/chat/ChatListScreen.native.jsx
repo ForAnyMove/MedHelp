@@ -76,6 +76,7 @@ const CustomListItem = ({ channel, onSelect }) => {
 
 export default function ChatListScreen() {
   const { sizes, colors } = useTheme();
+  const styles = useMemo(() => getStyles(sizes, colors), [sizes, colors]);
   const router = useRouter();
   const { chatClient } = useStreamContext();
   const { t } = useTranslation();
@@ -210,7 +211,7 @@ export default function ChatListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (sizes, colors) => StyleSheet.create({
   container: {
     flex: 1,
   },

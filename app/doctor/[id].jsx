@@ -54,6 +54,6 @@ const localStyles = (theme) => ({
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.sizes.spacing.xl },
   message: { ...theme.sizes.typography.h4, color: theme.colors.n700, marginTop: theme.sizes.spacing.l, textAlign: 'center' },
   subMessage: { ...theme.sizes.typography.body, color: theme.colors.n500, marginTop: theme.sizes.spacing.s },
-  actionButton: { marginTop: theme.sizes.spacing.xxl, backgroundColor: theme.colors.p500, paddingHorizontal: theme.sizes.spacing.xl, paddingVertical: theme.sizes.spacing.m, borderRadius: 100 },
+  actionButton: { marginTop: theme.sizes.spacing.xxl, backgroundColor: theme.colors.p500, paddingHorizontal: theme.sizes.spacing.xl, paddingVertical: theme.sizes.spacing.m, borderRadius: theme.sizes.borderRadius.full },
   actionText: { ...theme.sizes.typography.body, color: theme.colors.white, fontFamily: 'Manrope_700Bold' }
 });

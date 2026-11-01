@@ -2,8 +2,17 @@ import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, Animated, StyleSheet, View } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
+import { getHitSlopForSize } from '../../utils/accessibility';
 
-export function Switch({ value, onValueChange, style }) {
+export function Switch({ 
+  value, 
+  onValueChange, 
+  style, 
+  disabled = false,
+  accessibilityLabel,
+  accessibilityHint,
+  ...rest 
+}) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -17,7 +26,7 @@ export function Switch({ value, onValueChange, style }) {
   }, [value]);
 
   const toggleSwitch = () => {
-    if (onValueChange) {
+    if (!disabled && onValueChange) {
       onValueChange(!value);
     }
   };
@@ -46,7 +55,14 @@ export function Switch({ value, onValueChange, style }) {
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={toggleSwitch}
-      style={[style]}
+      disabled={disabled}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: !!value, disabled: !!disabled }}
+      accessibilityLabel={accessibilityLabel || "Переключатель"}
+      accessibilityHint={accessibilityHint}
+      hitSlop={rest.hitSlop !== undefined ? rest.hitSlop : getHitSlopForSize(sizes.scale(36), sizes.scale(22))}
+      style={[style, disabled && { opacity: 0.5 }]}
+      {...rest}
     >
       <Animated.View style={[styles.track, { backgroundColor: trackColor, borderColor: borderColor }]}>
         <Animated.View

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createApiClient } from '../api/apiClient';
 import { createConsultationsApi } from '../api/consultationsApi';
 import { mapConsultationsToBookings, mapConsultationToBooking } from '../utils/consultationMapper';
@@ -57,24 +57,36 @@ export default function consultationManager(setAppLoading, session, refreshSessi
     }
   }, [session?.userId, consultApi]);
 
+  const debounceTimerRef = useRef(null);
+
+  const debouncedLoadConsultations = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      loadConsultations();
+    }, 300);
+  }, [loadConsultations]);
+
   useEffect(() => {
     loadConsultations();
     
     const { DeviceEventEmitter } = require('react-native');
-    const sub1 = DeviceEventEmitter.addListener('booking_canceled', loadConsultations);
-    const sub2 = DeviceEventEmitter.addListener('booking_created', loadConsultations);
-    const sub3 = DeviceEventEmitter.addListener('consultation_updated', loadConsultations);
-    const sub4 = DeviceEventEmitter.addListener('consultation_completed', loadConsultations);
-    const sub5 = DeviceEventEmitter.addListener('booking_rescheduled', loadConsultations);
+    const sub1 = DeviceEventEmitter.addListener('booking_canceled', debouncedLoadConsultations);
+    const sub2 = DeviceEventEmitter.addListener('booking_created', debouncedLoadConsultations);
+    const sub3 = DeviceEventEmitter.addListener('consultation_updated', debouncedLoadConsultations);
+    const sub4 = DeviceEventEmitter.addListener('consultation_completed', debouncedLoadConsultations);
+    const sub5 = DeviceEventEmitter.addListener('booking_rescheduled', debouncedLoadConsultations);
 
     return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       sub1.remove();
       sub2.remove();
       sub3.remove();
       sub4.remove();
       sub5.remove();
     };
-  }, [loadConsultations]);
+  }, [loadConsultations, debouncedLoadConsultations]);
 
   // ── Timer for ongoing session ─────────────────────────────────────────────
 

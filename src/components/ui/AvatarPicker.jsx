@@ -4,11 +4,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { Icon } from './Icon';
 import { useTheme } from '../../theme/ThemeContext';
+import { useStyles } from '../../theme/useStyles';
 import { useSession } from '../../context/SessionContext';
 
 export function AvatarPicker({ currentAvatarUrl, pendingAvatarUrl, avatarModerationStatus, onUploadSuccess, style }) {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
+  const styles = useStyles(themeStyles);
   const { uploadAvatar } = useSession();
   const [loading, setLoading] = useState(false);
   const [localAvatarUrl, setLocalAvatarUrl] = useState(null);
@@ -61,9 +63,18 @@ export function AvatarPicker({ currentAvatarUrl, pendingAvatarUrl, avatarModerat
         ]} 
         onPress={handlePickImage}
         disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel={t('profile.avatar', 'Фотография профиля')}
+        accessibilityHint="Дважды коснитесь для выбора новой фотографии из галереи"
+        accessibilityState={{ busy: loading, disabled: loading }}
       >
         {displayUrl ? (
-          <Image source={{ uri: displayUrl }} style={styles.image} />
+          <Image 
+            source={{ uri: displayUrl }} 
+            style={styles.image} 
+            accessibilityRole="image"
+            accessibilityLabel="Текущая фотография профиля"
+          />
         ) : (
           <Icon name="User" size={sizes.scale(40)} color={colors.n400} />
         )}
@@ -80,43 +91,46 @@ export function AvatarPicker({ currentAvatarUrl, pendingAvatarUrl, avatarModerat
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatarContainer: {
-    borderRadius: 100,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    overflow: 'visible',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 100,
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  pendingBadge: {
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  pendingText: {
-    fontWeight: '600',
-  }
-});
+const themeStyles = (theme) => {
+  const { sizes } = theme;
+  return {
+    container: {
+      alignItems: 'center',
+      marginBottom: sizes.spacing.l,
+    },
+    avatarContainer: {
+      borderRadius: sizes.borderRadius.full,
+      borderWidth: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      overflow: 'visible',
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+      borderRadius: sizes.borderRadius.full,
+    },
+    editBadge: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      width: sizes.scale(32),
+      height: sizes.scale(32),
+      borderRadius: sizes.scale(16),
+      borderWidth: 2,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 2,
+    },
+    pendingBadge: {
+      marginTop: sizes.spacing.s,
+      paddingHorizontal: sizes.spacing.s,
+      paddingVertical: sizes.spacing.xs,
+      borderRadius: sizes.scale(16),
+    },
+    pendingText: {
+      fontWeight: '600',
+    }
+  };
+};

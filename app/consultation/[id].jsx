@@ -118,7 +118,7 @@ const localStyles = (theme) => ({
     backgroundColor: theme.colors.p500,
     paddingHorizontal: theme.sizes.spacing.xl,
     paddingVertical: theme.sizes.spacing.m,
-    borderRadius: 100,
+    borderRadius: theme.sizes.borderRadius.full,
   },
   actionText: {
     ...theme.sizes.typography.body,

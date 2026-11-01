@@ -208,7 +208,7 @@ const themeStyles = (theme) => ({
         color: theme.colors.n500,
         textAlign: 'center',
         marginBottom: theme.sizes.spacing.xxl,
-        lineHeight: 24,
+        lineHeight: theme.sizes.typography.bodyMedium.lineHeight,
     },
     starsContainer: {
         flexDirection: 'row',

@@ -34,21 +34,29 @@ const CustomVideoLayout = ({ onMinimize, onLeave, callId }) => {
   const [isNotesModalVisible, setIsNotesModalVisible] = useState(false);
   const [noteText, setNoteText] = useState('');
 
+  const isMountedRef = useRef(true);
+
   const resetControlsTimeout = () => {
+    if (!isMountedRef.current) return;
     setShowControls(true);
     Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
     if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current);
     hideControlsTimeout.current = setTimeout(() => {
-      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-        setShowControls(false);
+      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+        if (finished && isMountedRef.current) {
+          setShowControls(false);
+        }
       });
     }, 3000);
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     resetControlsTimeout();
     return () => {
+      isMountedRef.current = false;
       if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current);
+      fadeAnim.stopAnimation();
     };
   }, []);
 

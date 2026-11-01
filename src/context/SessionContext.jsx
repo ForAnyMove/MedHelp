@@ -4,7 +4,38 @@ import * as SecureStore from 'expo-secure-store';
 import { Asset } from 'expo-asset';
 import Constants from 'expo-constants';
 import { allImages } from '../assets';
-import { createApiClient } from '../api/apiClient';
+import { createApiClient, setGlobalTokenRefresher, setGlobalCurrentSession } from '../api/apiClient';
+
+function decodeBase64(str) {
+  if (typeof atob === 'function') {
+    return atob(str);
+  }
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(str, 'base64').toString('utf-8');
+  }
+  return null;
+}
+
+function getJwtExpirationMs(token) {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const jsonStr = decodeBase64(base64);
+    if (!jsonStr) return null;
+    const payload = JSON.parse(jsonStr);
+    if (payload && typeof payload.exp === 'number') {
+      return payload.exp * 1000;
+    }
+  } catch (e) {
+    // silent catch
+  }
+  return null;
+}
 
 const SESSION_KEY = 'medhelp_session';
 
@@ -254,6 +285,37 @@ export function SessionProvider({ children }) {
 
     return refreshPromise;
   }, [session?.refreshToken, session?.refresh_token, login, logout]);
+
+  // Register global token refresher for apiClient mutex
+  useEffect(() => {
+    setGlobalTokenRefresher(refreshSessionToken);
+  }, [refreshSessionToken]);
+
+  // Keep global session synced for standalone apiClient helpers
+  useEffect(() => {
+    setGlobalCurrentSession(session);
+  }, [session]);
+
+  // Proactive background JWT refresh: refresh token 5 minutes before expiration
+  useEffect(() => {
+    const token = session?.accessToken || session?.access_token;
+    if (!token) return;
+
+    const expMs = getJwtExpirationMs(token);
+    if (!expMs) return;
+
+    const BUFFER_MS = 5 * 60 * 1000; // 5 minutes before expiry
+    const now = Date.now();
+    const timeUntilExpiry = expMs - now;
+    const delay = Math.max(timeUntilExpiry - BUFFER_MS, 1000);
+
+    const timer = setTimeout(() => {
+      console.log('[SessionContext] Proactively refreshing session token before expiration...');
+      refreshSessionToken().catch(() => {});
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [session?.accessToken, session?.access_token, refreshSessionToken]);
 
   /**
    * Send OTP via Express API.

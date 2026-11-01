@@ -152,7 +152,7 @@ export default function LabResultsScreen() {
               </View>
               <Text style={{ flex: 1, fontFamily: fonts.bold, fontSize: sizes.font.sm, color: colors.text }}>{marker.value}</Text>
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                <View style={{ backgroundColor: statusBg, paddingHorizontal: spacing.xs, paddingVertical: 2, borderRadius: sizes.radius.sm }}>
+                <View style={{ backgroundColor: statusBg, paddingHorizontal: spacing.xs, paddingVertical: Math.round(spacing.xs / 2) || 2, borderRadius: sizes.radius.sm }}>
                   <Text style={{ fontFamily: fonts.medium, fontSize: sizes.font.xs, color: statusColor }}>
                     {statusIcon}{marker.status || 'Normal'}
                   </Text>

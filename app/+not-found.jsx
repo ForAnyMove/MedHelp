@@ -19,8 +19,10 @@ export default function NotFoundScreen() {
         <View style={styles.iconContainer}>
           <Icon name="alert-triangle" size={sizes.scale(64)} color={colors.warning} />
         </View>
-        <Text style={styles.title}>Oops! Page not found.</Text>
-        <Text style={styles.subtitle}>
+        <Text style={styles.title} accessibilityRole="header" allowFontScaling={true}>
+          Oops! Page not found.
+        </Text>
+        <Text style={styles.subtitle} allowFontScaling={true}>
           The screen you are looking for doesn't exist or has been moved.
         </Text>
         <Link href="/" asChild>
@@ -65,9 +67,9 @@ const themeStyles = (theme) => ({
     textAlign: 'center',
     marginBottom: theme.sizes.spacing.xxl,
     paddingHorizontal: theme.sizes.spacing.l,
-    lineHeight: 24,
+    lineHeight: theme.sizes.typography.bodyMedium.lineHeight,
   },
   button: {
-    minWidth: 200,
+    minWidth: theme.sizes.scale(200),
   }
 });

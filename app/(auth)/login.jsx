@@ -91,7 +91,11 @@ export default function Login() {
               {t('auth.terms_text')} <Text style={styles.link}>{t('auth.privacy_policy')}</Text> & <Text style={styles.link}>{t('auth.terms_of_use')}</Text>
             </Text>
 
-            {errorMsg ? <Text style={{ color: 'red', textAlign: 'center', marginBottom: 10 }}>{errorMsg}</Text> : null}
+            {errorMsg ? (
+              <Text style={styles.errorMsg} accessibilityRole="alert" allowFontScaling={true}>
+                {errorMsg}
+              </Text>
+            ) : null}
 
             <Button
               title={t('auth.continue_btn')}
@@ -186,5 +190,11 @@ const themeStyles = (theme) => ({
   },
   button: {
     marginBottom: theme.sizes.spacing.m,
+  },
+  errorMsg: {
+    ...theme.sizes.typography.caption,
+    color: theme.colors.danger,
+    textAlign: 'center',
+    marginBottom: theme.sizes.spacing.s,
   }
 });

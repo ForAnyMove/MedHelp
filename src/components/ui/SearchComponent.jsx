@@ -41,6 +41,9 @@ export function SearchComponent({
           placeholderTextColor={colors.n500}
           value={value}
           onChangeText={onChangeText}
+          accessibilityRole="search"
+          accessibilityLabel={placeholder || t('common.search', 'Поиск по врачам и специальностям')}
+          allowFontScaling={true}
           onFocus={() => setIsFocused(true)}
           onBlur={() => {
             // Delay to allow tap on dropdown item to register before hiding
@@ -51,14 +54,21 @@ export function SearchComponent({
 
       {/* Autocomplete Dropdown */}
       {isFocused && matchingProfessions.length > 0 && (
-        <ScrollView style={styles.dropdown} keyboardShouldPersistTaps="handled">
+        <ScrollView 
+          style={styles.dropdown} 
+          keyboardShouldPersistTaps="handled"
+          accessibilityRole="menu"
+        >
           {matchingProfessions.slice(0, 5).map((prof) => (
             <TouchableOpacity
               key={prof.code}
-              style={styles.dropdownItem}
+              style={[styles.dropdownItem, { minHeight: sizes.scale(44), justifyContent: 'center' }]}
               onPressIn={() => handleSelectProfession(prof.name)}
+              accessibilityRole="menuitem"
+              accessibilityLabel={prof.name}
+              accessibilityHint={t('common.select', 'Выбрать эту специальность')}
             >
-              <Text style={styles.dropdownItemText}>{prof.name}</Text>
+              <Text style={styles.dropdownItemText} allowFontScaling={true}>{prof.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>

@@ -3,6 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Moda
 import { useTranslation } from 'react-i18next';
 import { useReportsApi } from '../../api/reportsApi';
 import { Ionicons } from '@expo/vector-icons';
+import { getHitSlopForSize } from '../../utils/accessibility';
+import { useTheme } from '../../theme/ThemeContext';
+import { useStyles } from '../../theme/useStyles';
 
 const REPORT_REASONS = [
   'Spam or misleading',
@@ -14,6 +17,7 @@ const REPORT_REASONS = [
 
 export default function ReportModal({ visible, onClose, targetType, targetId }) {
   const { t } = useTranslation();
+  const styles = useStyles(themeStyles);
   
   const REPORT_REASONS = [
     { key: 'spam', label: t('reports.reason_spam', 'Spam or misleading') },
@@ -53,12 +57,24 @@ export default function ReportModal({ visible, onClose, targetType, targetId }) 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal 
+      visible={visible} 
+      animationType="slide" 
+      transparent
+      accessibilityViewIsModal={true}
+      aria-modal={true}
+    >
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>{t('reports.title', 'Report Content')}</Text>
-            <TouchableOpacity onPress={onClose} disabled={loading}>
+            <Text style={styles.title} accessibilityRole="header">{t('reports.title', 'Report Content')}</Text>
+            <TouchableOpacity 
+              onPress={onClose} 
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close', 'Закрыть')}
+              hitSlop={getHitSlopForSize(24, 24)}
+            >
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
@@ -74,6 +90,9 @@ export default function ReportModal({ visible, onClose, targetType, targetId }) 
                 style={styles.reasonOption} 
                 onPress={() => setSelectedReason(r)}
                 disabled={loading}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selectedReason.key === r.key }}
+                accessibilityLabel={r.label}
               >
                 <View style={styles.radioCircle}>
                   {selectedReason.key === r.key && <View style={styles.radioInner} />}
@@ -113,85 +132,92 @@ export default function ReportModal({ visible, onClose, targetType, targetId }) 
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  container: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    minHeight: 300,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 15,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    textAlignVertical: 'top',
-    fontSize: 16,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  reasonsList: {
-    maxHeight: 300,
-    marginBottom: 15,
-  },
-  reasonOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#e74c3c',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#e74c3c',
-  },
-  reasonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  button: {
-    backgroundColor: '#e74c3c',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#f5b7b1',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
+const themeStyles = (theme) => {
+  const { colors, sizes } = theme;
+  return {
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'flex-end',
+    },
+    container: {
+      backgroundColor: colors.white,
+      borderTopLeftRadius: sizes.borderRadius.large,
+      borderTopRightRadius: sizes.borderRadius.large,
+      padding: sizes.spacing.l,
+      minHeight: sizes.scale(300),
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: sizes.spacing.m,
+    },
+    title: {
+      ...sizes.typography.h3,
+      color: colors.n900,
+    },
+    subtitle: {
+      ...sizes.typography.bodyMedium,
+      color: colors.n700,
+      marginBottom: sizes.spacing.m,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.n300,
+      borderRadius: sizes.borderRadius.small,
+      padding: sizes.spacing.s,
+      textAlignVertical: 'top',
+      ...sizes.typography.bodyMedium,
+      color: colors.n900,
+      marginTop: sizes.spacing.s,
+      marginBottom: sizes.spacing.l,
+    },
+    reasonsList: {
+      maxHeight: sizes.scale(300),
+      marginBottom: sizes.spacing.m,
+    },
+    reasonOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: sizes.scale(10),
+      minHeight: sizes.scale(44),
+    },
+    radioCircle: {
+      width: sizes.scale(20),
+      height: sizes.scale(20),
+      borderRadius: sizes.scale(10),
+      borderWidth: 2,
+      borderColor: colors.danger,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: sizes.spacing.s,
+    },
+    radioInner: {
+      width: sizes.scale(10),
+      height: sizes.scale(10),
+      borderRadius: sizes.scale(5),
+      backgroundColor: colors.danger,
+    },
+    reasonText: {
+      ...sizes.typography.bodyLarge,
+      color: colors.n900,
+    },
+    button: {
+      backgroundColor: colors.danger,
+      padding: sizes.spacing.m,
+      borderRadius: sizes.borderRadius.small,
+      alignItems: 'center',
+      minHeight: sizes.scale(44),
+      justifyContent: 'center',
+    },
+    buttonDisabled: {
+      backgroundColor: colors.n300,
+    },
+    buttonText: {
+      color: colors.white,
+      ...sizes.typography.bodyLarge,
+      fontFamily: 'Manrope_700Bold',
+    },
+  };
+};

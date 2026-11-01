@@ -4,20 +4,41 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from './Icon';
 
-export function Checkbox({ checked, onChange, style, label }) {
+export function Checkbox({ 
+  checked, 
+  onChange, 
+  style, 
+  label, 
+  disabled = false,
+  accessibilityLabel,
+  accessibilityHint,
+  ...rest 
+}) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
+
+  const handlePress = () => {
+    if (!disabled && onChange) {
+      onChange(!checked);
+    }
+  };
 
   return (
     <TouchableOpacity 
       activeOpacity={0.8} 
-      onPress={() => onChange(!checked)}
-      style={[styles.container, style]}
+      onPress={handlePress}
+      disabled={disabled}
+      accessibilityRole="checkbox"
+      accessibilityLabel={accessibilityLabel || (typeof label === 'string' ? label : 'Флажок')}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ checked: !!checked, disabled: !!disabled }}
+      style={[styles.container, disabled && { opacity: 0.5 }, style]}
+      {...rest}
     >
       <View style={[styles.box, checked && styles.boxChecked]}>
         {checked && <Icon name="check2" size={sizes.scale(24)} color={colors.white} />}
       </View>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={styles.label} allowFontScaling={true}>{label}</Text>}
     </TouchableOpacity>
   );
 }
@@ -28,6 +49,7 @@ const themeStyles = (theme) => {
     container: {
       flexDirection: 'row',
       alignItems: 'center',
+      minHeight: sizes.scale(44), // WCAG 2.5.5 target size
     },
     label: {
       ...sizes.typography.body,

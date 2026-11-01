@@ -204,17 +204,24 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
         <View style={styles.footer}>
           <TouchableOpacity
             onPress={handleEndPress}
-            hitSlop={{ top: sizes.scale(20), bottom: sizes.scale(20), left: sizes.scale(50), right: sizes.scale(50) }}
             style={styles.endButton}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('consultation.end_btn')}
           >
             <View style={styles.endTextContainer}>
-              <Text style={styles.endText}>{t('consultation.end_btn')}</Text>
+              <Text style={styles.endText} allowFontScaling={true}>{t('consultation.end_btn')}</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        <Modal visible={isConfirmVisible} transparent animationType="fade">
+        <Modal 
+          visible={isConfirmVisible} 
+          transparent 
+          animationType="fade"
+          accessibilityViewIsModal={true}
+          aria-modal={true}
+        >
           <View style={styles.modalOverlay}>
             <View style={styles.confirmBox}>
               <Text style={styles.confirmTitle}>{t('consultation.confirm_end_title')}</Text>
@@ -289,16 +296,20 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   endButton: {
-    padding: theme.sizes.spacing.m,
+    minHeight: theme.sizes.scale(44),
+    minWidth: theme.sizes.scale(120),
+    paddingHorizontal: theme.sizes.spacing.m,
+    paddingVertical: theme.sizes.spacing.s,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   endTextContainer: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.p500,
+    borderBottomColor: theme.colors.danger,
   },
   endText: {
     ...theme.sizes.typography.h3,
-    lineHeight: theme.sizes.scale(16),
-    color: theme.colors.p500,
+    color: theme.colors.danger,
   },
   modalOverlay: {
     flex: 1,

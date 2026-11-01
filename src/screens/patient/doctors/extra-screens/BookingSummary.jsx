@@ -294,7 +294,7 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.caption,
     color: theme.colors.n600,
     fontSize: theme.sizes.scale(12),
-    marginTop: 2,
-    lineHeight: 16,
+    marginTop: theme.sizes.scale(2),
+    lineHeight: theme.sizes.typography.caption.lineHeight,
   }
 });

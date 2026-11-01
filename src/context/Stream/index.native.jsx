@@ -51,13 +51,17 @@ export function StreamProvider({ children }) {
 
         const fetchStreamTokens = async () => {
           const makeRequest = async (token) => {
+            const headers = {
+              'Content-Type': 'application/json',
+            };
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
+
             return fetch(`${API_URL}/stream/token`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token || 'mock-token'}`,
-                'X-Mock-User-Id': sessionRef.current?.userId || session.userId,
-              },
+              credentials: 'include',
+              headers,
             });
           };
 
