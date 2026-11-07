@@ -131,6 +131,9 @@ const themeStyles = (theme) => ({
   container: {
     paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.s,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 520 : undefined,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',

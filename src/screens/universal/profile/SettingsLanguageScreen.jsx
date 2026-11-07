@@ -9,27 +9,33 @@ import { useStyles } from '../../../theme/useStyles';
 import { useComponentContext } from '../../../context/GlobalContext';
 import { setAppLanguage } from '../../../locales/i18n';
 
-export function SettingsLanguageScreen({ onBack }) {
+export function SettingsLanguageScreen({ onBack, embedded = false }) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { settingsController } = useComponentContext();
   
   const { settings, languages, isLoadingSettings } = settingsController || {};
-  const currentLanguageCode = settings?.language || 'en';
+  const activeLang = i18n.language ? i18n.language.split('-')[0] : (settings?.language || 'ru');
+  const currentLanguageCode = activeLang;
 
   const [isChanging, setIsChanging] = useState(false);
 
   const handleSelectLanguage = async (langCode) => {
-    if (langCode === currentLanguageCode || isChanging) return;
+    if ((langCode === currentLanguageCode && langCode === (i18n.language ? i18n.language.split('-')[0] : 'ru')) || isChanging) return;
     
     setIsChanging(true);
-    // 1. Save to backend
-    await settingsController.updateSettings({ language: langCode });
-    // 2. Apply locally to i18n
-    await setAppLanguage(langCode);
-    setIsChanging(false);
+    try {
+      // 1. Save to backend
+      await settingsController.updateSettings({ language: langCode });
+      // 2. Apply locally to i18n
+      await setAppLanguage(langCode);
+    } catch (e) {
+      console.error('Failed to change language:', e);
+    } finally {
+      setIsChanging(false);
+    }
   };
 
   const renderRadio = (selected) => (
@@ -43,13 +49,18 @@ export function SettingsLanguageScreen({ onBack }) {
     else router.back();
   };
 
+  const Container = embedded ? View : Screen;
+  const ScrollContainer = embedded ? View : ScrollView;
+
   return (
-    <Screen style={styles.container}>
-      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
-          </TouchableOpacity>
+    <Container style={[styles.container, embedded && styles.embeddedContainer]}>
+      <KeyboardAvoidingView style={[styles.keyboardView, embedded && styles.embeddedKeyboardView]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={[styles.header, embedded && styles.embeddedHeader]}>
+          {!embedded && (
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.headerTitle}>{t('settings.language_title', 'Application language')}</Text>
         </View>
 
@@ -57,7 +68,7 @@ export function SettingsLanguageScreen({ onBack }) {
           {t('settings.language_desc', 'Choose the language for the app interface. This won’t affect content shared by your doctor.')}
         </Text>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollContainer {...(!embedded ? { contentContainerStyle: styles.scrollContent, showsVerticalScrollIndicator: false } : {})}>
           <View style={styles.card}>
             {isLoadingSettings && languages?.length === 0 ? (
               <ActivityIndicator style={{ padding: sizes.scale(40) }} color={colors.p500} />
@@ -93,9 +104,9 @@ export function SettingsLanguageScreen({ onBack }) {
               })
             )}
           </View>
-        </ScrollView>
+        </ScrollContainer>
       </KeyboardAvoidingView>
-    </Screen>
+    </Container>
   );
 }
 
@@ -104,12 +115,30 @@ const themeStyles = (theme) => ({
     paddingHorizontal: theme.sizes.spacing.m,
     backgroundColor: theme.colors.bg,
   },
-  keyboardView: { flex: 1 },
+  embeddedContainer: {
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 680 : undefined,
+    alignSelf: 'center',
+  },
+  embeddedKeyboardView: {
+    maxWidth: '100%',
+    width: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.sizes.scale(40),
     marginBottom: theme.sizes.scale(16),
+  },
+  embeddedHeader: {
+    marginTop: 0,
+    marginBottom: theme.sizes.scale(12),
   },
   backButton: {
     padding: theme.sizes.spacing.xs,

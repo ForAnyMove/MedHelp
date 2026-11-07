@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, View, Text, Animated } from 'react-native';
-import { usePathname, useRouter } from 'expo-router';
+import { TouchableOpacity, StyleSheet, View, Text, Animated, Platform } from 'react-native';
+import { usePathname, useRouter, useSegments } from 'expo-router';
 import { useTheme } from '../../theme/ThemeContext';
 import { Icon } from '../ui/Icon';
 import { useSession } from '../../context/SessionContext';
@@ -15,23 +15,57 @@ import { useChatNotifications } from '../../context/ChatNotificationContext';
  */
 export function ChatFloatingButton() {
   const pathname = usePathname();
+  const segments = useSegments();
   const router = useRouter();
   const { colors, sizes } = useTheme();
   const styles = getStyles(sizes, colors);
   const { session } = useSession();
   const { chatButtonConfig } = useComponentContext();
   const { totalUnreadConversations } = useChatNotifications();
+  const [webPathTick, setWebPathTick] = React.useState(0);
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handleLocationChange = () => setWebPathTick((t) => t + 1);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('medhelp:urlchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('medhelp:urlchange', handleLocationChange);
+    };
+  }, []);
 
   // Define visibility rules
   const shouldBeVisible = React.useMemo(() => {
     if (!session) return false;
     if (!chatButtonConfig.visible) return false;
 
-    const activeTab = pathname === '/' ? 'home' : (pathname.startsWith('/') ? pathname.slice(1) : pathname);
-    const mainTabs = ['home', 'doctors', 'consultation', 'history', 'balance'];
+    const routerPath = pathname || '';
+    const windowPath = (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.pathname)
+      ? window.location.pathname
+      : '';
 
-    return mainTabs.includes(activeTab);
-  }, [pathname, session, chatButtonConfig.visible]);
+    const isChatRoute =
+      segments.includes('(chat)') ||
+      segments.includes('list') ||
+      segments.includes('room') ||
+      routerPath.startsWith('/list') ||
+      routerPath.startsWith('/room') ||
+      routerPath.startsWith('/(chat)') ||
+      windowPath.startsWith('/list') ||
+      windowPath.startsWith('/room') ||
+      windowPath.startsWith('/(chat)');
+
+    if (isChatRoute) return false;
+
+    const effectivePathname = windowPath || routerPath || '/';
+    const firstSegment = effectivePathname === '/'
+      ? 'home'
+      : effectivePathname.replace(/^\//, '').split('/')[0];
+    const mainTabs = ['home', 'doctors', 'consultation', 'history', 'balance', 'calendar'];
+
+    return mainTabs.includes(firstSegment);
+  }, [pathname, segments, webPathTick, session, chatButtonConfig.visible]);
 
   const [isMounted, setIsMounted] = React.useState(shouldBeVisible);
   const fadeAnim = React.useRef(new Animated.Value(shouldBeVisible ? 1 : 0)).current;

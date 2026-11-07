@@ -1,14 +1,15 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, useWindowDimensions, Platform, BackHandler } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useTranslation } from 'react-i18next';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { Screen } from '../../components/ui/Screen';
 import { Icon } from '../../components/ui/Icon';
 import { useStyles } from '../../theme/useStyles';
 import { NotificationBadge } from '../../components/common/NotificationBadge';
 import { useComponentContext } from '../../context/GlobalContext';
 import { useTheme } from '../../theme/ThemeContext';
+import { AdaptiveNavigationShell } from '../../components/navigation/AdaptiveNavigationShell';
 
 import { OwnerDashboardProvider, useOwnerDashboard } from '../../context/OwnerDashboardContext';
 import { OwnerHomeTab } from './home/OwnerHomeTab';
@@ -37,9 +38,18 @@ const indexToTab = ['home', 'doctors', 'calendar', 'history', 'profile'];
 function OwnerTabsInner({ currentTab }) {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
-  const { sizes } = useTheme();
+  const { sizes, responsive } = useTheme();
   const { t } = useTranslation();
-  const { tabIndex, setTabIndex, isSwipeEnabled, pendingRequestsCount } = useOwnerDashboard();
+  const {
+    tabIndex,
+    setTabIndex,
+    isSwipeEnabled,
+    doctorsView,
+    calendarView,
+    historyView,
+    navigateBack,
+    syncStateFromUrl,
+  } = useOwnerDashboard();
   const { setChatButtonConfig, ownerController } = useComponentContext();
 
   const isProfileTab = tabIndex === 4;
@@ -52,33 +62,74 @@ function OwnerTabsInner({ currentTab }) {
     return () => setChatButtonConfig({ visible: true, animated: false });
   }, [isProfileTab, setChatButtonConfig]);
 
-  // Sync tab from URL param
+  // Android Hardware Back Button handler
   useEffect(() => {
-    if (currentTab && tabIndexMap[currentTab] !== undefined && tabIndexMap[currentTab] !== tabIndex) {
-      setTabIndex(tabIndexMap[currentTab]);
-    }
-  }, [currentTab]);
+    if (Platform.OS === 'web') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (tabIndex === 1 && doctorsView !== 'list') {
+        navigateBack();
+        return true;
+      }
+      if (tabIndex === 2 && calendarView !== 'dashboard') {
+        navigateBack();
+        return true;
+      }
+      if (tabIndex === 3 && historyView !== 'dashboard') {
+        navigateBack();
+        return true;
+      }
+      if (tabIndex !== 0) {
+        setTabIndex(0);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [tabIndex, doctorsView, calendarView, historyView, navigateBack, setTabIndex]);
 
   // Browser history sync
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
     const handlePopState = () => {
-      const path = window.location.pathname.replace('/', '');
-      if (tabIndexMap[path] !== undefined) {
-        setTabIndex(tabIndexMap[path]);
+      if (!window.location) return;
+      const rawPath = window.location.pathname.replace('/', '').split('/')[0];
+      const searchParams = new URLSearchParams(window.location.search);
+      const path = rawPath || searchParams.get('tab') || 'home';
+      const targetIndex = tabIndexMap[path];
+      if (targetIndex !== undefined) {
+        if (tabIndex !== targetIndex) {
+          setTabIndex(targetIndex);
+        }
+        syncStateFromUrl?.(searchParams, path);
+      }
+      if (rawPath === '' && path) {
+        const remainingParams = new URLSearchParams(window.location.search);
+        remainingParams.delete('tab');
+        const remaining = remainingParams.toString() ? `?${remainingParams.toString()}` : '';
+        const cleanUrl = `/${path}${remaining}`;
+        const existingState = (window.history.state && typeof window.history.state === 'object') ? { ...window.history.state } : {};
+        window.history.replaceState(existingState, '', cleanUrl);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setTabIndex]);
+  }, [tabIndex, setTabIndex, syncStateFromUrl]);
 
   const onIndexChange = (i) => {
     setTabIndex(i);
+    // Sync URL on user tab press
     const newTab = indexToTab[i];
-    if (typeof window !== 'undefined' && window.history) {
-      const currentUrlTab = window.location.pathname.replace('/', '');
-      if (newTab !== currentUrlTab) {
-        window.history.pushState(window.history.state, '', `/${newTab}`);
+    if (Platform.OS === 'web') {
+      const currentUrlTab = (typeof window !== 'undefined' && window.location) ? window.location.pathname.replace('/', '').split('/')[0] : '';
+      const currentSearch = (typeof window !== 'undefined' && window.location) ? window.location.search : '';
+      if (newTab !== currentUrlTab || (newTab === currentUrlTab && currentSearch)) {
+        if (typeof window.history?.pushState === 'function') {
+          const currentState = (window.history.state && typeof window.history.state === 'object') ? { ...window.history.state } : {};
+          window.history.pushState({ ...currentState, customTab: newTab }, '', `/${newTab}`);
+          try {
+            window.dispatchEvent(new Event('medhelp:urlchange'));
+          } catch (e) {}
+        }
       }
     }
   };
@@ -87,51 +138,32 @@ function OwnerTabsInner({ currentTab }) {
 
   const routes = useMemo(() => [
     { key: 'home', title: t('owner_tabs.home'), icon: 'home' },
-    { key: 'doctors', title: t('owner_tabs.doctors'), icon: 'doctor-01' },
+    { key: 'doctors', title: t('owner_tabs.doctors'), icon: 'doctor-01', badgeCount: pendingCount },
     { key: 'calendar', title: t('owner_tabs.calendar'), icon: 'calendar' },
     { key: 'history', title: t('owner_tabs.history'), icon: 'medic-history' },
     { key: 'profile', title: t('owner_tabs.profile'), icon: 'profile' },
-  ], [t]);
+  ], [t, pendingCount]);
 
-  const renderTabBar = (props) => (
-    <View style={styles.tabBar}>
-      {props.navigationState.routes.map((route, i) => {
-        const isFocused = tabIndex === i;
-        return (
-          <TouchableOpacity
-            key={route.key}
-            style={styles.tabItem}
-            onPress={() => onIndexChange(i)}
-          >
-            <View>
-              <Icon
-                name={route.icon}
-                color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color}
-                size={sizes.scale(24)}
-              />
-              {route.key === 'doctors' && pendingCount > 0 && (
-                <NotificationBadge count={pendingCount} />
-              )}
-            </View>
-            <Text style={[styles.tabText, isFocused && styles.tabTextFocused]} numberOfLines={1}>
-              {route.title}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
+  const isDesktopLandscape = !responsive?.isPortraitShell && (responsive?.isLandscape || responsive?.isDesktop || responsive?.navigationMode !== 'bottomBar');
 
   return (
-    <TabView
-      navigationState={{ index: tabIndex, routes }}
-      renderScene={renderScene}
-      renderTabBar={renderTabBar}
+    <AdaptiveNavigationShell
+      routes={routes}
+      currentIndex={tabIndex}
       onIndexChange={onIndexChange}
-      initialLayout={{ width: layout.width }}
-      swipeEnabled={isSwipeEnabled}
-      tabBarPosition="bottom"
-    />
+      role="owner"
+    >
+      <TabView
+        navigationState={{ index: tabIndex, routes }}
+        renderScene={renderScene}
+        renderTabBar={() => null}
+        onIndexChange={onIndexChange}
+        initialLayout={{ width: layout.width }}
+        swipeEnabled={isDesktopLandscape ? false : isSwipeEnabled}
+        animationEnabled={!isDesktopLandscape}
+        tabBarPosition="none"
+      />
+    </AdaptiveNavigationShell>
   );
 }
 

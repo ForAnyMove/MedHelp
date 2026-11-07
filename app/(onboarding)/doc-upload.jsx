@@ -335,6 +335,9 @@ const themeStyles = (theme) => ({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 600 : undefined,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -449,6 +452,9 @@ const themeStyles = (theme) => ({
     paddingBottom: theme.sizes.scale(40),
     marginTop: theme.sizes.spacing.s,
     gap: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 600 : undefined,
+    alignSelf: 'center',
   },
   submitBtn: {
   },
@@ -473,6 +479,7 @@ const themeStyles = (theme) => ({
     padding: theme.sizes.spacing.xl,
     alignItems: 'center',
     width: '100%',
+    maxWidth: 480,
     position: 'relative',
   },
   modalCloseBtn: {

@@ -11,6 +11,7 @@ import { useChatNotifications } from '../../context/ChatNotificationContext';
 const CustomListItem = ({ channel, onSelect }) => {
   const { sizes, colors } = useTheme();
   const { chatClient } = useStreamContext();
+  const { t } = useTranslation();
 
   // Find the other member
   const otherMembers = Object.values(channel.state.members).filter(
@@ -22,10 +23,16 @@ const CustomListItem = ({ channel, onSelect }) => {
 
   // Last message text
   const lastMessage = channel.state.messages[channel.state.messages.length - 1];
-  let lastMessageText = lastMessage?.text || '';
-  if (lastMessage?.attachments?.length > 0) {
-    lastMessageText = 'Attachment';
+  let lastMessageText = lastMessage?.text || t('chat.no_messages');
+  if (!lastMessage?.text && lastMessage?.attachments?.length > 0) {
+    lastMessageText = `📎 ${t('chat.attachment', 'Вложение')}`;
   }
+
+  const lastDate = lastMessage?.created_at ? new Date(lastMessage.created_at) : null;
+  const timeStr = lastDate && !isNaN(lastDate.getTime())
+    ? `${String(lastDate.getHours()).padStart(2, '0')}:${String(lastDate.getMinutes()).padStart(2, '0')}`
+    : '';
+  const unreadCount = typeof channel.countUnread === 'function' ? channel.countUnread() : 0;
 
   return (
     <TouchableOpacity
@@ -57,18 +64,43 @@ const CustomListItem = ({ channel, onSelect }) => {
           </Text>
         )}
       </View>
-      <View style={{ flex: 1, paddingBottom: sizes.spacing.s }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ ...sizes.typography.bodyLarge, color: colors.n900, fontFamily: 'Manrope_600SemiBold', flexShrink: 1 }} numberOfLines={1}>
-            {name}
-          </Text>
-          {otherUser?.isVerified && (
-            <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: sizes.spacing.xs }}>
+            <Text style={{ ...sizes.typography.bodyLarge, color: colors.n900, fontFamily: 'Manrope_600SemiBold', flexShrink: 1 }} numberOfLines={1}>
+              {name}
+            </Text>
+            {otherUser?.isVerified && (
+              <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+            )}
+          </View>
+          {!!timeStr && (
+            <Text style={{ ...sizes.typography.caption, color: unreadCount > 0 ? colors.p500 : colors.n400 }}>
+              {timeStr}
+            </Text>
           )}
         </View>
-        <Text style={{ ...sizes.typography.bodyMedium, color: colors.n500, marginTop: sizes.scale(4) }} numberOfLines={1}>
-          {lastMessageText}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: sizes.scale(4) }}>
+          <Text style={{ ...sizes.typography.bodyMedium, color: unreadCount > 0 ? colors.n900 : colors.n500, fontFamily: unreadCount > 0 ? 'Manrope_600SemiBold' : undefined, flex: 1 }} numberOfLines={1}>
+            {lastMessageText}
+          </Text>
+          {unreadCount > 0 && (
+            <View style={{
+              minWidth: sizes.scale(20),
+              height: sizes.scale(20),
+              borderRadius: sizes.scale(10),
+              backgroundColor: colors.p500,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: sizes.scale(6),
+              marginLeft: sizes.spacing.xs,
+            }}>
+              <Text style={{ color: colors.white, ...sizes.typography.caption, fontFamily: 'Manrope_700Bold' }}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );

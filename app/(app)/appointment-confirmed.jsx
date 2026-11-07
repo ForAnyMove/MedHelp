@@ -143,7 +143,7 @@ export default function AppointmentConfirmedScreen() {
         <Button
           title={t('consultation.view_appointment', 'View appointment')}
           variant="outlined"
-          onPress={() => router.push(`/(app)/consultation?id=${id}`)}
+          onPress={() => router.push(`/consultation?id=${id}&view=detail`)}
         />
       </View>
     </SafeAreaView>

@@ -10,6 +10,7 @@ import { Button } from '../../src/components/ui/Button';
 import { Screen } from '../../src/components/ui/Screen';
 import { createApiClient } from '../../src/api/apiClient';
 import { createConsultationsApi } from '../../src/api/consultationsApi';
+import { isValidRouteUUID, useUnsavedChangesGuard } from '../../src/utils/routeValidation';
 
 export default function RateConsultationScreen() {
     const { id } = useLocalSearchParams();
@@ -25,8 +26,15 @@ export default function RateConsultationScreen() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
 
+    const isDirty = (rating > 0 || comment.trim().length > 0) && !submitting;
+    useUnsavedChangesGuard(isDirty);
+
     useEffect(() => {
-        if (!id || !session) return;
+        if (!session) return;
+        if (!isValidRouteUUID(id)) {
+            router.replace('/+not-found');
+            return;
+        }
         let isMounted = true;
 
         const fetchConsultation = async () => {

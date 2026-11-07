@@ -73,11 +73,38 @@ export default function doctorManager(consultationController, setAppLoading, ses
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
-  const selectDoctor = (doctor) => {
+  const selectDoctor = useCallback((doctor) => {
+    if (!doctor) return;
     setSelectedDoctor(doctor);
     setCurrentDoctorView('profile');
     getAvailableSlots(doctor.id);
-  };
+  }, [getAvailableSlots]);
+
+  const selectDoctorById = useCallback(async (doctorId) => {
+    if (!doctorId) return;
+    const found = doctors.find(d => String(d.id) === String(doctorId));
+    if (found) {
+      selectDoctor(found);
+      return;
+    }
+    try {
+      const raw = await doctorsApi.getById(doctorId);
+      if (raw) {
+        const doc = mapDoctor(raw);
+        selectDoctor({
+          ...doc,
+          specialization: Array.isArray(doc.specialization)
+            ? doc.specialization.join(', ')
+            : String(doc.specialization || ''),
+          languages: Array.isArray(doc.languages)
+            ? doc.languages.map(l => (typeof l === 'string' ? l : l?.name)).filter(Boolean).join(', ')
+            : String(doc.languages || ''),
+        });
+      }
+    } catch (err) {
+      console.error('[doctorManager] selectDoctorById error:', err.message);
+    }
+  }, [doctors, doctorsApi, selectDoctor]);
 
   /**
    * @param {string|object} date - ISO date string or date object
@@ -88,11 +115,17 @@ export default function doctorManager(consultationController, setAppLoading, ses
       const newDate = (typeof date === 'string') ? date : (date?.date || prev.date);
       const newTime = (typeof slot === 'string') ? slot : (slot?.time || prev.time);
       const newId   = (slot && typeof slot === 'object') ? slot.id : (newTime === prev.time ? prev.slotId : null);
+      const newPrice = (slot && typeof slot === 'object' && slot.price !== undefined) ? slot.price : prev.price;
+      const newDuration = (slot && typeof slot === 'object' && slot.duration !== undefined) ? slot.duration : prev.duration;
+      const newProfessions = (slot && typeof slot === 'object') ? slot.professionCodes : prev.professionCodes;
       
       return {
         slotId: newId,
         date:   newDate,
-        time:   newTime
+        time:   newTime,
+        price:  newPrice,
+        duration: newDuration,
+        professionCodes: newProfessions,
       };
     });
   };
@@ -155,6 +188,7 @@ export default function doctorManager(consultationController, setAppLoading, ses
     selectedSlot,
     fetchDoctors,
     selectDoctor,
+    selectDoctorById,
     selectSlot,
     navigateToSummary,
     confirmBooking,

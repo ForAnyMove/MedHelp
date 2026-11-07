@@ -9,7 +9,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { useStyles } from '../../../theme/useStyles';
 import { useComponentContext } from '../../../context/GlobalContext';
 
-export function SettingsVisibilityScreen({ onBack }) {
+export function SettingsVisibilityScreen({ onBack, embedded = false }) {
   const router = useRouter();
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
@@ -72,14 +72,19 @@ export function SettingsVisibilityScreen({ onBack }) {
     </View>
   );
 
+  const Container = embedded ? View : Screen;
+  const ScrollContainer = embedded ? View : ScrollView;
+
   return (
-    <Screen style={styles.container}>
-      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <Container style={[styles.container, embedded && styles.embeddedContainer]}>
+      <KeyboardAvoidingView style={[styles.keyboardView, embedded && styles.embeddedKeyboardView]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
-          </TouchableOpacity>
+        <View style={[styles.header, embedded && styles.embeddedHeader]}>
+          {!embedded && (
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.headerTitle}>{t('settings.visibility_title', 'Profile visibility')}</Text>
         </View>
 
@@ -87,7 +92,7 @@ export function SettingsVisibilityScreen({ onBack }) {
           {t('settings.visibility_desc', 'Control what doctors can see before and during a consultation.')}
         </Text>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollContainer {...(!embedded ? { contentContainerStyle: styles.scrollContent, showsVerticalScrollIndicator: false } : {})}>
           
           {/* Info Box */}
           <View style={styles.infoBox}>
@@ -118,9 +123,9 @@ export function SettingsVisibilityScreen({ onBack }) {
               isLast
             />
           </View>
-        </ScrollView>
+        </ScrollContainer>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, embedded && styles.embeddedFooter]}>
           <Button
             title={t('common.save_changes', 'Save changes')}
             variant="outlined"
@@ -132,7 +137,7 @@ export function SettingsVisibilityScreen({ onBack }) {
           />
         </View>
       </KeyboardAvoidingView>
-    </Screen>
+    </Container>
   );
 }
 
@@ -141,11 +146,29 @@ const themeStyles = (theme) => ({
     paddingHorizontal: theme.sizes.spacing.m,
     backgroundColor: theme.colors.bg,
   },
-  keyboardView: { flex: 1 },
+  embeddedContainer: {
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 680 : undefined,
+    alignSelf: 'center',
+  },
+  embeddedKeyboardView: {
+    maxWidth: '100%',
+    width: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.sizes.scale(40),
+    marginBottom: theme.sizes.scale(16),
+  },
+  embeddedHeader: {
+    marginTop: 0,
     marginBottom: theme.sizes.scale(16),
   },
   backButton: {
@@ -236,6 +259,12 @@ const themeStyles = (theme) => ({
     paddingBottom: theme.sizes.scale(40),
     paddingTop: theme.sizes.scale(20),
     backgroundColor: theme.colors.bg,
+  },
+  embeddedFooter: {
+    paddingBottom: theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.xs,
+    backgroundColor: 'transparent',
+    maxWidth: 320,
   },
   saveBtn: {
     borderColor: theme.colors.p500,

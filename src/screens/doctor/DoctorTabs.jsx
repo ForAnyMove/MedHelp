@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, useWindowDimensions, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, useWindowDimensions, StyleSheet, Platform, BackHandler } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,6 +16,7 @@ import { DoctorBalanceTab } from './balance/DoctorBalanceTab';
 import { DoctorHistoryTab } from './history/DoctorHistoryTab';
 import { ProfileTab } from '../universal/profile/ProfileTab';
 import { useTheme } from '../../theme/ThemeContext';
+import { AdaptiveNavigationShell } from '../../components/navigation/AdaptiveNavigationShell';
 
 const HomeRoute = () => <DoctorHomeTab />;
 const BalanceRoute = () => <DoctorBalanceTab />;
@@ -37,11 +38,16 @@ const indexToTab = ['home', 'balance', 'consultation', 'history', 'profile'];
 function DoctorTabsInner({ currentTab }) {
   const layout = useWindowDimensions();
   const styles = useStyles(tabStyles);
-  const { sizes, colors } = useTheme();
+  const { sizes, colors, responsive } = useTheme();
   const { t } = useTranslation();
   const {
     tabIndex,
     setTabIndex,
+    currentView,
+    balanceView,
+    historyView,
+    consultationStatus,
+    isSummarySaved,
     isSwipeEnabled,
     handleTabSwitchRequest,
     showExitConfirmation,
@@ -50,10 +56,13 @@ function DoctorTabsInner({ currentTab }) {
     navigateToHistoryDetail,
     navigateToHistoryPatientProfile,
     openConsultationById,
-    syncStateFromUrl
+    navigateBack,
+    backFromForm,
+    syncStateFromUrl,
+    updateUrlParams
   } = useDoctorDashboard();
-  const { setChatButtonConfig } = useComponentContext();
-  const { openConsultationId, consultationAction, action, ts, returnTab, tab, openHistoryId, openPatientProfileId } = useLocalSearchParams();
+  const { doctorProfileController, doctorHistoryController, setChatButtonConfig } = useComponentContext();
+  const { openConsultationId, consultationAction, action, ts, returnTab, tab, openHistoryId, openPatientProfileId, view, id } = useLocalSearchParams();
   const router = require('expo-router').useRouter();
 
   const [initialDeepLinkProcessed, setInitialDeepLinkProcessed] = React.useState(false);
@@ -65,8 +74,11 @@ function DoctorTabsInner({ currentTab }) {
     const profileChanged = isProfileTab !== prevIsProfileTab.current;
     setChatButtonConfig({ visible: isSwipeEnabled && !isProfileTab, animated: profileChanged });
     prevIsProfileTab.current = isProfileTab;
-    return () => setChatButtonConfig({ visible: true, animated: false });
   }, [isSwipeEnabled, isProfileTab, setChatButtonConfig]);
+
+  React.useEffect(() => {
+    return () => setChatButtonConfig({ visible: true, animated: false });
+  }, [setChatButtonConfig]);
 
   React.useEffect(() => {
     const activeTab = typeof tab === 'string' ? tab : tab?.[0];
@@ -90,103 +102,145 @@ function DoctorTabsInner({ currentTab }) {
     }
   }, [openConsultationId, consultationAction, action, ts, returnTab]);
 
-  // Sync index from URL natively
+  // Handle deep linking & route param changes for sub-screens
   useEffect(() => {
-    if (currentTab && tabIndexMap[currentTab] !== undefined && tabIndexMap[currentTab] !== tabIndex) {
-      handleTabSwitchRequest(tabIndexMap[currentTab]);
-    }
-  }, [currentTab]);
-
-  // Handle deep linking for sub-screens on initial load
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !initialDeepLinkProcessed) {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
       const searchParams = new URLSearchParams(window.location.search);
-      const tabName = window.location.pathname.replace('/', '');
+      const tabName = window.location.pathname.replace('/', '').split('/')[0];
       if (tabIndexMap[tabName] !== undefined) {
         syncStateFromUrl(searchParams, tabName);
       }
       setInitialDeepLinkProcessed(true);
     }
-  }, [initialDeepLinkProcessed, syncStateFromUrl]);
+  }, [tab, view, id, openConsultationId, syncStateFromUrl]);
+
+  // Android Hardware Back Button handler
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (tabIndex === 2 && (consultationStatus === 'form' || consultationStatus === 'summary')) {
+        if (!isSummarySaved) {
+          handleTabSwitchRequest(tabIndex);
+        } else {
+          backFromForm();
+        }
+        return true;
+      }
+      if (tabIndex === 2 && currentView !== 'dashboard') {
+        navigateBack();
+        return true;
+      }
+      if (tabIndex === 1 && balanceView !== 'dashboard') {
+        navigateBack();
+        return true;
+      }
+      if (tabIndex === 3 && historyView !== 'dashboard') {
+        navigateBack();
+        return true;
+      }
+      if (tabIndex !== 0) {
+        handleTabSwitchRequest(0);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [tabIndex, currentView, balanceView, historyView, consultationStatus, isSummarySaved, handleTabSwitchRequest, navigateBack, backFromForm]);
 
   const onIndexChangeWithSync = (i) => {
+    const isBlockedByUnsaved = (consultationStatus === 'summary' || consultationStatus === 'form') && !isSummarySaved;
     handleTabSwitchRequest(i);
-    // Explicit URL push ONLY on manual user swipe / tab press
+    if (isBlockedByUnsaved) return;
+
+    // Sync URL on user tab press
     const newTab = indexToTab[i];
-    if (typeof window !== 'undefined' && window.history) {
-      const currentUrlTab = window.location.pathname.replace('/', '');
-      if (newTab !== currentUrlTab) {
-        // Pass existing history state so Expo Router doesn't crash on Back button
-        window.history.pushState(window.history.state, '', `/${newTab}`);
+    if (Platform.OS === 'web') {
+      const currentUrlTab = (typeof window !== 'undefined' && window.location) ? window.location.pathname.replace('/', '').split('/')[0] : '';
+      const currentSearch = (typeof window !== 'undefined' && window.location) ? window.location.search : '';
+      if (newTab !== currentUrlTab || (newTab === currentUrlTab && currentSearch)) {
+        if (typeof window.history?.pushState === 'function') {
+          const currentState = (window.history.state && typeof window.history.state === 'object') ? { ...window.history.state } : {};
+          window.history.pushState({ ...currentState, customTab: newTab }, '', `/${newTab}`);
+          try {
+            window.dispatchEvent(new Event('medhelp:urlchange'));
+          } catch (e) {}
+        }
       }
     }
   };
 
   // Sync from Browser Back/Forward buttons perfectly without remounting Expo routes
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
     const handlePopState = (e) => {
-      const path = window.location.pathname.replace('/', '');
-      if (tabIndexMap[path] !== undefined) {
-        handleTabSwitchRequest(tabIndexMap[path]);
+      if (!window.location) return;
+      const rawPath = window.location.pathname.replace('/', '').split('/')[0];
+      const searchParams = new URLSearchParams(window.location.search);
+      const path = rawPath || searchParams.get('tab') || 'home';
+      const targetIndex = tabIndexMap[path];
+
+      // Guard unsaved medical form/summary against accidental browser Back press
+      if ((consultationStatus === 'summary' || consultationStatus === 'form') && !isSummarySaved) {
+        const nextView = searchParams.get('view');
+        if (path !== 'consultation' || (nextView !== 'form' && nextView !== 'summary')) {
+          handleTabSwitchRequest(targetIndex !== undefined ? targetIndex : tabIndex);
+          updateUrlParams?.('consultation', consultationStatus, undefined, undefined, undefined, { replace: false });
+          return;
+        }
+      }
+
+      if (targetIndex !== undefined) {
+        if (tabIndex !== targetIndex) {
+          setTabIndex(targetIndex);
+        }
         // Also sync sub-view state
-        const searchParams = new URLSearchParams(window.location.search);
         syncStateFromUrl(searchParams, path);
+      }
+      if (rawPath === '' && path) {
+        const remainingParams = new URLSearchParams(window.location.search);
+        remainingParams.delete('tab');
+        const remaining = remainingParams.toString() ? `?${remainingParams.toString()}` : '';
+        const cleanUrl = `/${path}${remaining}`;
+        const existingState = (window.history.state && typeof window.history.state === 'object') ? { ...window.history.state } : {};
+        window.history.replaceState(existingState, '', cleanUrl);
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [handleTabSwitchRequest, syncStateFromUrl]);
+  }, [tabIndex, setTabIndex, syncStateFromUrl, consultationStatus, isSummarySaved, handleTabSwitchRequest, updateUrlParams]);
+
+  const upcomingConsultationsCount = doctorProfileController?.upcomingCount ?? 0;
+  const historyBadgeCount = doctorHistoryController?.doctorPastConsultations?.length ?? 0;
 
   const routes = useMemo(() => [
     { key: 'home', title: t('doctor_tabs.home'), icon: 'home' },
     { key: 'balance', title: t('doctor_tabs.balance'), icon: 'balance' },
-    { key: 'consultation', title: t('doctor_tabs.consultation'), icon: 'stethoscope' },
-    { key: 'history', title: t('doctor_tabs.history'), icon: 'medic-history' },
+    { key: 'consultation', title: t('doctor_tabs.consultation'), icon: 'stethoscope', badgeCount: upcomingConsultationsCount },
+    { key: 'history', title: t('doctor_tabs.history'), icon: 'medic-history', badgeCount: historyBadgeCount },
     { key: 'profile', title: t('doctor_tabs.profile'), icon: 'profile' },
-  ], [t]);
+  ], [t, upcomingConsultationsCount, historyBadgeCount]);
 
-  const renderTabBar = (props) => {
-    return (
-      <View style={styles.tabBar}>
-        {props.navigationState.routes.map((route, i) => {
-          const isFocused = tabIndex === i;
-          return (
-            <TouchableOpacity
-              key={route.key}
-              style={styles.tabItem}
-              onPress={() => onIndexChangeWithSync(i)}
-            >
-              <View>
-                <Icon
-                  name={route.icon}
-                  color={isFocused ? styles.focusedIcon.color : styles.unfocusedIcon.color}
-                  size={sizes.scale(24)}
-                />
-                {route.key === 'history' && <NotificationBadge count={4} />}
-                {route.key === 'consultation' && <NotificationBadge count={2} />}
-              </View>
-              <Text style={[styles.tabText, isFocused && styles.tabTextFocused]} numberOfLines={1}>
-                {route.title}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
-  };
+  const isDesktopLandscape = !responsive?.isPortraitShell && (responsive?.isLandscape || responsive?.isDesktop || responsive?.navigationMode !== 'bottomBar');
 
   return (
     <View style={{ flex: 1 }}>
-      <TabView
-        navigationState={{ index: tabIndex, routes }}
-        renderScene={renderScene}
-        renderTabBar={renderTabBar}
+      <AdaptiveNavigationShell
+        routes={routes}
+        currentIndex={tabIndex}
         onIndexChange={onIndexChangeWithSync}
-        initialLayout={{ width: layout.width }}
-        swipeEnabled={isSwipeEnabled}
-        tabBarPosition="bottom"
-      />
+        role="doctor"
+      >
+        <TabView
+          navigationState={{ index: tabIndex, routes }}
+          renderScene={renderScene}
+          renderTabBar={() => null}
+          onIndexChange={onIndexChangeWithSync}
+          initialLayout={{ width: layout.width }}
+          swipeEnabled={isDesktopLandscape ? false : isSwipeEnabled}
+          animationEnabled={!isDesktopLandscape}
+          tabBarPosition="none"
+        />
+      </AdaptiveNavigationShell>
       {showExitConfirmation && (
         <View style={StyleSheet.absoluteFillObject}>
           <View style={{ flex: 1, backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>

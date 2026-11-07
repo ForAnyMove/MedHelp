@@ -53,6 +53,10 @@ const themeStyles = (theme) => ({
     flex: 1,
     paddingHorizontal: theme.sizes.spacing.l,
     backgroundColor: theme.colors.bg,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 600 : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   header: {
     paddingTop: theme.sizes.spacing.s,

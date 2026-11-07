@@ -49,7 +49,7 @@ export function RequestPayout() {
   };
 
   return (
-    <SubViewScreen title={t('doctor_balance.request_payout') || 'Request payout'} onBack={navigateBack}>
+    <SubViewScreen title={t('doctor_balance.request_payout') || 'Request payout'} onBack={navigateBack} maxWidth={600}>
       {loading ? (
         <View style={{ padding: sizes.scale(12) }}>
           <SkeletonCard lines={3} />

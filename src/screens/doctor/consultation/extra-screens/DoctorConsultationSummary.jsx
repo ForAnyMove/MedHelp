@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, ActivityIn
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { Icon } from '../../../../components/ui/Icon';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
@@ -13,6 +14,8 @@ import { createConsultationsApi } from '../../../../api/consultationsApi';
 
 export function DoctorConsultationSummary({ consultation }) {
   const { colors, sizes } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
   const { closeSummary, backFromForm, goToForm, setTabIndex, handleTabSwitchRequest } = useDoctorDashboard();
@@ -68,6 +71,9 @@ export function DoctorConsultationSummary({ consultation }) {
       
       await consultApi.updateResult(consultation.id, { is_draft: false });
       
+      const { DeviceEventEmitter } = require('react-native');
+      DeviceEventEmitter.emit('consultation_completed', { consultation_id: consultation.id });
+
       setIsSending(false);
       setShowSuccessModal(true);
     } catch (error) {
@@ -144,85 +150,165 @@ export function DoctorConsultationSummary({ consultation }) {
            <Text style={isDraft ? styles.progressActive : styles.progressInactive}>{t('doctor_consultation.sent', 'Sent')}</Text>
         </View>
         
-        {/* Patient has / Overview */}
-        <View style={styles.mainNoteCard}>
-          {resultData.overview ? (
-            <Text style={styles.mainNoteText}>{resultData.overview}</Text>
-          ) : null}
-          
-          {resultData.patient_has && resultData.patient_has.length > 0 && (
-            <>
-              <Text style={styles.mainNoteText}>{t('doctor_consultation.you_have', 'You have:')}</Text>
-              {resultData.patient_has.map((p, idx) => (
-                <View key={idx} style={[styles.bulletRow, { marginBottom: idx !== resultData.patient_has.length - 1 ? sizes.spacing.s : 0 }]}>
-                  <View style={[styles.bullet, { backgroundColor: colors.p500 }]} />
-                  <Text style={styles.bulletText}>{p}</Text>
-                </View>
-              ))}
-            </>
-          )}
-        </View>
+        {isLandscapeLayout ? (
+          <View style={styles.desktopSplitRow}>
+            <View style={styles.desktopLeftCol}>
+              {/* Patient has / Overview */}
+              <View style={styles.mainNoteCard}>
+                {resultData.overview ? (
+                  <Text style={styles.mainNoteText}>{resultData.overview}</Text>
+                ) : null}
+                
+                {resultData.patient_has && resultData.patient_has.length > 0 && (
+                  <>
+                    <Text style={styles.mainNoteText}>{t('doctor_consultation.you_have', 'You have:')}</Text>
+                    {resultData.patient_has.map((p, idx) => (
+                      <View key={idx} style={[styles.bulletRow, { marginBottom: idx !== resultData.patient_has.length - 1 ? sizes.spacing.s : 0 }]}>
+                        <View style={[styles.bullet, { backgroundColor: colors.p500 }]} />
+                        <Text style={styles.bulletText}>{p}</Text>
+                      </View>
+                    ))}
+                  </>
+                )}
+              </View>
 
-        {/* Diagnosis */}
-        {(resultData.diagnosis_icd10 || resultData.diagnosis_name) && (
-          <View style={styles.listCard}>
-            <Text style={styles.sectionTitle}>{t('doctor_consultation.diagnosis', 'Diagnosis')}</Text>
-            <Text style={styles.listText}>
-               {resultData.diagnosis_icd10 ? `[${resultData.diagnosis_icd10}] ` : ''}
-               {resultData.diagnosis_name || ''}
-            </Text>
+              {/* Diagnosis */}
+              {(resultData.diagnosis_icd10 || resultData.diagnosis_name) && (
+                <View style={styles.listCard}>
+                  <Text style={styles.sectionTitle}>{t('doctor_consultation.diagnosis', 'Diagnosis')}</Text>
+                  <Text style={styles.listText}>
+                     {resultData.diagnosis_icd10 ? `[${resultData.diagnosis_icd10}] ` : ''}
+                     {resultData.diagnosis_name || ''}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.desktopRightCol}>
+              {/* Recommendations */}
+              {resultData.recommendations && resultData.recommendations.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
+                  <View style={styles.listCard}>
+                    {resultData.recommendations.map((rec, idx) => (
+                      <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.recommendations.length - 1 ? 1 : 0}>
+                        <Icon name="file-text" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
+                        <Text style={styles.listText}>{rec}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              {/* Next Steps */}
+              {resultData.next_steps && resultData.next_steps.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
+                  <View style={styles.listCard}>
+                    {resultData.next_steps.map((rec, idx) => (
+                      <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.next_steps.length - 1 ? 1 : 0}>
+                        <Icon name="check-circle" size={sizes.scale(24)} color={getIconColor(idx + 1)} wrapperStyle={styles.iconBox} wrapped />
+                        <Text style={styles.listText}>{rec}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
+              
+              {/* Prescriptions */}
+              {resultData.prescriptions ? (
+                <>
+                  <Text style={styles.sectionTitle}>{t('doctor_consultation.prescriptions', 'Prescriptions')}</Text>
+                  <View style={styles.listCard}>
+                    <Text style={styles.listText}>{resultData.prescriptions}</Text>
+                  </View>
+                </>
+              ) : null}
+            </View>
           </View>
-        )}
+        ) : (
+          <>
+            {/* Patient has / Overview */}
+            <View style={styles.mainNoteCard}>
+              {resultData.overview ? (
+                <Text style={styles.mainNoteText}>{resultData.overview}</Text>
+              ) : null}
+              
+              {resultData.patient_has && resultData.patient_has.length > 0 && (
+                <>
+                  <Text style={styles.mainNoteText}>{t('doctor_consultation.you_have', 'You have:')}</Text>
+                  {resultData.patient_has.map((p, idx) => (
+                    <View key={idx} style={[styles.bulletRow, { marginBottom: idx !== resultData.patient_has.length - 1 ? sizes.spacing.s : 0 }]}>
+                      <View style={[styles.bullet, { backgroundColor: colors.p500 }]} />
+                      <Text style={styles.bulletText}>{p}</Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </View>
 
-        {/* Recommendations */}
-        {resultData.recommendations && resultData.recommendations.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
-            <View style={styles.listCard}>
-              {resultData.recommendations.map((rec, idx) => (
-                <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.recommendations.length - 1 ? 1 : 0}>
-                  <Icon name="file-text" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
-                  <Text style={styles.listText}>{rec}</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+            {/* Diagnosis */}
+            {(resultData.diagnosis_icd10 || resultData.diagnosis_name) && (
+              <View style={styles.listCard}>
+                <Text style={styles.sectionTitle}>{t('doctor_consultation.diagnosis', 'Diagnosis')}</Text>
+                <Text style={styles.listText}>
+                   {resultData.diagnosis_icd10 ? `[${resultData.diagnosis_icd10}] ` : ''}
+                   {resultData.diagnosis_name || ''}
+                </Text>
+              </View>
+            )}
 
-        {/* Next Steps */}
-        {resultData.next_steps && resultData.next_steps.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
-            <View style={styles.listCard}>
-              {resultData.next_steps.map((rec, idx) => (
-                <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.next_steps.length - 1 ? 1 : 0}>
-                  <Icon name="check-circle" size={sizes.scale(24)} color={getIconColor(idx + 1)} wrapperStyle={styles.iconBox} wrapped />
-                  <Text style={styles.listText}>{rec}</Text>
+            {/* Recommendations */}
+            {resultData.recommendations && resultData.recommendations.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>{t('doctor_consultation.recommendations') || 'Recommendations'}</Text>
+                <View style={styles.listCard}>
+                  {resultData.recommendations.map((rec, idx) => (
+                    <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.recommendations.length - 1 ? 1 : 0}>
+                      <Icon name="file-text" size={sizes.scale(24)} color={getIconColor(idx)} wrapperStyle={styles.iconBox} wrapped />
+                      <Text style={styles.listText}>{rec}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
+              </>
+            )}
+
+            {/* Next Steps */}
+            {resultData.next_steps && resultData.next_steps.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>{t('doctor_consultation.next_steps') || 'Next steps'}</Text>
+                <View style={styles.listCard}>
+                  {resultData.next_steps.map((rec, idx) => (
+                    <View key={idx} style={styles.listItem} borderBottomWidth={idx !== resultData.next_steps.length - 1 ? 1 : 0}>
+                      <Icon name="check-circle" size={sizes.scale(24)} color={getIconColor(idx + 1)} wrapperStyle={styles.iconBox} wrapped />
+                      <Text style={styles.listText}>{rec}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+            
+            {/* Prescriptions */}
+            {resultData.prescriptions ? (
+              <>
+                <Text style={styles.sectionTitle}>{t('doctor_consultation.prescriptions', 'Prescriptions')}</Text>
+                <View style={styles.listCard}>
+                  <Text style={styles.listText}>{resultData.prescriptions}</Text>
+                </View>
+              </>
+            ) : null}
           </>
         )}
-        
-        {/* Prescriptions */}
-        {resultData.prescriptions ? (
-          <>
-            <Text style={styles.sectionTitle}>{t('doctor_consultation.prescriptions', 'Prescriptions')}</Text>
-            <View style={styles.listCard}>
-              <Text style={styles.listText}>{resultData.prescriptions}</Text>
-            </View>
-          </>
-        ) : null}
       </ScrollView>
 
       {isDraft && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, isLandscapeLayout && styles.footerDesktop]}>
           <Button
             title={t('doctor_consultation.send_to_patient') || 'Sent to patient'}
             onPress={handleSendToPatient}
             variant="primary"
             size="medium"
-            style={styles.saveBtn}
+            style={[styles.saveBtn, isLandscapeLayout && { flex: 1 }]}
             loading={isSending}
           />
           <Button
@@ -230,7 +316,7 @@ export function DoctorConsultationSummary({ consultation }) {
             onPress={closeSummary}
             variant="outlined"
             size="medium"
-            style={styles.skipBtn}
+            style={[styles.skipBtn, isLandscapeLayout && { flex: 1, marginTop: 0 }]}
           />
         </View>
       )}
@@ -287,6 +373,27 @@ const themeStyles = (theme) => ({
   },
   scroll: {
     paddingBottom: theme.sizes.scale(100), // space for fixed footer
+  },
+  desktopSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    width: '100%',
+  },
+  desktopLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  footerDesktop: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.m,
+    maxWidth: 720,
+    alignSelf: 'center',
+    width: '100%',
   },
   progressContainer: {
     flexDirection: 'row',

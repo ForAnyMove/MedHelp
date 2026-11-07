@@ -62,7 +62,7 @@ export function PatientConsultationRate({ booking, onSkip, onSubmit }) {
   };
 
   return (
-    <SubViewScreen title={t('consultation.rating_title', 'Consultation')} hideHeader>
+    <SubViewScreen title={t('consultation.rating_title', 'Consultation')} hideHeader maxWidth={600}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}

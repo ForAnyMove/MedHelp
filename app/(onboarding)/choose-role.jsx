@@ -136,6 +136,9 @@ const themeStyles = (theme) => ({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 520 : undefined,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -232,6 +235,9 @@ const themeStyles = (theme) => ({
   },
   footer: {
     paddingBottom: theme.sizes.scale(40),
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 520 : undefined,
+    alignSelf: 'center',
   },
   button: {
     width: '100%',

@@ -1,9 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { createApiClient } from '../api/apiClient';
+import { setAppLanguage } from '../locales/i18n';
+
+const DEFAULT_LANGUAGES = [
+  { code: 'ru', name: 'Русский', name_en: 'Russian' },
+  { code: 'en', name: 'English', name_en: 'English' },
+];
 
 export default function settingsManager(setAppLoading, session, refreshSessionToken) {
   const [settings, setSettings] = useState(null);
-  const [languages, setLanguages] = useState([]);
+  const [languages, setLanguages] = useState(DEFAULT_LANGUAGES);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchSettings = useCallback(async () => {
@@ -13,6 +19,9 @@ export default function settingsManager(setAppLoading, session, refreshSessionTo
       const api = createApiClient(session, refreshSessionToken);
       const data = await api.get('/settings');
       setSettings(data);
+      if (data?.language) {
+        await setAppLanguage(data.language);
+      }
     } catch (e) {
       console.error('Failed to fetch settings:', e);
     } finally {
@@ -24,7 +33,9 @@ export default function settingsManager(setAppLoading, session, refreshSessionTo
     try {
       const api = createApiClient(session, refreshSessionToken);
       const data = await api.get('/settings/languages');
-      setLanguages(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setLanguages(data);
+      }
     } catch (e) {
       console.error('Failed to fetch languages:', e);
     }
@@ -37,6 +48,9 @@ export default function settingsManager(setAppLoading, session, refreshSessionTo
       const api = createApiClient(session, refreshSessionToken);
       const data = await api.put('/settings', updates);
       setSettings(data);
+      if (updates?.language) {
+        await setAppLanguage(updates.language);
+      }
       return { success: true, data };
     } catch (e) {
       console.error('Failed to update settings:', e);

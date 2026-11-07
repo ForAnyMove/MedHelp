@@ -12,6 +12,9 @@ import { TimerBlock } from '../components/TimerBlock';
 import { useRouter } from 'expo-router';
 import { useSession } from '../../../../context/SessionContext';
 import { useComponentContext } from '../../../../context/GlobalContext';
+import { useStreamContext } from '../../../../context/Stream';
+import { useChatNotifications } from '../../../../context/ChatNotificationContext';
+import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
 import { useConsultationTimer } from '../../../../hooks/useConsultationTimer';
 
 export function PatientActiveConsultation({ booking, onBack, onEnd }) {
@@ -21,7 +24,12 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
   const router = useRouter();
   const { session, refreshSessionToken } = useSession();
   const { consultationController } = useComponentContext();
+  const { chatClient } = useStreamContext();
+  const { setPendingChannelId } = useChatNotifications();
+  const { navigateToHistoryDoctorProfile, navigateToUpload } = usePatientDashboard();
   const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
+  const onEndRef = React.useRef(onEnd);
+  onEndRef.current = onEnd;
 
   // Active session timer sync
   const { activeSession, startConsultation, endConsultation } = consultationController;
@@ -54,11 +62,11 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
         }
         endConsultation();
         setIsConfirmVisible(false);
-        if (onEnd) onEnd(booking);
+        if (onEndRef.current) onEndRef.current(booking);
       };
       endAutomatically();
     }
-  }, [timerSeconds, booking, session, refreshSessionToken, endConsultation, onEnd]);
+  }, [timerSeconds, booking, session, refreshSessionToken, endConsultation]);
 
   const [isOtherUserInCall, setIsOtherUserInCall] = React.useState(!!booking.is_other_user_in_video);
 
@@ -79,7 +87,7 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
       if (event?.consultationId === booking?.id) {
         endConsultation();
         setIsConfirmVisible(false);
-        if (onEnd) onEnd(booking);
+        if (onEndRef.current) onEndRef.current(booking);
       }
     });
 
@@ -88,7 +96,7 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
       callLeftSub.remove();
       completedSub.remove();
     };
-  }, [session.userId, booking?.id, endConsultation, onEnd]);
+  }, [session.userId, booking?.id, endConsultation]);
 
   React.useEffect(() => {
     const checkStatus = async () => {
@@ -105,7 +113,7 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
         if (consultInfo?.status === 'completed') {
           endConsultation();
           setIsConfirmVisible(false);
-          if (onEnd) onEnd(booking);
+          if (onEndRef.current) onEndRef.current(booking);
         }
       } catch (e) {
         // Silent catch to prevent spamming logs on transient errors
@@ -127,7 +135,7 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
       clearInterval(interval);
       appStateSub.remove();
     };
-  }, [booking?.id, session, refreshSessionToken, endConsultation, onEnd]);
+  }, [booking?.id, session, refreshSessionToken, endConsultation]);
 
   useEffect(() => {
     // If we land here but the session wasn't started in context, start it now
@@ -148,6 +156,24 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
     notifyReady();
   }, [booking.id]);
 
+  const openDoctorChat = async () => {
+    const doctorUserId = booking?.doctor?.profileId || booking?.doctor?.profile_id || booking?.doctor?.id;
+    try {
+      if (chatClient && chatClient.userID && doctorUserId) {
+        const channel = chatClient.channel('messaging', {
+          members: [String(chatClient.userID), String(doctorUserId)],
+        });
+        await channel.watch();
+        if (channel.id) {
+          setPendingChannelId?.(channel.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not pre-watch doctor chat channel:', err);
+    }
+    router.push('/(chat)/list');
+  };
+
   const handleActionPress = async (actionId) => {
     if (actionId === 'video') {
       try {
@@ -162,6 +188,14 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
         console.error('Failed to start call:', err);
         Alert.alert(t('common.error'), t('consultation.call_error_msg') || 'Failed to connect to the Call Server.');
       }
+    } else if (actionId === 'chat' || actionId === 'messages') {
+      await openDoctorChat();
+    } else if (actionId === 'files') {
+      if (navigateToUpload) {
+        navigateToUpload();
+      } else {
+        await openDoctorChat();
+      }
     }
   };
 
@@ -174,13 +208,18 @@ export function PatientActiveConsultation({ booking, onBack, onEnd }) {
   };
 
   return (
-    <SubViewScreen title={t('consultation.title')} onBack={onBack}>
+    <SubViewScreen title={t('consultation.title')} onBack={onBack} maxWidth={720}>
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ flex: 1 }}>
           <RegularDoctorCard
             doctor={booking.doctor || {}}
             variant="compact"
-            onProfilePress={() => { }}
+            onProfilePress={() => {
+              const docId = booking?.doctor?.id || booking?.doctorId;
+              if (docId && navigateToHistoryDoctorProfile) {
+                navigateToHistoryDoctorProfile(docId, 'consultation');
+              }
+            }}
           />
 
           <View style={{ marginTop: sizes.spacing.m }}>

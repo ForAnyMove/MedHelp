@@ -4,21 +4,9 @@ import { StreamChat } from 'stream-chat';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { useSession } from '../SessionContext';
+import { getApiUrl } from '../../api/apiClient';
 
 const StreamContext = createContext(null);
-
-const getApiUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'web') return 'http://localhost:3000/api';
-    const hostUri = Constants.expoConfig?.hostUri;
-    if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
-    return 'http://10.0.2.2:3000/api';
-  }
-  let url = process.env.EXPO_PUBLIC_API_URL;
-  if (url) return url.endsWith('/api') ? url : url + '/api';
-  return '/api';
-};
-
 
 const API_URL = getApiUrl();
 

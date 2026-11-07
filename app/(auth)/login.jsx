@@ -16,10 +16,11 @@ export default function Login() {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
-  const { sendOtp } = useSession();
+  const { sendOtp, loginWithGoogle } = useSession();
 
   const [contact, setContact] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleContinue = async () => {
@@ -36,6 +37,22 @@ export default function Login() {
       setErrorMsg(result.error || 'Failed to send code');
     }
   };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setErrorMsg('');
+    try {
+      const result = await loginWithGoogle();
+      if (!result.success && !result.cancelled) {
+        setErrorMsg(result.error || 'Failed to authenticate with Google');
+      }
+    } catch (e) {
+      setErrorMsg(e.message || 'An error occurred during Google login');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
 
   return (
     <Screen style={styles.container}>
@@ -108,8 +125,10 @@ export default function Login() {
             <Button
               title={t('auth.login_google_btn')}
               variant="outlined"
-              onPress={() => console.log('Google login')}
+              onPress={handleGoogleLogin}
               style={styles.button}
+              disabled={loading || googleLoading}
+              loading={googleLoading}
             />
           </View>
         </ScrollView>
@@ -128,6 +147,9 @@ const themeStyles = (theme) => ({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 480 : undefined,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',

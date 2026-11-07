@@ -44,14 +44,54 @@ export default function CallScreenWeb() {
 
     const _call = videoClient.call('default', id);
 
-    _call.join({ create: true })
-      .then(() => {
+    // Use flexible ideal resolution constraints so webcams that don't support strict 720p
+    // or tabs sharing devices on the same PC don't crash getUserMedia
+    try {
+      if (_call.camera?.setDefaultDeviceConstraints) {
+        _call.camera.setDefaultDeviceConstraints({
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+        });
+      }
+    } catch (_) {}
+
+    const joinCallSafely = async () => {
+      try {
+        // Pre-check if camera or microphone is available; if camera is busy (e.g. second browser tab on same PC),
+        // disable camera before join so _call.join() succeeds without throwing getUserMedia errors.
+        if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+          try {
+            const testVideo = await navigator.mediaDevices.getUserMedia({ video: true });
+            testVideo.getTracks().forEach(track => track.stop());
+          } catch (camErr) {
+            try { await _call.camera.disable(); } catch (_) {}
+          }
+          try {
+            const testAudio = await navigator.mediaDevices.getUserMedia({ audio: true });
+            testAudio.getTracks().forEach(track => track.stop());
+          } catch (micErr) {
+            try { await _call.microphone.disable(); } catch (_) {}
+          }
+        }
+
+        await _call.join({ create: true });
         setCall(_call);
         setActiveCall(_call);
-      })
-      .catch((err) => {
-        console.error('Failed to join call on web:', err);
-      });
+      } catch (err) {
+        console.warn('Primary call join failed, retrying with camera/mic disabled:', err);
+        try {
+          await _call.camera.disable().catch(() => {});
+          await _call.microphone.disable().catch(() => {});
+          await _call.join({ create: true });
+          setCall(_call);
+          setActiveCall(_call);
+        } catch (retryErr) {
+          console.error('Failed to join call on web:', retryErr);
+        }
+      }
+    };
+
+    joinCallSafely();
 
     return () => { };
   }, [id, videoClient]);
@@ -95,7 +135,7 @@ export default function CallScreenWeb() {
       const callIdStr = String(id);
       if (callIdStr.startsWith('medhelp-consult-')) {
         const consultationId = callIdStr.replace('medhelp-consult-', '');
-        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+        router.replace(`/consultation?view=active&id=${consultationId}`);
       } else {
         router.replace('/home');
       }
@@ -125,7 +165,7 @@ export default function CallScreenWeb() {
       const callIdStr = String(id);
       if (callIdStr.startsWith('medhelp-consult-')) {
         const consultationId = callIdStr.replace('medhelp-consult-', '');
-        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+        router.replace(`/consultation?view=active&id=${consultationId}`);
       } else {
         router.replace('/home');
       }
@@ -170,9 +210,37 @@ function CustomWebLayout({ onMinimize, onLeave, callId }) {
 
   const [isNotesModalVisible, setIsNotesModalVisible] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [cameraErrorDismissed, setCameraErrorDismissed] = useState(false);
+  const [deviceWarning, setDeviceWarning] = useState(null);
 
-  const toggleMic = () => call?.microphone.toggle();
-  const toggleCam = () => call?.camera.toggle();
+  const toggleMic = async () => {
+    try {
+      await call?.microphone.toggle();
+      setDeviceWarning(null);
+    } catch (err) {
+      console.warn('Microphone toggle failed:', err);
+      setDeviceWarning(t('call.mic_failed', 'Не удалось включить микрофон (возможно, устройство занято другим окном или вкладкой).'));
+    }
+  };
+
+  const toggleCam = async () => {
+    try {
+      setCameraErrorDismissed(false);
+      await call?.camera.toggle();
+      setDeviceWarning(null);
+    } catch (err) {
+      console.warn('Camera toggle failed, trying basic constraints:', err);
+      try {
+        if (call?.camera?.setDefaultDeviceConstraints) {
+          call.camera.setDefaultDeviceConstraints({ video: true });
+        }
+        await call?.camera.enable();
+        setDeviceWarning(null);
+      } catch (fallbackErr) {
+        setDeviceWarning(t('call.camera_failed', 'Камера недоступна или используется в другом окне браузера. Звонок продолжается в аудио-режиме.'));
+      }
+    }
+  };
   const toggleRecord = () => {
     if (isRecording) call?.stopRecording();
     else call?.startRecording();
@@ -459,28 +527,43 @@ function CustomWebLayout({ onMinimize, onLeave, callId }) {
           </Animated.View>
         )}
 
-        {cameraStatus === 'failed' && (
+        {((cameraStatus === 'failed' && !cameraErrorDismissed) || deviceWarning) && (
           <div style={{
             position: 'absolute',
-            top: '50%',
+            top: sizes.scale(72),
             left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: /* TODO: color */ 'rgba(0,0,0,0.85)',
-            padding: '20px',
-            borderRadius: '12px',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            padding: '14px 20px',
+            borderRadius: '16px',
             color: 'white',
-            textAlign: 'center',
-            maxWidth: '80%',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '12px',
+            maxWidth: '520px',
+            width: '90%',
             zIndex: 1000,
-            borderWidth: 1,
-            borderColor: /* TODO: color */ 'rgba(255,255,255,0.2)'
+            border: '1px solid rgba(255,255,255,0.18)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.25)'
           }}>
-            <Text style={{ color: 'white', fontWeight: 'bold', marginBottom: '8px', fontSize: sizes.scale(16) }}>
-              {t('call.camera_issue', 'Camera Issue')}
-            </Text>
-            <Text style={{ color: /* TODO: color */ '#ddd', fontSize: sizes.scale(14) }}>
-              {t('call.camera_failed', 'Failed to access video. Camera might be in use by another application.')}
-            </Text>
+            <div style={{ flex: 1 }}>
+              <Text style={{ color: 'white', fontFamily: 'Manrope_700Bold', marginBottom: '4px', fontSize: sizes.scale(14) }}>
+                {t('call.camera_issue', 'Уведомление об устройстве')}
+              </Text>
+              <Text style={{ color: '#cbd5e1', fontSize: sizes.scale(12), lineHeight: sizes.scale(17) }}>
+                {deviceWarning || t('call.camera_failed', 'Камера занята другим приложением или вкладкой браузера. Вы можете продолжить звонок без видео.')}
+              </Text>
+            </div>
+            <TouchableOpacity
+              onPress={() => {
+                setCameraErrorDismissed(true);
+                setDeviceWarning(null);
+              }}
+              style={{ padding: 6, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 10 }}
+            >
+              <Icon name="close" size={sizes.scale(18)} color={colors.white} />
+            </TouchableOpacity>
           </div>
         )}
       </div>

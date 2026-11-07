@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { LayoutAnimation, Platform, UIManager } from 'react-native';
 
 // Enable LayoutAnimation on Android (safe to call multiple times)
@@ -28,28 +28,28 @@ export function useDashboardNavigator(defaultView = 'dashboard', initialTabIndex
   const scrollViewRef = useRef(null);
 
   /** Navigate to a named sub-view with animation */
-  const navigateTo = (view) => {
+  const navigateTo = useCallback((view) => {
     LayoutAnimation.configureNext(ANIM);
     setCurrentView(view);
-  };
+  }, []);
 
   /** Go back to 'dashboard' view with animation */
-  const resetToMain = () => {
+  const resetToMain = useCallback(() => {
     LayoutAnimation.configureNext(ANIM);
     setCurrentView(defaultView);
-  };
+  }, [defaultView]);
 
   /** Switch to a tab by index */
-  const switchTab = (index) => {
+  const switchTab = useCallback((index) => {
     setTabIndex(index);
-  };
+  }, []);
 
   /** Scroll back to top of the current tab's ScrollView */
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  };
+  }, []);
 
-  return {
+  return useMemo(() => ({
     currentView,
     setCurrentView,
     tabIndex,
@@ -59,5 +59,5 @@ export function useDashboardNavigator(defaultView = 'dashboard', initialTabIndex
     resetToMain,
     switchTab,
     scrollToTop,
-  };
+  }), [currentView, tabIndex, navigateTo, resetToMain, switchTab, scrollToTop]);
 }

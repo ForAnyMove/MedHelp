@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useWindowDimensions, Platform, PixelRatio } from 'react-native';
 import { scaleByHeight, scaleByHeightMobile } from '../utils/resizeFuncs';
+import { getResponsiveMetrics } from '../theme/useResponsive';
 
 const lightColors = {
   p500: '#23D3C2',
@@ -30,6 +31,7 @@ const lightColors = {
   sn300: '#DCE4E9',
   white: '#FFFFFF',
   bg: '#F3F9FE',
+  background: '#F3F9FE',
   success: '#3CC480',
   warning: '#FFB547',
   danger: '#FF6B6B',
@@ -86,16 +88,23 @@ export default function themeManager() {
     };
   }, [height, width, isWebLandscape, fontScale]);
 
+  const responsive = useMemo(
+    () => getResponsiveMetrics(width, height, Platform.OS),
+    [width, height]
+  );
+
   const current = useMemo(() => ({
     colors: lightColors, // Future: add darkColors and toggle
     sizes,
-  }), [sizes]);
+    responsive,
+  }), [sizes, responsive]);
 
   return {
     isTheme: isDark ? 'dark' : 'light',
     current,
     colors: lightColors, // Shortcut for easier access
     sizes, // Shortcut
+    responsive,
     switchTheme: () => setIsDark(!isDark),
   };
 }

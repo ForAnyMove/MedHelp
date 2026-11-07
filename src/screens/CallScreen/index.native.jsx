@@ -345,7 +345,7 @@ export default function CallScreen() {
       const callIdStr = String(id);
       if (callIdStr.startsWith('medhelp-consult-')) {
         const consultationId = callIdStr.replace('medhelp-consult-', '');
-        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+        router.replace(`/consultation?view=active&id=${consultationId}`);
       } else {
         router.replace('/home');
       }
@@ -374,7 +374,7 @@ export default function CallScreen() {
       const callIdStr = String(id);
       if (callIdStr.startsWith('medhelp-consult-')) {
         const consultationId = callIdStr.replace('medhelp-consult-', '');
-        router.replace(`/home?tab=consultation&view=active&id=${consultationId}`);
+        router.replace(`/consultation?view=active&id=${consultationId}`);
       } else {
         router.replace('/home');
       }

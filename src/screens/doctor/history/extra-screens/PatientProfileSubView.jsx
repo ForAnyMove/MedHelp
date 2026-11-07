@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator, Lin
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { Icon } from '../../../../components/ui/Icon';
 import { SegmentedControl } from '../../../../components/ui/SegmentedControl';
 import { useComponentContext } from '../../../../context/GlobalContext';
@@ -18,35 +19,100 @@ export function PatientProfileSubView({ patientId: id, onBack }) {
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const { t, i18n } = useTranslation();
-  const { consultationController } = useComponentContext();
+  const { consultationController, historyController, doctorProfileController } = useComponentContext();
   const lang = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
 
   const [activeTab, setActiveTab] = useState('Profile');
   const [reportModalVisible, setReportModalVisible] = useState(false);
 
-  // Extract patient data from consultations
+  // Extract patient data from consultations across all available managers
   const patientData = useMemo(() => {
-    const consultations = consultationController?.allConsultations || [];
-    const patientConsults = consultations.filter(c => c.patient_profile_id === id);
+    const rawConsultations = consultationController?.allConsultations || [];
+    const patientConsults = rawConsultations.filter(
+      c => String(c.patient_profile_id || c.patient?.id || c.patientId) === String(id)
+    );
 
-    if (patientConsults.length === 0) return null;
+    if (patientConsults.length > 0) {
+      const profile = patientConsults[0].patient;
+      const sorted = [...patientConsults].sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
 
-    const profile = patientConsults[0].patient;
-    const sorted = [...patientConsults].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return {
+        id,
+        profile,
+        visitsCount: patientConsults.length,
+        lastVisit: sorted[0].created_at || sorted[0].date,
+        consultations: sorted,
+      };
+    }
 
-    return {
-      id,
-      profile,
-      visitsCount: patientConsults.length,
-      lastVisit: sorted[0].created_at,
-      consultations: sorted,
-    };
-  }, [id, consultationController?.allConsultations]);
+    // Fallback to mapped history / doctor profile consultations
+    const mappedPast = (historyController?.doctorPastConsultations || []).filter(
+      c => String(c.patientId || c.patient?.id) === String(id)
+    );
+    const mappedUpcoming = (doctorProfileController?.consultations || []).filter(
+      c => String(c.patientId || c.patient?.id) === String(id)
+    );
+    const combined = [...mappedPast, ...mappedUpcoming];
 
-  if (!patientData) {
+    if (combined.length > 0) {
+      const first = combined[0];
+      const nameParts = (first.patientName || '').split(' ');
+      const fallbackProfile = {
+        id,
+        first_name: first.patient?.firstName || nameParts[0] || '',
+        last_name: first.patient?.lastName || nameParts.slice(1).join(' ') || '',
+        avatar_url: first.patientAvatarUrl || first.patient?.avatarUrl || null,
+        date_of_birth: first.patient?.dob || null,
+        gender: first.patient?.gender || null,
+      };
+      const normalizedConsults = combined
+        .map(c => ({
+          id: c.id,
+          created_at: c.date,
+          status: c.status,
+          purpose: c.diagnosis || c.purpose,
+          results: c.diagnosis ? [{ diagnosis: c.diagnosis, file_urls: c.documents?.map(d => d.url) || [] }] : [],
+        }))
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      return {
+        id,
+        profile: fallbackProfile,
+        visitsCount: normalizedConsults.length,
+        lastVisit: normalizedConsults[0]?.created_at,
+        consultations: normalizedConsults,
+      };
+    }
+
+    return null;
+  }, [id, consultationController?.allConsultations, historyController?.doctorPastConsultations, doctorProfileController?.consultations]);
+
+  const isLoading = !patientData && !consultationController?.isLoaded && !historyController?.isLoaded;
+
+  if (isLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={colors.p500} />
+      </View>
+    );
+  }
+
+  if (!patientData) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Icon name="arrow-back" size={sizes.scale(24)} color={colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t('doctor_history.patient_profile', 'Patient profile')}</Text>
+          </View>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: sizes.spacing.xl }}>
+          <Text style={{ fontFamily: 'Manrope_600SemiBold', color: colors.n500, fontSize: sizes.scale(16) }}>
+            {t('doctor_history.patient_not_found', 'Пациент не найден')}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -136,6 +202,8 @@ export function PatientProfileSubView({ patientId: id, onBack }) {
 
 function ProfileTab({ patientData }) {
   const { sizes, colors } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const styles = useStyles(themeStyles);
   const { t, i18n } = useTranslation();
   const { session, refreshSessionToken } = useSession();
@@ -188,8 +256,8 @@ function ProfileTab({ patientData }) {
     </View>
   );
 
-  return (
-    <View>
+  const renderInfoAndMedical = () => (
+    <>
       <Text style={styles.sectionTitle}>{t('doctor_history.personal_info', 'Personal info')}</Text>
       <View style={styles.card}>
         {renderInfoRow(t('doctor_history.date_of_birth', 'Date of birth:'), dob)}
@@ -217,7 +285,11 @@ function ProfileTab({ patientData }) {
           </>
         )}
       </View>
+    </>
+  );
 
+  const renderVisits = () => (
+    <>
       <Text style={styles.sectionTitle}>{t('doctor_history.visit_history', 'Visit history with you')}</Text>
       <View style={styles.visitsContainer}>
         {patientData.consultations.map((c, i) => {
@@ -257,6 +329,26 @@ function ProfileTab({ patientData }) {
           );
         })}
       </View>
+    </>
+  );
+
+  if (isLandscapeLayout) {
+    return (
+      <View style={styles.desktopSplitRow}>
+        <View style={styles.desktopLeftCol}>
+          {renderInfoAndMedical()}
+        </View>
+        <View style={styles.desktopRightCol}>
+          {renderVisits()}
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      {renderInfoAndMedical()}
+      {renderVisits()}
     </View>
   );
 }
@@ -447,7 +539,7 @@ const themeStyles = (theme) => ({
   },
   header: {
     backgroundColor: theme.colors.p400,
-    paddingTop: theme.sizes.spacing.xxl + 10,
+    paddingTop: (theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge) ? theme.sizes.spacing.l : theme.sizes.spacing.xxl + 10,
     paddingBottom: theme.sizes.spacing.l,
     borderBottomLeftRadius: theme.sizes.borderRadius.large,
     borderBottomRightRadius: theme.sizes.borderRadius.large,
@@ -455,8 +547,13 @@ const themeStyles = (theme) => ({
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
   },
   backButton: {
     padding: theme.sizes.spacing.xs,
@@ -471,7 +568,12 @@ const themeStyles = (theme) => ({
   profileInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
   },
   avatar: {
     width: theme.sizes.scale(64),
@@ -520,8 +622,28 @@ const themeStyles = (theme) => ({
     color: theme.colors.p400,
   },
   scrollContent: {
-    padding: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xxl,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
+  },
+  desktopSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    width: '100%',
+  },
+  desktopLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1.15,
+    minWidth: 0,
   },
   segmented: {
     marginBottom: theme.sizes.spacing.l,

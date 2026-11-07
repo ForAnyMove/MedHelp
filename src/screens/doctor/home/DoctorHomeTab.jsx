@@ -18,9 +18,11 @@ export function DoctorHomeTab() {
   const styles = useStyles(themeStyles);
   const { navigateToPatientCard, setTabIndex, scrollViewRef } = useDoctorDashboard();
   const { doctorProfileController, user } = useComponentContext();
-  const { sizes, colors } = useTheme();
+  const { sizes, colors, responsive } = useTheme();
   const [isNotificationSheetOpen, setIsNotificationSheetOpen] = React.useState(false);
   
+  const isMultiCol = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
+  const isWideDesktop = !responsive?.isPortraitShell && (responsive?.isDesktopWide || responsive?.isUltrawide);
   const data = doctorProfileController.getDashboardData();
 
   const handleConsultationPress = () => {
@@ -42,16 +44,57 @@ export function DoctorHomeTab() {
           profile={data.profile} 
           onNotificationPress={() => setIsNotificationSheetOpen(true)} 
         />
-        <TodayStatusCard
-          consultationCount={data.consultationsTodayCount}
-          onConsultationPress={handleConsultationPress}
-        />
-        <NextPatientCard
-          consultation={data.nextConsultation}
-          onOpenConsultation={handleOpenConsultation}
-        />
-        <DoctorQuickActions />
-        <ProfitStatusCard profit={data.profit} />
+
+        {isMultiCol ? (
+          <View style={styles.dashboardRow}>
+            <View style={styles.dashboardColMain}>
+              {isWideDesktop ? (
+                <View style={styles.wideTopGrid}>
+                  <View style={styles.wideGridCol}>
+                    <TodayStatusCard
+                      consultationCount={data.consultationsTodayCount}
+                      onConsultationPress={handleConsultationPress}
+                    />
+                  </View>
+                  <View style={styles.wideGridCol}>
+                    <NextPatientCard
+                      consultation={data.nextConsultation}
+                      onOpenConsultation={handleOpenConsultation}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <TodayStatusCard
+                    consultationCount={data.consultationsTodayCount}
+                    onConsultationPress={handleConsultationPress}
+                  />
+                  <NextPatientCard
+                    consultation={data.nextConsultation}
+                    onOpenConsultation={handleOpenConsultation}
+                  />
+                </>
+              )}
+              <DoctorQuickActions />
+            </View>
+            <View style={styles.dashboardColSide}>
+              <ProfitStatusCard profit={data.profit} />
+            </View>
+          </View>
+        ) : (
+          <>
+            <TodayStatusCard
+              consultationCount={data.consultationsTodayCount}
+              onConsultationPress={handleConsultationPress}
+            />
+            <NextPatientCard
+              consultation={data.nextConsultation}
+              onOpenConsultation={handleOpenConsultation}
+            />
+            <DoctorQuickActions />
+            <ProfitStatusCard profit={data.profit} />
+          </>
+        )}
       </ScrollView>
 
       <BottomSheet
@@ -71,8 +114,39 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.xs,
     paddingBottom: theme.sizes.spacing.xl,
-  }
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 760 : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
+  },
+  dashboardRow: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.l,
+    alignItems: 'flex-start',
+    marginTop: theme.sizes.spacing.s,
+    width: '100%',
+  },
+  wideTopGrid: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.m,
+    alignItems: 'stretch',
+    width: '100%',
+  },
+  wideGridCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  dashboardColMain: {
+    flex: theme.responsive?.isDesktopLarge ? 3.2 : 3,
+    minWidth: 0,
+  },
+  dashboardColSide: {
+    flex: theme.responsive?.isDesktopLarge ? 1.8 : 2,
+    minWidth: 0,
+  },
 });

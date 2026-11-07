@@ -19,13 +19,17 @@ import * as importPatientConsultationCard from './extra-screens/PatientConsultat
 import * as importPatientActiveConsultation from './extra-screens/PatientActiveConsultation';
 import { PatientConsultationRate } from './extra-screens/PatientConsultationRate';
 import { PatientConsultationCompleted } from './extra-screens/PatientConsultationCompleted';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Platform } from 'react-native';
 import { useSession } from '../../../context/SessionContext';
 import { getEstimatedServerDate } from '../../../hooks/useServerTime';
+import { useResponsive } from '../../../theme/useResponsive';
 
 export function ConsultationTab() {
   const { t } = useTranslation();
   const { session, refreshSessionToken } = useSession();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const { consultationController, doctorController, themeController: { colors, sizes } } = useComponentContext();
   const {
     bookings,
@@ -39,6 +43,29 @@ export function ConsultationTab() {
     getPreviousResult,
     setActiveSession
   } = consultationController;
+
+  const searchParams = useLocalSearchParams();
+  const routeView = typeof searchParams?.view === 'string' ? searchParams.view : searchParams?.view?.[0];
+  const routeId = typeof searchParams?.id === 'string' ? searchParams.id : searchParams?.id?.[0];
+
+  const getWebParam = (key) => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.location) return null;
+    try {
+      if (!window.location.pathname.startsWith('/consultation')) return null;
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get(key);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const [, setPopstateTick] = useState(0);
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handlePop = () => setPopstateTick((tick) => tick + 1);
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
 
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
@@ -107,6 +134,18 @@ export function ConsultationTab() {
     setIsConsultationDetailsVisible
   } = usePatientDashboard();
 
+  const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && window.location;
+  const isWebConsultationBase = isWeb && window.location.pathname.startsWith('/consultation') && (!window.location.search || window.location.search === '?');
+
+  const urlView = getWebParam('view');
+  const urlId = getWebParam('id');
+  const effectiveView = isWebConsultationBase
+    ? 'main'
+    : (consultationView !== 'main' ? consultationView : (urlView || (routeView || 'main')));
+  const effectiveBookingId = isWebConsultationBase
+    ? null
+    : (urlId || (isWeb ? selectedSummaryBooking?.id : (routeId || selectedSummaryBooking?.id)));
+
   const styles = useStyles(themeStyles);
   const router = useRouter();
 
@@ -162,13 +201,20 @@ export function ConsultationTab() {
           <Text style={styles.title}>{t('consultation.title')}</Text>
         </View>
         <View style={styles.emptyContainer}>
-          <Icon name="calendar" size={sizes.scale(64)} color={colors.n300} />
-          <Text style={styles.emptyText}>{t('consultation.empty_text')}</Text>
-          <Button
-            title={t('consultation.go_to_doctors')}
-            onPress={navigateToDoctors}
-            style={styles.emptyButton}
-          />
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconCircle}>
+              <Icon name="calendar" size={sizes.scale(40)} color={colors.p500} />
+            </View>
+            <Text style={styles.emptyTitle}>
+              {t('consultation.no_consultations_title', 'Нет запланированных приёмов')}
+            </Text>
+            <Text style={styles.emptyText}>{t('consultation.empty_text')}</Text>
+            <Button
+              title={t('consultation.go_to_doctors')}
+              onPress={() => navigateToDoctors()}
+              style={styles.emptyButton}
+            />
+          </View>
         </View>
       </View>
     );
@@ -176,27 +222,29 @@ export function ConsultationTab() {
 
   const isOngoing = activeSession.status === 'ongoing';
 
+  const targetBookingId = effectiveBookingId || selectedSummaryBooking?.id;
   let activeBooking = selectedSummaryBooking;
-  if (selectedSummaryBooking?.id && !selectedSummaryBooking.doctor) {
-    const groupedConsultations = consultationController.getGroupedConsultations();
-    for (const group of groupedConsultations) {
-      const found = group.data.find(c => c.id === selectedSummaryBooking.id);
+  if (targetBookingId) {
+    const grouped = consultationController.getGroupedConsultations();
+    for (const group of grouped) {
+      const found = group.data.find(c => String(c.id) === String(targetBookingId));
       if (found) {
         activeBooking = found;
         break;
       }
     }
-    if (!activeBooking?.doctor) {
-      activeBooking = bookings.find(b => b.id === selectedSummaryBooking.id) || results.find(r => r.id === selectedSummaryBooking.id) || selectedSummaryBooking;
+    if (!activeBooking || !activeBooking.doctor) {
+      activeBooking = bookings.find(b => String(b.id) === String(targetBookingId)) ||
+        results.find(r => String(r.id) === String(targetBookingId)) ||
+        (selectedSummaryBooking && String(selectedSummaryBooking.id) === String(targetBookingId) ? selectedSummaryBooking : { id: targetBookingId });
     }
   }
 
-
-  if (consultationView === 'summary') {
+  if (effectiveView === 'summary' && activeBooking) {
     return <ConsultationSummary booking={activeBooking} onClose={navigateToConsultationMain} />;
   }
 
-  if (consultationView === 'detail' && activeBooking) {
+  if (effectiveView === 'detail' && activeBooking) {
     return (
       <importPatientConsultationCard.PatientConsultationCard
         booking={activeBooking}
@@ -215,7 +263,7 @@ export function ConsultationTab() {
     );
   }
 
-  if (consultationView === 'active' && activeBooking) {
+  if (effectiveView === 'active' && activeBooking) {
     return (
       <importPatientActiveConsultation.PatientActiveConsultation
         booking={activeBooking}
@@ -240,7 +288,7 @@ export function ConsultationTab() {
     );
   }
 
-  if (consultationView === 'rate' && activeBooking) {
+  if (effectiveView === 'rate' && activeBooking) {
     return (
       <PatientConsultationRate
         booking={activeBooking}
@@ -250,7 +298,7 @@ export function ConsultationTab() {
     );
   }
 
-  if (consultationView === 'completed' && activeBooking) {
+  if (effectiveView === 'completed' && activeBooking) {
     return (
       <PatientConsultationCompleted
         booking={activeBooking}
@@ -279,22 +327,45 @@ export function ConsultationTab() {
 
           return (
             <View key={idx} style={styles.group}>
-              <Text style={styles.groupTitle}>{displayTitle}</Text>
+              <View style={styles.groupHeaderRow}>
+                <Text style={styles.groupTitle}>{displayTitle}</Text>
+                {hasData && (
+                  <View style={styles.countBadge}>
+                    <Text style={styles.countBadgeText}>
+                      {group.data.length} {group.data.length === 1 ? 'консультация' : 'консультаций'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
               {hasData ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.horizontalScroll}
-                  nestedScrollEnabled
-                >
-                  {group.data.map(consultation => (
-                    <PatientConsultationMiniCard
-                      key={consultation.id}
-                      consultation={consultation}
-                      onPress={navigateToConsultationDetail}
-                    />
-                  ))}
-                </ScrollView>
+                isLandscapeLayout ? (
+                  <View style={styles.desktopCardsGrid}>
+                    {group.data.map(consultation => (
+                      <PatientConsultationMiniCard
+                        key={consultation.id}
+                        consultation={consultation}
+                        onPress={navigateToConsultationDetail}
+                        style={styles.desktopConsultationCard}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalScroll}
+                    nestedScrollEnabled
+                  >
+                    {group.data.map(consultation => (
+                      <PatientConsultationMiniCard
+                        key={consultation.id}
+                        consultation={consultation}
+                        onPress={navigateToConsultationDetail}
+                      />
+                    ))}
+                  </ScrollView>
+                )
               ) : (
                 <View style={styles.emptyGroup}>
                   <Text style={styles.emptyGroupText}>{t('consultation.no_consultations_day')}</Text>
@@ -326,15 +397,54 @@ const themeStyles = (theme) => ({
   },
   scrollContent: {
     paddingBottom: theme.sizes.spacing.xl,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 760
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
   },
   group: {
-    marginBottom: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.l,
   },
-  groupTitle: {
-    ...theme.sizes.typography.h3,
-    color: theme.colors.n700,
+  groupHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.xs,
+  },
+  groupTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n800,
+    fontWeight: '700',
+  },
+  countBadge: {
+    backgroundColor: theme.colors.n100,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  countBadgeText: {
+    fontSize: theme.sizes.scale(11),
+    color: theme.colors.n600,
+    fontWeight: '500',
+  },
+  desktopCardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.sizes.spacing.m,
+    paddingHorizontal: theme.sizes.spacing.m,
+    marginTop: theme.sizes.spacing.xs,
+  },
+  desktopConsultationCard: {
+    width: theme.sizes.scale(240),
+    minHeight: theme.sizes.scale(130),
+    marginRight: 0,
+    marginBottom: 0,
   },
   horizontalScroll: {
     paddingLeft: theme.sizes.spacing.m,
@@ -352,8 +462,16 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingVertical: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 760
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   title: {
     ...theme.sizes.typography.h3,
@@ -366,18 +484,51 @@ const themeStyles = (theme) => ({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.xl,
-    marginTop: '40%',
+    paddingHorizontal: theme.sizes.spacing.l,
+    paddingVertical: theme.sizes.spacing.xl,
+    minHeight: theme.sizes.scale(400),
+  },
+  emptyCard: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.xl,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: theme.sizes.scale(440),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  emptyIconCircle: {
+    width: theme.sizes.scale(72),
+    height: theme.sizes.scale(72),
+    borderRadius: theme.sizes.scale(36),
+    backgroundColor: theme.colors.p100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.sizes.spacing.m,
+  },
+  emptyTitle: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n900,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: theme.sizes.spacing.xs,
   },
   emptyText: {
-    ...theme.sizes.typography.body,
+    ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n500,
     textAlign: 'center',
-    marginTop: theme.sizes.spacing.m,
-    marginBottom: theme.sizes.spacing.xl,
+    marginBottom: theme.sizes.spacing.l,
+    lineHeight: theme.sizes.scale(20),
   },
   emptyButton: {
     width: '100%',
+    maxWidth: theme.sizes.scale(260),
   },
   actionGrid: {
     width: '100%',

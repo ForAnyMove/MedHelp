@@ -3,6 +3,7 @@ import { View, Text, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { Icon } from '../../../../components/ui/Icon';
 import { transactionManager } from '../../../../managers/transactionManager';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
@@ -66,6 +67,8 @@ const AiStatusBadge = ({ status }) => {
 
 export function PatientDetails({ patient, onBack }) {
   const { colors, sizes } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
@@ -87,52 +90,104 @@ export function PatientDetails({ patient, onBack }) {
         </View>
 
         {patient.aiSummary && (
-          <>
-            <Text style={styles.title}>{t('doctor_consultation.ai_summary')}</Text>
-            <View style={styles.aiCard}>
-              <View style={styles.aiHeader}>
-                <Icon name="drops" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={styles.aiIconBox} wrapped />
-                <View style={styles.aiHeaderContent}>
-                  <View style={styles.aiHeaderTitleRow}>
-                    <Text style={styles.aiSummaryTitle}>{patient.aiSummary.title}</Text>
-                    <AiBadge value={patient.aiSummary.value} status={patient.aiSummary.status} />
-                    <AiStatusBadge status={patient.aiSummary.status} />
+          isLandscapeLayout ? (
+            <View style={styles.desktopSplitRow}>
+              <View style={styles.desktopLeftCol}>
+                <Text style={styles.title}>{t('doctor_consultation.ai_summary')}</Text>
+                <View style={styles.aiCard}>
+                  <View style={styles.aiHeader}>
+                    <Icon name="drops" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={styles.aiIconBox} wrapped />
+                    <View style={styles.aiHeaderContent}>
+                      <View style={styles.aiHeaderTitleRow}>
+                        <Text style={styles.aiSummaryTitle}>{patient.aiSummary.title}</Text>
+                        <AiBadge value={patient.aiSummary.value} status={patient.aiSummary.status} />
+                        <AiStatusBadge status={patient.aiSummary.status} />
+                      </View>
+                      <Text style={styles.aiNormalRange}>(Normal {patient.aiSummary.normalRange})</Text>
+                    </View>
                   </View>
-                  <Text style={styles.aiNormalRange}>(Normal {patient.aiSummary.normalRange})</Text>
+
+                  <View style={styles.aiDivider} />
+
+                  <Text style={styles.aiMainText}>
+                    <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{patient.aiSummary.title} -</Text> {patient.aiSummary.description}
+                  </Text>
+
+                  <View style={styles.insightContainer}>
+                    <View style={styles.insightBox}>
+                      <Icon name="check" size={sizes.scale(24)} color={colors.p500} style={styles.circleCheck} />
+                      <Text style={styles.insightText}>{patient.aiSummary.insight}</Text>
+                    </View>
+
+                    {patient.aiSummary.bullets?.map((bullet, idx) => (
+                      <View key={idx} style={styles.bulletRow}>
+                        <View style={styles.aiBullet} />
+                        <Text style={styles.bulletText}>{bullet}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+              <View style={styles.desktopRightCol}>
+                <Text style={styles.title}>{t('symptoms.res_cause')}</Text>
+                <View style={styles.reasonsList}>
+                  {patient.aiSummary.reasons?.map((reason, idx) => (
+                    <View key={idx} style={styles.reasonItem}>
+                      <Icon name="anemia" size={sizes.scale(24)} color={idx === 0 ? colors.sCoral : idx === 1 ? colors.sYell : colors.sBlue} wrapperStyle={styles.reasonIcon} wrapped />
+                      <Text style={styles.reasonText}>{reason.text}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.title}>{t('doctor_consultation.ai_summary')}</Text>
+              <View style={styles.aiCard}>
+                <View style={styles.aiHeader}>
+                  <Icon name="drops" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={styles.aiIconBox} wrapped />
+                  <View style={styles.aiHeaderContent}>
+                    <View style={styles.aiHeaderTitleRow}>
+                      <Text style={styles.aiSummaryTitle}>{patient.aiSummary.title}</Text>
+                      <AiBadge value={patient.aiSummary.value} status={patient.aiSummary.status} />
+                      <AiStatusBadge status={patient.aiSummary.status} />
+                    </View>
+                    <Text style={styles.aiNormalRange}>(Normal {patient.aiSummary.normalRange})</Text>
+                  </View>
+                </View>
+
+                <View style={styles.aiDivider} />
+
+                <Text style={styles.aiMainText}>
+                  <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{patient.aiSummary.title} -</Text> {patient.aiSummary.description}
+                </Text>
+
+                <View style={styles.insightContainer}>
+                  <View style={styles.insightBox}>
+                    <Icon name="check" size={sizes.scale(24)} color={colors.p500} style={styles.circleCheck} />
+                    <Text style={styles.insightText}>{patient.aiSummary.insight}</Text>
+                  </View>
+
+                  {patient.aiSummary.bullets?.map((bullet, idx) => (
+                    <View key={idx} style={styles.bulletRow}>
+                      <View style={styles.aiBullet} />
+                      <Text style={styles.bulletText}>{bullet}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
 
-              <View style={styles.aiDivider} />
-
-              <Text style={styles.aiMainText}>
-                <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{patient.aiSummary.title} -</Text> {patient.aiSummary.description}
-              </Text>
-
-              <View style={styles.insightContainer}>
-                <View style={styles.insightBox}>
-                  <Icon name="check" size={sizes.scale(24)} color={colors.p500} style={styles.circleCheck} />
-                  <Text style={styles.insightText}>{patient.aiSummary.insight}</Text>
-                </View>
-
-                {patient.aiSummary.bullets?.map((bullet, idx) => (
-                  <View key={idx} style={styles.bulletRow}>
-                    <View style={styles.aiBullet} />
-                    <Text style={styles.bulletText}>{bullet}</Text>
+              <Text style={styles.title}>{t('symptoms.res_cause')}</Text>
+              <View style={styles.reasonsList}>
+                {patient.aiSummary.reasons?.map((reason, idx) => (
+                  <View key={idx} style={styles.reasonItem}>
+                    <Icon name="anemia" size={sizes.scale(24)} color={idx === 0 ? colors.sCoral : idx === 1 ? colors.sYell : colors.sBlue} wrapperStyle={styles.reasonIcon} wrapped />
+                    <Text style={styles.reasonText}>{reason.text}</Text>
                   </View>
                 ))}
               </View>
-            </View>
-
-            <Text style={styles.title}>{t('symptoms.res_cause')}</Text>
-            <View style={styles.reasonsList}>
-              {patient.aiSummary.reasons?.map((reason, idx) => (
-                <View key={idx} style={styles.reasonItem}>
-                  <Icon name="anemia" size={sizes.scale(24)} color={idx === 0 ? colors.sCoral : idx === 1 ? colors.sYell : colors.sBlue} wrapperStyle={styles.reasonIcon} wrapped />
-                  <Text style={styles.reasonText}>{reason.text}</Text>
-                </View>
-              ))}
-            </View>
-          </>
+            </>
+          )
         )}
       </ScrollView>
     </SubViewScreen>
@@ -150,11 +205,26 @@ const themeStyles = (theme) => ({
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.m,
   },
+  desktopSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    width: '100%',
+  },
+  desktopLeftCol: {
+    flex: 1.4,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
+  },
   analysisCard: {
-    width: theme.sizes.scale(108),
+    width: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge) ? theme.sizes.scale(148) : theme.sizes.scale(108),
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,

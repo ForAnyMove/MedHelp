@@ -8,7 +8,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { useStyles } from '../../../theme/useStyles';
 import { useComponentContext } from '../../../context/GlobalContext';
 
-export function ProfileLegalScreen({ type, onBack }) {
+export function ProfileLegalScreen({ type, onBack, embedded = false }) {
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
@@ -27,17 +27,22 @@ export function ProfileLegalScreen({ type, onBack }) {
     b: { ...sizes.typography.bodyMedium, color: colors.n900 }
   };
 
+  const Container = embedded ? View : Screen;
+  const ScrollContainer = embedded ? View : ScrollView;
+
   return (
-    <Screen style={styles.container}>
+    <Container style={[styles.container, embedded && styles.embeddedContainer]}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
-        </TouchableOpacity>
+      <View style={[styles.header, embedded && styles.embeddedHeader]}>
+        {!embedded && (
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerTitle}>{pageTitle}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollContainer {...(!embedded ? { contentContainerStyle: styles.scrollContent, showsVerticalScrollIndicator: false } : {})}>
         {list.map((item, index) => {
           const isFirst = index === 0;
           return (
@@ -56,7 +61,7 @@ export function ProfileLegalScreen({ type, onBack }) {
               </View>
               <View style={styles.contentWrapper}>
                 <RenderHtml
-                  contentWidth={width - sizes.scale(64)}
+                  contentWidth={embedded ? Math.min(width - 420, 800) : width - sizes.scale(64)}
                   source={{ html: item.content }}
                   tagsStyles={htmlStyles}
                 />
@@ -64,21 +69,30 @@ export function ProfileLegalScreen({ type, onBack }) {
             </View>
           );
         })}
-      </ScrollView>
-    </Screen>
+      </ScrollContainer>
+    </Container>
   );
 }
 
 const themeStyles = (theme) => ({
   container: {
     paddingHorizontal: theme.sizes.spacing.m,
-    backgroundColor: /* TODO: color */ '#FAFAFA', // Light background as in mockup
+    backgroundColor: theme.colors.bg,
+  },
+  embeddedContainer: {
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.sizes.scale(40),
     marginBottom: theme.sizes.scale(24),
+  },
+  embeddedHeader: {
+    marginTop: 0,
+    marginBottom: theme.sizes.scale(16),
   },
   backButton: {
     padding: theme.sizes.spacing.xs,

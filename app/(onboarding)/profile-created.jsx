@@ -55,6 +55,9 @@ export default function ProfileCreated() {
 const themeStyles = (theme) => ({
   container: {
     paddingHorizontal: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 500 : undefined,
+    alignSelf: 'center',
   },
   content: {
     flex: 1,

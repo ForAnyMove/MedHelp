@@ -5,13 +5,17 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Avatar } from '../common/Avatar';
 import { Icon } from '../ui/Icon';
+import { useComponentContext } from '../../context/GlobalContext';
 
 export function DoctorHeader({ profile, onNotificationPress }) {
   const { colors, sizes } = useTheme();
   const { t } = useTranslation();
+  const { notificationController } = useComponentContext();
   const styles = useStyles(themeStyles);
 
   if (!profile) return <View style={styles.container} />;
+
+  const hasUnread = (notificationController?.notifications || []).some(n => !n.is_read);
 
   return (
     <View style={styles.container}>
@@ -27,8 +31,13 @@ export function DoctorHeader({ profile, onNotificationPress }) {
           {t('doctor_dashboard.hi_dr', { name: profile.firstName || '' })}
         </Text>
       </View>
-      <TouchableOpacity style={styles.notification} onPress={onNotificationPress}>
+      <TouchableOpacity 
+        style={styles.notification} 
+        onPress={onNotificationPress}
+        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+      >
         <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} />
+        {hasUnread && <View style={styles.notifDot} />}
       </TouchableOpacity>
     </View>
   );
@@ -57,6 +66,18 @@ const themeStyles = (theme) => ({
     color: theme.colors.n700,
   },
   notification: {
-    // padding: theme.sizes.spacing.xs,
-  }
+    position: 'relative',
+    padding: theme.sizes.spacing.xs,
+  },
+  notifDot: {
+    position: 'absolute',
+    top: theme.sizes.scale(6),
+    right: theme.sizes.scale(6),
+    width: theme.sizes.scale(8),
+    height: theme.sizes.scale(8),
+    borderRadius: theme.sizes.scale(4),
+    backgroundColor: theme.colors.danger || '#F05252',
+    borderWidth: 1.5,
+    borderColor: theme.colors.bg || theme.colors.white,
+  },
 });

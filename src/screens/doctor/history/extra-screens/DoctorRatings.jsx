@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, FlatList } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
 import { useStyles } from '../../../../theme/useStyles';
 import { useComponentContext } from '../../../../context/GlobalContext';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
@@ -10,14 +11,25 @@ import { formatIsoDate } from '../../../../utils/dateUtils';
 import _ from 'lodash';
 import { format, parseISO } from 'date-fns';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 import ReportModal from '../../../../components/common/ReportModal';
 
 export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) {
   const { sizes, colors } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
+  const router = useRouter();
   const { user, doctorController } = useComponentContext();
-  const { navigateBack, navigateToHistoryPatientProfile } = useDoctorDashboard();
+  let dashboardContext = null;
+  try {
+    dashboardContext = useDoctorDashboard();
+  } catch (e) {
+    dashboardContext = null;
+  }
+  const navigateBack = dashboardContext?.navigateBack || (() => router.canGoBack() ? router.back() : router.replace('/home'));
+  const navigateToHistoryPatientProfile = dashboardContext?.navigateToHistoryPatientProfile || ((patientId) => router.push(`/patient/${patientId}`));
   
   // If no doctorId is passed, use the logged-in user's ID
   const doctorId = propsDoctorId || user?.id;
@@ -138,8 +150,8 @@ export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) 
   const recommendCount = (aggregate?.distribution?.[4] || 0) + (aggregate?.distribution?.[5] || 0);
   const recommendPercent = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
 
-  const renderHeaderComponent = () => (
-    <View style={styles.headerContent}>
+  const renderOverviewAndStats = () => (
+    <View style={styles.overviewWrapper}>
       {/* Overview Card */}
       <View style={styles.overviewCard}>
         <View style={styles.overviewLeft}>
@@ -178,39 +190,41 @@ export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) 
           <Text style={styles.statLabel}>{t('doctor_history.last_month', 'Last month')}</Text>
         </View>
       </View>
-
-      {/* Filters */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll} contentContainerStyle={styles.filtersContent}>
-        <FilterChip label={t('doctor_history.all_reviews', 'All')} isActive={activeFilter === 'all'} onPress={() => setFilter('all')} />
-        <FilterChip label="5 ☆" isActive={activeFilter === 5} onPress={() => setFilter(5)} />
-        <FilterChip label="4 ☆" isActive={activeFilter === 4} onPress={() => setFilter(4)} />
-        <FilterChip label="3 ☆" isActive={activeFilter === 3} onPress={() => setFilter(3)} />
-        <FilterChip label={t('doctor_history.with_comments', 'With comments')} isActive={activeFilter === 'comments'} onPress={() => setFilter('comments')} />
-      </ScrollView>
     </View>
   );
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{top: sizes.scale(10), bottom: sizes.scale(10), left: sizes.scale(10), right: sizes.scale(10)}}>
-          <Icon name="arrow-back" size={sizes.scale(24)} color=/* TODO: color */ "#1A9C8E"  />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('doctor_history.my_rating', 'My Rating')}</Text>
-      </View>
+  const renderFiltersBar = () => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll} contentContainerStyle={styles.filtersContent}>
+      <FilterChip label={t('doctor_history.all_reviews', 'All')} isActive={activeFilter === 'all'} onPress={() => setFilter('all')} />
+      <FilterChip label="5 ☆" isActive={activeFilter === 5} onPress={() => setFilter(5)} />
+      <FilterChip label="4 ☆" isActive={activeFilter === 4} onPress={() => setFilter(4)} />
+      <FilterChip label="3 ☆" isActive={activeFilter === 3} onPress={() => setFilter(3)} />
+      <FilterChip label={t('doctor_history.with_comments', 'With comments')} isActive={activeFilter === 'comments'} onPress={() => setFilter('comments')} />
+    </ScrollView>
+  );
 
-      <FlatList
-        data={groupKeys}
-        keyExtractor={(item) => item}
-        ListHeaderComponent={renderHeaderComponent}
-        renderItem={({ item: month }) => (
-          <View style={styles.monthGroup}>
-            <Text style={styles.monthTitle}>{month}</Text>
+  const renderHeaderComponent = () => (
+    <View style={styles.headerContent}>
+      {!isLandscapeLayout && renderOverviewAndStats()}
+      {renderFiltersBar()}
+    </View>
+  );
+
+  const listNode = (
+    <FlatList
+      style={isLandscapeLayout ? styles.desktopRightCol : undefined}
+      data={groupKeys}
+      keyExtractor={(item) => item}
+      ListHeaderComponent={renderHeaderComponent}
+      renderItem={({ item: month }) => (
+        <View style={styles.monthGroup}>
+          <Text style={styles.monthTitle}>{month}</Text>
+          <View style={isLandscapeLayout ? styles.desktopRatingsGrid : undefined}>
             {groupedItems[month].map((rating) => (
               <RatingCard 
                 key={rating.id} 
                 rating={rating} 
+                isLandscapeLayout={isLandscapeLayout}
                 onReport={() => setReportModalTargetId(rating.id)}
                 onUserClick={() => {
                   if (rating.patient?.id) {
@@ -220,26 +234,49 @@ export function DoctorRatings({ doctorId: propsDoctorId, onBack: propsOnBack }) 
               />
             ))}
           </View>
-        )}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        onRefresh={handleRefresh}
-        refreshing={isRefreshing}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          hasMore && isLoading && !isRefreshing && data.items.length > 0 ? (
-            <ActivityIndicator style={{ marginVertical: sizes.scale(20) }} color=/* TODO: color */ "#1A9C8E" />
-          ) : null
-        }
-        ListEmptyComponent={
-          isLoading && page === 1 && !isRefreshing ? (
-             <ActivityIndicator style={{ marginVertical: sizes.scale(40) }} size="large" color=/* TODO: color */ "#1A9C8E" />
-          ) : !isLoading ? (
-             <Text style={styles.emptyText}>{t('doctor_history.no_reviews', 'No reviews found')}</Text>
-          ) : null
-        }
-      />
+        </View>
+      )}
+      contentContainerStyle={[styles.listContent, isLandscapeLayout && styles.listContentDesktop]}
+      showsVerticalScrollIndicator={false}
+      onRefresh={handleRefresh}
+      refreshing={isRefreshing}
+      onEndReached={handleLoadMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={
+        hasMore && isLoading && !isRefreshing && data.items.length > 0 ? (
+          <ActivityIndicator style={{ marginVertical: sizes.scale(20) }} color="#1A9C8E" />
+        ) : null
+      }
+      ListEmptyComponent={
+        isLoading && page === 1 && !isRefreshing ? (
+           <ActivityIndicator style={{ marginVertical: sizes.scale(40) }} size="large" color="#1A9C8E" />
+        ) : !isLoading ? (
+           <Text style={styles.emptyText}>{t('doctor_history.no_reviews', 'No reviews found')}</Text>
+        ) : null
+      }
+    />
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{top: sizes.scale(10), bottom: sizes.scale(10), left: sizes.scale(10), right: sizes.scale(10)}}>
+          <Icon name="arrow-back" size={sizes.scale(24)} color="#1A9C8E" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('doctor_history.my_rating', 'My Rating')}</Text>
+      </View>
+
+      {isLandscapeLayout ? (
+        <View style={styles.desktopBodyContainer}>
+          <View style={styles.desktopLeftCol}>
+            {renderOverviewAndStats()}
+          </View>
+          {listNode}
+        </View>
+      ) : (
+        listNode
+      )}
 
       <ReportModal
         visible={!!reportModalTargetId}
@@ -265,7 +302,7 @@ function FilterChip({ label, isActive, onPress }) {
   );
 }
 
-function RatingCard({ rating, onReport, onUserClick }) {
+function RatingCard({ rating, isLandscapeLayout, onReport, onUserClick }) {
   const { sizes, colors } = useTheme();
   const styles = useStyles(themeStyles);
   const patientName = rating.patient 
@@ -273,7 +310,7 @@ function RatingCard({ rating, onReport, onUserClick }) {
     : 'Anonymous';
     
   return (
-    <View style={styles.ratingCard}>
+    <View style={[styles.ratingCard, isLandscapeLayout && styles.desktopRatingCard]}>
       <View style={styles.ratingHeader}>
         <TouchableOpacity style={styles.userInfo} onPress={onUserClick} disabled={!rating.patient?.id}>
           <Image 
@@ -330,9 +367,14 @@ const themeStyles = (theme) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.l,
     paddingTop: theme.sizes.spacing.xl,
     paddingBottom: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 760 : undefined,
+    alignSelf: 'center',
   },
   backBtn: {
     marginRight: theme.sizes.spacing.m,
@@ -342,9 +384,51 @@ const themeStyles = (theme) => ({
     color: theme.colors.n900,
     fontFamily: 'Manrope_700Bold',
   },
+  desktopBodyContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: theme.responsive?.containerMaxWidth || 1440,
+    alignSelf: 'center',
+  },
+  desktopLeftCol: {
+    width: theme.responsive?.isDesktopLarge ? 420 : 360,
+    flexShrink: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  overviewWrapper: {
+    width: '100%',
+  },
   listContent: {
-    paddingHorizontal: theme.sizes.spacing.l,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 760 : undefined,
+    alignSelf: 'center',
+  },
+  listContentDesktop: {
+    paddingHorizontal: 0,
+    maxWidth: undefined,
+  },
+  desktopRatingsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.sizes.spacing.m,
+    width: '100%',
+  },
+  desktopRatingCard: {
+    flex: 1,
+    minWidth: 280,
+    maxWidth: theme.responsive?.isUltrawide ? '49%' : '48.8%',
+    marginBottom: 0,
   },
   headerContent: {
     paddingBottom: theme.sizes.spacing.m,
@@ -356,7 +440,7 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: theme.sizes.spacing.m,
-    shadowColor: /* TODO: color */ '#000',
+    shadowColor: '#000',
     shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
@@ -368,13 +452,17 @@ const themeStyles = (theme) => ({
     marginRight: theme.sizes.spacing.xl,
   },
   bigRating: {
-    fontSize: theme.sizes.scale(56),
-    fontFamily: 'Manrope_800ExtraBold',
-    color: /* TODO: color */ '#0D3F3A',
-    lineHeight: theme.sizes.scale(64),
+    fontSize: theme.sizes.scale(52),
+    fontFamily: 'Manrope_700Bold',
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    color: '#0D3F3A',
+    lineHeight: theme.sizes.scale(60),
   },
   reviewsCount: {
     ...theme.sizes.typography.caption,
+    fontFamily: 'Manrope_500Medium',
+    fontVariant: ['tabular-nums'],
     color: theme.colors.n500,
   },
   overviewRight: {
@@ -388,13 +476,15 @@ const themeStyles = (theme) => ({
   },
   barStar: {
     ...theme.sizes.typography.caption,
-    color: theme.colors.n400,
-    width: theme.sizes.scale(12),
+    fontFamily: 'Manrope_600SemiBold',
+    fontVariant: ['tabular-nums'],
+    color: theme.colors.n500,
+    width: theme.sizes.scale(14),
   },
   barContainer: {
     flex: 1,
     height: theme.sizes.scale(6),
-    backgroundColor: /* TODO: color */ '#F3F9F9',
+    backgroundColor: '#F3F9F9',
     borderRadius: theme.sizes.scale(3),
     marginHorizontal: theme.sizes.spacing.s,
     overflow: 'hidden',
@@ -405,8 +495,10 @@ const themeStyles = (theme) => ({
   },
   barCount: {
     ...theme.sizes.typography.caption,
-    color: theme.colors.n300,
-    width: theme.sizes.scale(20),
+    fontFamily: 'Manrope_600SemiBold',
+    fontVariant: ['tabular-nums'],
+    color: theme.colors.n400,
+    width: theme.sizes.scale(24),
     textAlign: 'right',
   },
   statsRow: {
@@ -420,7 +512,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     paddingVertical: theme.sizes.spacing.m,
     alignItems: 'center',
-    shadowColor: /* TODO: color */ '#000',
+    shadowColor: '#000',
     shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(4) },
     shadowOpacity: 0.05,
     shadowRadius: 12,
@@ -430,10 +522,12 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.h3,
     color: theme.colors.n900,
     fontFamily: 'Manrope_700Bold',
+    fontVariant: ['tabular-nums'],
     marginBottom: theme.sizes.scale(4),
   },
   statLabel: {
     ...theme.sizes.typography.caption,
+    fontFamily: 'Manrope_500Medium',
     color: theme.colors.n400,
   },
   filtersScroll: {
@@ -518,8 +612,9 @@ const themeStyles = (theme) => ({
   },
   ratingScore: {
     ...theme.sizes.typography.body,
-    color: /* TODO: color */ '#0D3F3A',
+    color: '#0D3F3A',
     fontFamily: 'Manrope_700Bold',
+    fontVariant: ['tabular-nums'],
     marginLeft: theme.sizes.scale(4),
   },
   commentText: {

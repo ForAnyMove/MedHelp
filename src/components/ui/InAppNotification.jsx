@@ -130,7 +130,7 @@ function ToastCard({ notification, index, total, isLandscape, colors, sizes, onD
         accessibilityHint="Дважды коснитесь для перехода к уведомлению"
       >
         {/* Avatar */}
-        <View style={[styles.avatar, { backgroundColor: colors.p100 }]} accessible={false}>
+        <View style={[styles.avatar, { backgroundColor: colors.p100 }]} aria-hidden={true}>
           <Text style={{ color: colors.p500, fontSize: sizes.scale(18), fontWeight: '700' }} allowFontScaling={true}>
             {(notification.title || '?')[0].toUpperCase()}
           </Text>

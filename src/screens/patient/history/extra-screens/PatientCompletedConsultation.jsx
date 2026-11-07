@@ -58,7 +58,8 @@ export function PatientCompletedConsultation({ id: propId }) {
     const { pastConsultations, isLoaded } = historyController;
     const { navigateBack, navigateToHistorySummary, navigateToHistoryDoctorProfile } = usePatientDashboard();
     const styles = useStyles(themeStyles);
-    const { colors, sizes } = useTheme();
+    const { colors, sizes, responsive } = useTheme();
+    const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
 
     const [consultation, setConsultation] = useState(null);
     const [patientHistory, setPatientHistory] = useState(null);
@@ -248,265 +249,277 @@ export function PatientCompletedConsultation({ id: propId }) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <View style={isLandscapeLayout ? styles.desktopTwoColumn : undefined}>
+                    <View style={isLandscapeLayout ? styles.desktopLeftCol : undefined}>
+                        {/* UPCOMING: Reminder Pill */}
+                        {isScheduled && getReminderText() ? (
+                            <View style={styles.reminderPill}>
+                                <Icon name="clock" size={sizes.scale(16)} color={colors.info} />
+                                <Text style={styles.reminderText}>{getReminderText()}</Text>
+                            </View>
+                        ) : null}
 
-                {/* UPCOMING: Reminder Pill */}
-                {isScheduled && getReminderText() ? (
-                    <View style={styles.reminderPill}>
-                        <Icon name="clock" size={sizes.scale(16)} color={colors.info} />
-                        <Text style={styles.reminderText}>{getReminderText()}</Text>
-                    </View>
-                ) : null}
-
-                {/* Patient Info Card (shows doctor info) */}
-                <TouchableOpacity
-                    style={[styles.patientCard, { backgroundColor: typeConfig.bg, borderColor: typeConfig.borderColor }]}
-                    onPress={() => navigateToHistoryDoctorProfile(consultation.doctorId)}
-                >
-                    {consultation.avatarUrl ? (
-                        <Image
-                            source={{ uri: consultation.avatarUrl }}
-                            style={styles.patientAvatar}
-                        />
-                    ) : (
-                        <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
-                            <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
-                        </View>
-                    )}
-                    <View style={styles.patientInfo}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={[styles.patientName, { marginBottom: 0 }]}>
-                                {consultation.doctorName ? `${t('doctors.dr_prefix')}${consultation.doctorName}` : t('doctor_history.doctor', 'Doctor')}
-                            </Text>
-                            {consultation.doctorIsVerified && (
-                                <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                        {/* Patient Info Card (shows doctor info) */}
+                        <TouchableOpacity
+                            style={[styles.patientCard, { backgroundColor: typeConfig.bg, borderColor: typeConfig.borderColor }]}
+                            onPress={() => navigateToHistoryDoctorProfile(consultation.doctorId)}
+                        >
+                            {consultation.avatarUrl ? (
+                                <Image
+                                    source={{ uri: consultation.avatarUrl }}
+                                    style={styles.patientAvatar}
+                                />
+                            ) : (
+                                <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
+                                    <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
+                                </View>
                             )}
+                            <View style={styles.patientInfo}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={[styles.patientName, { marginBottom: 0 }]}>
+                                        {consultation.doctorName ? `${t('doctors.dr_prefix')}${consultation.doctorName}` : t('doctor_history.doctor', 'Doctor')}
+                                    </Text>
+                                    {consultation.doctorIsVerified && (
+                                        <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                                    )}
+                                </View>
+                                {consultation.doctorMeta ? (
+                                    <Text style={[styles.patientMeta, { color: typeConfig.color }]}>
+                                        {translateMeta(consultation.doctorMeta)}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            {/* Type badge */}
+                            <View style={[styles.typeBadge, { backgroundColor: typeConfig.color }]}>
+                                <Icon name={typeConfig.icon} size={sizes.scale(14)} color={colors.white} />
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* CANCELED: Info Card */}
+                        {isCanceled && (
+                            <View style={styles.canceledCard}>
+                                <View style={styles.canceledHeader}>
+                                    <Icon name="info" size={sizes.scale(18)} color={colors.danger} />
+                                    <Text style={styles.canceledTitle}>
+                                        {consultation.canceledBy === consultation.patientId
+                                            ? t('doctor_history.canceled_by_patient')
+                                            : t('doctor_history.canceled_by_doctor')}
+                                    </Text>
+                                </View>
+                                <Text style={styles.canceledDate}>
+                                    {consultation.canceledAt ? formatIsoDate(consultation.canceledAt, 'medium', t) : ''}
+                                </Text>
+                                <Text style={styles.canceledReason}>
+                                    {consultation.cancelReason || t('doctor_history.no_reason')}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Details Card */}
+                        <View style={styles.detailsCard}>
+                            <DetailRow
+                                icon="calendar"
+                                label={t('doctor_history.label_date')}
+                                value={formatIsoDate(consultation.date, 'medium', t)}
+                            />
+                            <DetailRow
+                                icon="clock"
+                                label={t('doctor_history.label_time')}
+                                value={timeValue}
+                            />
+                            {consultation.duration ? (
+                                <DetailRow
+                                    icon="timer"
+                                    label={t('doctor_history.label_duration')}
+                                    value={t('doctor_history.duration', { duration: consultation.duration })}
+                                />
+                            ) : null}
+                            {consultation.price !== undefined && consultation.price !== null ? (
+                                <DetailRow
+                                    icon="dollar-sign"
+                                    label={t('doctor_history.label_price', 'Стоимость')}
+                                    value={`$${consultation.price}`}
+                                />
+                            ) : null}
+                            <DetailRow
+                                icon="video"
+                                label={t('doctor_history.label_format')}
+                                value={formatValue}
+                            />
+                            <DetailRow
+                                icon={isCanceled ? 'x-circle' : isCompleted ? 'check-circle' : 'calendar-clock'}
+                                label={t('doctor_history.label_status')}
+                                value={t(getStatusKey(consultation.status))}
+                                valueColor={typeConfig.color}
+                                isLast
+                            />
                         </View>
-                        {consultation.doctorMeta ? (
-                            <Text style={[styles.patientMeta, { color: typeConfig.color }]}>
-                                {translateMeta(consultation.doctorMeta)}
-                            </Text>
+
+                        {/* UPCOMING: Patient's Note Card */}
+                        {isScheduled && consultation.purpose ? (
+                            <View style={styles.purposeCard}>
+                                <View style={styles.purposeHeader}>
+                                    <Icon name="file-text" size={sizes.scale(18)} color={colors.p500} />
+                                    <Text style={styles.purposeTitle}>{t('doctor_history.patient_note_title')}</Text>
+                                </View>
+                                <Text style={styles.purposeText}>{consultation.purpose}</Text>
+                            </View>
                         ) : null}
                     </View>
 
-                    {/* Type badge */}
-                    <View style={[styles.typeBadge, { backgroundColor: typeConfig.color }]}>
-                        <Icon name={typeConfig.icon} size={sizes.scale(14)} color={colors.white} />
-                    </View>
-                </TouchableOpacity>
-
-                {/* CANCELED: Info Card */}
-                {isCanceled && (
-                    <View style={styles.canceledCard}>
-                        <View style={styles.canceledHeader}>
-                            <Icon name="info" size={sizes.scale(18)} color={colors.danger} />
-                            <Text style={styles.canceledTitle}>
-                                {consultation.canceledBy === consultation.patientId
-                                    ? t('doctor_history.canceled_by_patient')
-                                    : t('doctor_history.canceled_by_doctor')}
-                            </Text>
-                        </View>
-                        <Text style={styles.canceledDate}>
-                            {consultation.canceledAt ? formatIsoDate(consultation.canceledAt, 'medium', t) : ''}
-                        </Text>
-                        <Text style={styles.canceledReason}>
-                            {consultation.cancelReason || t('doctor_history.no_reason')}
-                        </Text>
-                    </View>
-                )}
-
-                {/* Details Card */}
-                <View style={styles.detailsCard}>
-                    <DetailRow
-                        icon="calendar"
-                        label={t('doctor_history.label_date')}
-                        value={formatIsoDate(consultation.date, 'medium', t)}
-                    />
-                    <DetailRow
-                        icon="clock"
-                        label={t('doctor_history.label_time')}
-                        value={timeValue}
-                    />
-                    {consultation.duration ? (
-                        <DetailRow
-                            icon="timer"
-                            label={t('doctor_history.label_duration')}
-                            value={t('doctor_history.duration', { duration: consultation.duration })}
-                        />
-                    ) : null}
-                    <DetailRow
-                        icon="video"
-                        label={t('doctor_history.label_format')}
-                        value={formatValue}
-                    />
-                    <DetailRow
-                        icon={isCanceled ? 'x-circle' : isCompleted ? 'check-circle' : 'calendar-clock'}
-                        label={t('doctor_history.label_status')}
-                        value={t(getStatusKey(consultation.status))}
-                        valueColor={typeConfig.color}
-                        isLast
-                    />
-                </View>
-
-                {/* UPCOMING: Patient's Note Card */}
-                {isScheduled && consultation.purpose ? (
-                    <View style={styles.purposeCard}>
-                        <View style={styles.purposeHeader}>
-                            <Icon name="file-text" size={sizes.scale(18)} color={colors.p500} />
-                            <Text style={styles.purposeTitle}>{t('doctor_history.patient_note_title')}</Text>
-                        </View>
-                        <Text style={styles.purposeText}>{consultation.purpose}</Text>
-                    </View>
-                ) : null}
-
-                {/* COMPLETED: Summary & Rating */}
-                {isCompleted && (
-                    <View style={styles.resultsContainer}>
-                        {consultation._resultError ? (
-                            <View style={[styles.summaryReadyCard, { backgroundColor: colors.danger, opacity: 0.8 }]}>
-                                <View style={styles.summaryReadyInner}>
-                                    <Icon name="alert-circle" size={sizes.scale(24)} color={colors.danger} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
-                                    <View style={styles.summaryTexts}>
-                                        <Text style={styles.summaryTitle}>{t('common.error', 'Error')}</Text>
-                                        <Text style={styles.summarySub}>
-                                            {t('consultation.failed_load_results', 'Failed to load consultation results.')}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        ) : consultation.hasResult && !consultation.is_draft ? (
-                            <TouchableOpacity
-                                style={[styles.summaryReadyCard, { backgroundColor: colors.p400 }]}
-                                onPress={() => navigateToHistorySummary(consultation.id)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.summaryReadyInner}>
-                                    <Icon name="medic-history" size={sizes.scale(24)} color={colors.p500} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
-                                    <View style={styles.summaryTexts}>
-                                        <Text style={styles.summaryTitle}>{t('doctor_history.consultation_summary', 'Consultation summary')}</Text>
-                                        <Text style={styles.summarySub}>{t('doctor_history.summary_desc', "Doctor's diagnosis, conclusion, recommendations & next steps.")}</Text>
-                                    </View>
-                                    <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
-                                </View>
-                            </TouchableOpacity>
-                        ) : (
-                            <View style={[styles.summaryReadyCard, { backgroundColor: colors.p400, opacity: 0.8 }]}>
-                                <View style={styles.summaryReadyInner}>
-                                    <Icon name="medic-history" size={sizes.scale(24)} color={colors.p500} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
-                                    <View style={styles.summaryTexts}>
-                                        <Text style={styles.summaryTitle}>{t('doctor_history.consultation_summary', 'Consultation summary')}</Text>
-                                        <Text style={styles.summarySub}>
-                                            {t('consultation.waiting_for_results', 'Необходимо дождаться результатов консультации от доктора')}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        )}
-
-                        {/* Rating Block */}
-                        <View style={styles.rateCard}>
-                            <View style={styles.rateHeader}>
-                                <Icon name="star-flag" size={sizes.scale(32)} color={colors.sYell2} style={{ marginRight: sizes.spacing.m }} />
-                                <View style={styles.rateTexts}>
-                                    <Text style={styles.rateTitle}>
-                                        {ratingData
-                                            ? t('consultation.rated', 'You rated this consultation')
-                                            : t('consultation.rate_this', 'Rate this consultation')}
-                                    </Text>
-                                    {!ratingData && (
-                                        <Text style={styles.rateSub}>{t('consultation.help_others', 'Help others by sharing your experience')}</Text>
-                                    )}
-                                </View>
-                            </View>
-
-                            {loadingHistory ? (
-                                <ActivityIndicator size="large" color={colors.sYell2} style={{ marginVertical: sizes.scale(24) }} />
-                            ) : (
-                                <>
-                                    <View style={styles.starsContainer}>
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <TouchableOpacity
-                                                key={star}
-                                                onPress={() => !ratingData && setRatingValue(star)}
-                                                style={styles.starButton}
-                                                activeOpacity={ratingData ? 1 : 0.7}
-                                            >
-                                                <Icon
-                                                    name={star <= ratingValue ? 'rate-star' : 'rate-star-empty'}
-                                                    size={sizes.scale(36)}
-                                                    color={colors.sYell2}
-                                                />
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-
-                                    {(!ratingData || ratingComment) ? (
-                                        <View style={styles.commentBox}>
-                                            <TextInput
-                                                style={[styles.commentInput, ratingData && { color: colors.n700 }]}
-                                                placeholder={ratingData ? '' : t('consultation.leave_comment', 'Leave a comment (optional)')}
-                                                placeholderTextColor={colors.n400}
-                                                multiline
-                                                numberOfLines={3}
-                                                textAlignVertical="top"
-                                                value={ratingComment}
-                                                onChangeText={setRatingComment}
-                                                maxLength={100}
-                                                editable={!ratingData}
-                                            />
-                                            {!ratingData && <Text style={styles.charCount}>{ratingComment.length}/100</Text>}
+                    <View style={isLandscapeLayout ? styles.desktopRightCol : undefined}>
+                        {/* COMPLETED: Summary & Rating */}
+                        {isCompleted && (
+                            <View style={styles.resultsContainer}>
+                                {consultation._resultError ? (
+                                    <View style={[styles.summaryReadyCard, { backgroundColor: colors.danger, opacity: 0.8 }]}>
+                                        <View style={styles.summaryReadyInner}>
+                                            <Icon name="alert-circle" size={sizes.scale(24)} color={colors.danger} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
+                                            <View style={styles.summaryTexts}>
+                                                <Text style={styles.summaryTitle}>{t('common.error', 'Error')}</Text>
+                                                <Text style={styles.summarySub}>
+                                                    {t('consultation.failed_load_results', 'Failed to load consultation results.')}
+                                                </Text>
+                                            </View>
                                         </View>
-                                    ) : null}
+                                    </View>
+                                ) : consultation.hasResult && !consultation.is_draft ? (
+                                    <TouchableOpacity
+                                        style={[styles.summaryReadyCard, { backgroundColor: colors.p400 }]}
+                                        onPress={() => navigateToHistorySummary(consultation.id)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.summaryReadyInner}>
+                                            <Icon name="medic-history" size={sizes.scale(24)} color={colors.p500} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
+                                            <View style={styles.summaryTexts}>
+                                                <Text style={styles.summaryTitle}>{t('doctor_history.consultation_summary', 'Consultation summary')}</Text>
+                                                <Text style={styles.summarySub}>{t('doctor_history.summary_desc', "Doctor's diagnosis, conclusion, recommendations & next steps.")}</Text>
+                                            </View>
+                                            <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
+                                        </View>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View style={[styles.summaryReadyCard, { backgroundColor: colors.p400, opacity: 0.8 }]}>
+                                        <View style={styles.summaryReadyInner}>
+                                            <Icon name="medic-history" size={sizes.scale(24)} color={colors.p500} wrapped wrapperStyle={{ marginRight: sizes.spacing.m }} />
+                                            <View style={styles.summaryTexts}>
+                                                <Text style={styles.summaryTitle}>{t('doctor_history.consultation_summary', 'Consultation summary')}</Text>
+                                                <Text style={styles.summarySub}>
+                                                    {t('consultation.waiting_for_results', 'Необходимо дождаться результатов консультации от доктора')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                )}
 
-                                    {!ratingData && (
-                                        <Button
-                                            title={t('consultation.submit_rating', 'Submit rating')}
-                                            variant={'outlined'}
-                                            onPress={handleRatingSubmit}
-                                            style={styles.submitRatingBtn}
-                                            textStyle={{ color: colors.warning }}
-                                            loading={ratingSubmitting}
-                                            disabled={ratingSubmitting || ratingValue === 0}
-                                        />
+                                {/* Rating Block */}
+                                <View style={styles.rateCard}>
+                                    <View style={styles.rateHeader}>
+                                        <Icon name="star-flag" size={sizes.scale(32)} color={colors.sYell2} style={{ marginRight: sizes.spacing.m }} />
+                                        <View style={styles.rateTexts}>
+                                            <Text style={styles.rateTitle}>
+                                                {ratingData
+                                                    ? t('consultation.rated', 'You rated this consultation')
+                                                    : t('consultation.rate_this', 'Rate this consultation')}
+                                            </Text>
+                                            {!ratingData && (
+                                                <Text style={styles.rateSub}>{t('consultation.help_others', 'Help others by sharing your experience')}</Text>
+                                            )}
+                                        </View>
+                                    </View>
+
+                                    {loadingHistory ? (
+                                        <ActivityIndicator size="large" color={colors.sYell2} style={{ marginVertical: sizes.scale(24) }} />
+                                    ) : (
+                                        <>
+                                            <View style={styles.starsContainer}>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <TouchableOpacity
+                                                        key={star}
+                                                        onPress={() => !ratingData && setRatingValue(star)}
+                                                        style={styles.starButton}
+                                                        activeOpacity={ratingData ? 1 : 0.7}
+                                                    >
+                                                        <Icon
+                                                            name={star <= ratingValue ? 'rate-star' : 'rate-star-empty'}
+                                                            size={sizes.scale(36)}
+                                                            color={colors.sYell2}
+                                                        />
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+
+                                            {(!ratingData || ratingComment) ? (
+                                                <View style={styles.commentBox}>
+                                                    <TextInput
+                                                        style={[styles.commentInput, ratingData && { color: colors.n700 }]}
+                                                        placeholder={ratingData ? '' : t('consultation.leave_comment', 'Leave a comment (optional)')}
+                                                        placeholderTextColor={colors.n400}
+                                                        multiline
+                                                        numberOfLines={3}
+                                                        textAlignVertical="top"
+                                                        value={ratingComment}
+                                                        onChangeText={setRatingComment}
+                                                        maxLength={100}
+                                                        editable={!ratingData}
+                                                    />
+                                                    {!ratingData && <Text style={styles.charCount}>{ratingComment.length}/100</Text>}
+                                                </View>
+                                            ) : null}
+
+                                            {!ratingData && (
+                                                <Button
+                                                    title={t('consultation.submit_rating', 'Submit rating')}
+                                                    variant={'outlined'}
+                                                    onPress={handleRatingSubmit}
+                                                    style={styles.submitRatingBtn}
+                                                    textStyle={{ color: colors.warning }}
+                                                    loading={ratingSubmitting}
+                                                    disabled={ratingSubmitting || ratingValue === 0}
+                                                />
+                                            )}
+                                        </>
                                     )}
-                                </>
-                            )}
-                        </View>
-                    </View>
-                )}
-
-                {/* UPCOMING or CANCELED: Previous Visits */}
-                {(isScheduled || isCanceled) && (
-                    <View style={styles.previousVisitsCard}>
-                        <Text style={styles.previousVisitsTitle}>{t('doctor_history.previous_visits_title')}</Text>
-
-                        {loadingHistory ? (
-                            <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
-                        ) : patientHistory?._error ? (
-                            <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
-                        ) : patientHistory && patientHistory.totalVisits > 0 ? (
-                            <View style={styles.visitsList}>
-                                <DetailRow
-                                    icon="calendar"
-                                    label={t('doctor_history.label_last_visit')}
-                                    value={formatIsoDate(patientHistory.lastVisitDate, 'medium', t)}
-                                />
-                                <DetailRow
-                                    icon="file-text"
-                                    label={t('doctor_history.label_last_diagnosis')}
-                                    value={patientHistory.lastDiagnosis || '—'}
-                                />
-                                <DetailRow
-                                    icon="activity"
-                                    label={t('doctor_history.label_total_visits')}
-                                    value={String(patientHistory.totalVisits)}
-                                    isLast
-                                />
+                                </View>
                             </View>
-                        ) : (
-                            <Text style={styles.noVisitsText}>{t('doctor_history.no_previous_visits')}</Text>
+                        )}
+
+                        {/* UPCOMING or CANCELED: Previous Visits */}
+                        {(isScheduled || isCanceled) && (
+                            <View style={styles.previousVisitsCard}>
+                                <Text style={styles.previousVisitsTitle}>{t('doctor_history.previous_visits_title')}</Text>
+
+                                {loadingHistory ? (
+                                    <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
+                                ) : patientHistory?._error ? (
+                                    <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
+                                ) : patientHistory && patientHistory.totalVisits > 0 ? (
+                                    <View style={styles.visitsList}>
+                                        <DetailRow
+                                            icon="calendar"
+                                            label={t('doctor_history.label_last_visit')}
+                                            value={formatIsoDate(patientHistory.lastVisitDate, 'medium', t)}
+                                        />
+                                        <DetailRow
+                                            icon="file-text"
+                                            label={t('doctor_history.label_last_diagnosis')}
+                                            value={patientHistory.lastDiagnosis || '—'}
+                                        />
+                                        <DetailRow
+                                            icon="activity"
+                                            label={t('doctor_history.label_total_visits')}
+                                            value={String(patientHistory.totalVisits)}
+                                            isLast
+                                        />
+                                    </View>
+                                ) : (
+                                    <Text style={styles.noVisitsText}>{t('doctor_history.no_previous_visits')}</Text>
+                                )}
+                            </View>
                         )}
                     </View>
-                )}
+                </View>
 
             </ScrollView>
 
@@ -554,9 +567,16 @@ const themeStyles = (theme) => ({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingTop: theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.s,
+        width: '100%',
+        maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+            ? 1160
+            : theme.responsive?.isTabletPortrait
+                ? 760
+                : undefined,
+        alignSelf: 'center',
     },
     backButton: {
         padding: theme.sizes.spacing.xs,
@@ -569,9 +589,29 @@ const themeStyles = (theme) => ({
         marginLeft: theme.sizes.spacing.s,
     },
     scrollContent: {
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingTop: theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.xl,
+        width: '100%',
+        maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+            ? 1160
+            : theme.responsive?.isTabletPortrait
+                ? 760
+                : undefined,
+        alignSelf: 'center',
+    },
+    desktopTwoColumn: {
+        flexDirection: 'row',
+        gap: theme.sizes.spacing.xl,
+        alignItems: 'flex-start',
+    },
+    desktopLeftCol: {
+        flex: 1,
+        minWidth: 0,
+    },
+    desktopRightCol: {
+        flex: 1,
+        minWidth: 0,
     },
 
     /* ── Reminder Pill ── */
@@ -926,10 +966,22 @@ const themeStyles = (theme) => ({
         borderTopWidth: 1,
         borderTopColor: theme.colors.n200,
         backgroundColor: theme.colors.white,
+        width: '100%',
+        maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+            ? 1160
+            : theme.responsive?.isTabletPortrait
+                ? 760
+                : undefined,
+        alignSelf: 'center',
+        borderTopLeftRadius: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? theme.sizes.borderRadius.large : 0,
+        borderTopRightRadius: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? theme.sizes.borderRadius.large : 0,
     },
     viewProfileBtn: {
         height: theme.sizes.scale(56),
         borderWidth: 2,
+        maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 420 : undefined,
+        alignSelf: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 'center' : undefined,
+        width: '100%',
     },
     viewProfileText: {
         ...theme.sizes.typography.h3,

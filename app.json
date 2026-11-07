@@ -13,9 +13,63 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.medhelp.app",
+      "associatedDomains": [
+        "applinks:medhelp.app",
+        "applinks:www.medhelp.app"
+      ],
+      "infoPlist": {
+        "NSCameraUsageDescription": "MedHelp использует камеру для проведения онлайн-видеоконсультаций с врачами и загрузки медицинских документов.",
+        "NSMicrophoneUsageDescription": "MedHelp использует микрофон для голосовой связи с врачом во время онлайн-консультаций.",
+        "NSPhotoLibraryUsageDescription": "MedHelp требуется доступ к галерее для прикрепления результатов анализов и медицинских документов к приёму."
+      }
     },
     "android": {
+      "package": "com.medhelp.app",
+      "googleServicesFile": "./google-services.json",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "medhelp.app",
+              "pathPrefix": "/consultation"
+            },
+            {
+              "scheme": "https",
+              "host": "medhelp.app",
+              "pathPrefix": "/doctor"
+            },
+            {
+              "scheme": "https",
+              "host": "medhelp.app",
+              "pathPrefix": "/patient"
+            },
+            {
+              "scheme": "https",
+              "host": "medhelp.app",
+              "pathPrefix": "/chat"
+            },
+            {
+              "scheme": "https",
+              "host": "medhelp.app",
+              "pathPrefix": "/call"
+            },
+            {
+              "scheme": "https",
+              "host": "medhelp.app",
+              "pathPrefix": "/lab-result"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -32,7 +86,16 @@
       "expo-asset",
       "expo-secure-store",
       "expo-sharing",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563EB",
+          "sounds": []
+        }
+      ]
     ]
   }
 }

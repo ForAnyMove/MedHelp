@@ -110,7 +110,7 @@ const themeStyles = (theme) => {
       borderColor: colors.p500,
     },
     primaryText: {
-      color: colors.n900, // WCAG 1.4.3: 9.71:1 contrast ratio against #23D3C2 (Level AAA)
+      color: colors.white,
       fontWeight: '700',
     },
     secondary: {
@@ -128,7 +128,7 @@ const themeStyles = (theme) => {
       borderColor: colors.p500,
     },
     outlinedText: {
-      color: colors.n700, // WCAG 1.4.3: 11.64:1 contrast ratio against light bg
+      color: colors.p500,
       fontWeight: '600',
     },
     disabled: {

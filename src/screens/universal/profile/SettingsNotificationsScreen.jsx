@@ -9,7 +9,7 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { useStyles } from '../../../theme/useStyles';
 import { useComponentContext } from '../../../context/GlobalContext';
 
-export function SettingsNotificationsScreen({ onBack }) {
+export function SettingsNotificationsScreen({ onBack, embedded = false }) {
   const router = useRouter();
   const { t } = useTranslation();
   const { sizes, colors } = useTheme();
@@ -92,18 +92,23 @@ export function SettingsNotificationsScreen({ onBack }) {
     </View>
   );
 
+  const Container = embedded ? View : Screen;
+  const ScrollContainer = embedded ? View : ScrollView;
+
   return (
-    <Screen style={styles.container}>
-      <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <Container style={[styles.container, embedded && styles.embeddedContainer]}>
+      <KeyboardAvoidingView style={[styles.keyboardView, embedded && styles.embeddedKeyboardView]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
-          </TouchableOpacity>
+        <View style={[styles.header, embedded && styles.embeddedHeader]}>
+          {!embedded && (
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.headerTitle}>{t('settings.notifications_title', 'Notifications')}</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollContainer {...(!embedded ? { contentContainerStyle: styles.scrollContent, showsVerticalScrollIndicator: false } : { style: styles.embeddedBody })}>
           
           <View style={styles.card}>
             <NotificationRow 
@@ -144,9 +149,9 @@ export function SettingsNotificationsScreen({ onBack }) {
               isLast
             />
           </View>
-        </ScrollView>
+        </ScrollContainer>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, embedded && styles.embeddedFooter]}>
           <Button
             title={t('common.save_changes', 'Save changes')}
             variant="outlined"
@@ -158,7 +163,7 @@ export function SettingsNotificationsScreen({ onBack }) {
           />
         </View>
       </KeyboardAvoidingView>
-    </Screen>
+    </Container>
   );
 }
 
@@ -167,12 +172,30 @@ const themeStyles = (theme) => ({
     paddingHorizontal: theme.sizes.spacing.m,
     backgroundColor: theme.colors.bg,
   },
-  keyboardView: { flex: 1 },
+  embeddedContainer: {
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 680 : undefined,
+    alignSelf: 'center',
+  },
+  embeddedKeyboardView: {
+    maxWidth: '100%',
+    width: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.sizes.scale(40),
     marginBottom: theme.sizes.scale(24),
+  },
+  embeddedHeader: {
+    marginTop: 0,
+    marginBottom: theme.sizes.scale(16),
   },
   backButton: {
     padding: theme.sizes.spacing.xs,
@@ -185,6 +208,15 @@ const themeStyles = (theme) => ({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: theme.sizes.scale(100),
+  },
+  embeddedBody: {
+    width: '100%',
+  },
+  embeddedFooter: {
+    paddingBottom: theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.xs,
+    backgroundColor: 'transparent',
+    maxWidth: 320,
   },
   card: {
     backgroundColor: theme.colors.white,

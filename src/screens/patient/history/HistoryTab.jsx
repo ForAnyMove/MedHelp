@@ -19,9 +19,14 @@ import { DoctorProfileSubView } from './extra-screens/DoctorProfileSubView';
 import { ConsultationSummary } from '../consultation/extra-screens/ConsultationSummary';
 import { PatientAllCheckups } from './extra-screens/PatientAllCheckups';
 import { Step6Result } from '../home/extra-screens/symptom-checker/Step6Result';
+import { useLocalSearchParams } from 'expo-router';
+import { Platform } from 'react-native';
+import { useResponsive } from '../../../theme/useResponsive';
 
 export function HistoryTab() {
   const { historyController, themeController: { sizes }, checkupsApi } = useComponentContext();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const styles = useStyles(themeStyles);
   const { metrics, analysisSummary, vitamins, timeline, pastConsultations = [] } = historyController;
   const router = useRouter();
@@ -40,6 +45,47 @@ export function HistoryTab() {
     navigateToSymptomChecker,
     navigateBack 
   } = usePatientDashboard();
+
+  const searchParams = useLocalSearchParams();
+  const routeView = typeof searchParams?.view === 'string' ? searchParams.view : searchParams?.view?.[0];
+  const routeId = typeof searchParams?.id === 'string' ? searchParams.id : searchParams?.id?.[0];
+  const routeFilter = typeof searchParams?.filter === 'string' ? searchParams.filter : searchParams?.filter?.[0];
+
+  const getWebParam = (key) => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.location) return null;
+    try {
+      if (!window.location.pathname.startsWith('/history') && !(window.location.pathname === '/' && window.location.search.includes('tab=history'))) return null;
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get(key);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const [, setPopstateTick] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handlePop = () => setPopstateTick((tick) => tick + 1);
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  const urlView = getWebParam('view');
+  const urlId = getWebParam('id');
+  const urlFilter = getWebParam('filter');
+
+  const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && window.location;
+  const isWebHistoryBase = isWeb && (window.location.pathname.startsWith('/history') || (window.location.pathname === '/' && window.location.search.includes('tab=history'))) && (!window.location.search || window.location.search === '?' || window.location.search === '?tab=history');
+
+  const effectiveView = isWebHistoryBase
+    ? 'dashboard'
+    : (historyView !== 'dashboard' ? historyView : (urlView || (isWeb ? historyView : (routeView || historyView)) || 'dashboard'));
+
+  const effectiveId = isWebHistoryBase
+    ? null
+    : (historySelectedId || urlId || (routeId || historySelectedId));
+
+  const effectiveSegment = ((urlFilter || (isWeb ? activeSegment : routeFilter) || activeSegment) === 'latest') ? 'latest' : 'all';
 
   const [loading, setLoading] = useState(true);
   const [checkups, setCheckups] = useState([]);
@@ -75,12 +121,12 @@ export function HistoryTab() {
     };
     fetchCheckups();
     return () => { cancelled = true; };
-  }, [checkupsApi, historyView]);
+  }, [checkupsApi, effectiveView]);
 
   const currentSummary = React.useMemo(() => {
     let data = pastConsultations || [];
     let chkData = checkups || [];
-    if (activeSegment === 'latest') {
+    if (effectiveSegment === 'latest') {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       data = data.filter(c => new Date(c.date) >= weekAgo);
@@ -93,18 +139,18 @@ export function HistoryTab() {
       lastOverview: sortedData.length > 0 ? sortedData[0].date : analysisSummary.lastOverview,
       consultationsCount: data.length,
       checkupsCount: chkData.length,
-      analysesCount: activeSegment === 'all' ? analysisSummary.analysesCount : Math.max(0, Math.floor(analysisSummary.analysesCount / 4)),
+      analysesCount: effectiveSegment === 'all' ? analysisSummary.analysesCount : Math.max(0, Math.floor(analysisSummary.analysesCount / 4)),
     };
-  }, [pastConsultations, checkups, activeSegment, analysisSummary]);
+  }, [pastConsultations, checkups, effectiveSegment, analysisSummary]);
 
-  if (historyView === 'all') {
-    return <PatientAllConsultations activeSegment={activeSegment} />;
+  if (effectiveView === 'all') {
+    return <PatientAllConsultations activeSegment={effectiveSegment} />;
   }
 
-  if (historyView === 'checkups') {
+  if (effectiveView === 'checkups') {
     return (
       <PatientAllCheckups 
-        activeSegment={activeSegment} 
+        activeSegment={effectiveSegment} 
         checkups={checkups} 
         loading={loadingCheckups} 
         onSelectCheckup={(checkup) => navigateToHistoryCheckupDetail(checkup)}
@@ -114,8 +160,8 @@ export function HistoryTab() {
     );
   }
 
-  if (historyView === 'checkup-detail') {
-    const selected = historySelectedCheckup || checkups.find(c => String(c.id) === String(historySelectedCheckupId));
+  if (effectiveView === 'checkup-detail') {
+    const selected = historySelectedCheckup || checkups.find(c => String(c.id) === String(effectiveId || historySelectedCheckupId));
     if (selected) {
       return (
         <Step6Result 
@@ -129,17 +175,21 @@ export function HistoryTab() {
     }
   }
 
-  if (historyView === 'detail' && historySelectedId) {
-    return <PatientCompletedConsultation id={historySelectedId} />;
+  if (effectiveView === 'detail' && effectiveId) {
+    return <PatientCompletedConsultation id={effectiveId} />;
   }
 
-  if (historyView === 'summary' && historySelectedId) {
-    const booking = pastConsultations.find(c => String(c.id) === String(historySelectedId));
-    return <ConsultationSummary booking={booking} onClose={() => navigateToHistoryDetail(historySelectedId)} />;
+  if (effectiveView === 'summary' && effectiveId) {
+    const booking = pastConsultations.find(c => String(c.id) === String(effectiveId));
+    return <ConsultationSummary booking={booking} onClose={() => navigateToHistoryDetail(effectiveId)} />;
   }
 
-  if (historyView === 'doctor-profile' && historyDoctorProfileId) {
-    return <DoctorProfileSubView doctorId={historyDoctorProfileId} onBack={navigateBack} />;
+  const targetDoctorProfileId = isWebHistoryBase
+    ? null
+    : (historyDoctorProfileId || urlId || (routeId || null));
+
+  if (effectiveView === 'doctor-profile' && targetDoctorProfileId) {
+    return <DoctorProfileSubView doctorId={targetDoctorProfileId} onBack={navigateBack} />;
   }
 
   return (
@@ -147,22 +197,44 @@ export function HistoryTab() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>{t('history.title')}</Text>
 
-        {/* Removed duplicate segmentRow */}
+        {isLandscapeLayout ? (
+          <View style={styles.desktopTwoColumn}>
+            {/* Left Column: Summary card & Timeline */}
+            <View style={styles.desktopLeftCol}>
+              <HistorySummaryCard
+                activeSegment={activeSegment}
+                onSegmentChange={(v) => setActiveSegment(v)}
+                summary={currentSummary}
+                onConsultationsPress={() => navigateToHistoryAll(activeSegment)}
+                onCheckupsPress={() => navigateToHistoryCheckups(activeSegment)}
+              />
+              {timeline.map(item => (
+                <HistoryTimelineItem key={item.id} item={item} />
+              ))}
+            </View>
 
-        <>
-          <HistorySummaryCard
-            activeSegment={activeSegment}
-            onSegmentChange={(v) => setActiveSegment(v)}
-            summary={currentSummary}
-            onConsultationsPress={() => navigateToHistoryAll(activeSegment)}
-            onCheckupsPress={() => navigateToHistoryCheckups(activeSegment)}
-          />
-          <HealthMetricsCard metrics={metrics} />
-          <AnalysisProgressCard vitamins={vitamins} />
-          {timeline.map(item => (
-            <HistoryTimelineItem key={item.id} item={item} />
-          ))}
-        </>
+            {/* Right Column: Health metrics & Analysis progress */}
+            <View style={styles.desktopRightCol}>
+              <HealthMetricsCard metrics={metrics} />
+              <AnalysisProgressCard vitamins={vitamins} />
+            </View>
+          </View>
+        ) : (
+          <>
+            <HistorySummaryCard
+              activeSegment={activeSegment}
+              onSegmentChange={(v) => setActiveSegment(v)}
+              summary={currentSummary}
+              onConsultationsPress={() => navigateToHistoryAll(activeSegment)}
+              onCheckupsPress={() => navigateToHistoryCheckups(activeSegment)}
+            />
+            <HealthMetricsCard metrics={metrics} />
+            <AnalysisProgressCard vitamins={vitamins} />
+            {timeline.map(item => (
+              <HistoryTimelineItem key={item.id} item={item} />
+            ))}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -207,9 +279,31 @@ const themeStyles = (theme) => ({
     backgroundColor: /* TODO: color */ '#F3F9F9',
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 760
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
+  },
+  desktopTwoColumn: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.l,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  desktopLeftCol: {
+    flex: 1.15,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 0.85,
+    minWidth: 0,
   },
   headerTitle: {
     ...theme.sizes.typography.h2,

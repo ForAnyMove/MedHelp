@@ -46,13 +46,16 @@ function formatTime(isoDate) {
 
 export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, onReschedule }) {
   const { t } = useTranslation();
-  const { colors, sizes } = useTheme();
+  const { colors, sizes, responsive } = useTheme();
   const styles = useStyles(themeStyles);
   const { session, refreshSessionToken } = useSession();
   const router = useRouter();
 
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
+
   const [isDoctorWaiting, setIsDoctorWaiting] = useState(booking.status === 'occupied');
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [currentStatus, setCurrentStatus] = useState(booking.status);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
 
   const translateSpecialization = (spec) => {
@@ -67,17 +70,18 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
   const [comment, setComment] = useState('');
   const [isRated, setIsRated] = useState(false);
 
-  const isCompleted = booking.status === 'completed';
-  const isCanceled = booking.status === 'canceled';
-  const isScheduled = booking.status === 'scheduled' || booking.status === 'occupied';
+  const isCompleted = currentStatus === 'completed';
+  const isCanceled = currentStatus === 'canceled';
+  const isScheduled = currentStatus === 'scheduled' || currentStatus === 'occupied';
 
   const doctor = booking.doctor || {};
-  const typeConfig = getTypeConfig(booking.status, colors);
+  const typeConfig = getTypeConfig(currentStatus, colors);
 
-  const startTime = formatTime(booking.date);
+  const effectiveDate = booking.date || booking.slot?.date || booking.slot?.start_at || booking.createdAt || booking.created_at;
+  const startTime = formatTime(effectiveDate);
   const endTime = (() => {
-    if (!booking.date || !booking.duration) return null;
-    const d = new Date(booking.date);
+    if (!effectiveDate || !booking.duration) return null;
+    const d = new Date(effectiveDate);
     if (isNaN(d.getTime())) return null;
     d.setMinutes(d.getMinutes() + Number(booking.duration));
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -93,6 +97,9 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
         const api = createApiClient(session, refreshSessionToken);
         const { data } = await api.get(`/consultations/${booking.id}`);
         if (data && data.data) {
+          if (data.data.status) {
+            setCurrentStatus(data.data.status);
+          }
           if (data.data.status === 'occupied') {
             setIsDoctorWaiting(true);
           } else {
@@ -132,10 +139,11 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
       const cId = event?.consultation_id || event?.consultationId;
       if (!cId || cId === booking.id) {
         if (event?.status === 'in_progress') {
+          setCurrentStatus('occupied');
           setIsDoctorWaiting(true);
         } else if (event?.status === 'completed') {
           setIsDoctorWaiting(false);
-          setIsCompleted(true);
+          setCurrentStatus('completed');
         }
         setLoadingStatus(false);
       }
@@ -145,7 +153,7 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
       const cId = event?.consultation_id || event?.consultationId;
       if (!cId || cId === booking.id) {
         setIsDoctorWaiting(false);
-        setIsCompleted(true);
+        setCurrentStatus('completed');
         setLoadingStatus(false);
       }
     };
@@ -203,106 +211,113 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
   );
 
   return (
-    <SubViewScreen title={t(getTitleKey(booking.status))} onBack={onBack}>
+    <SubViewScreen title={t(getTitleKey(currentStatus))} onBack={onBack} maxWidth={isCompleted ? 1120 : 720}>
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
           {/* COMPLETED FLOW */}
           {isCompleted && (
-            <>
-              {/* Merged Doctor & Details Card */}
-              <View style={styles.mergedCard}>
-                <View style={styles.mergedDoctorRow}>
-                  {doctor?.avatarUrl ? (
-                    <Image source={{ uri: doctor.avatarUrl }} style={styles.patientAvatar} />
-                  ) : (
-                    <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
-                      <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
+            <View style={isLandscapeLayout ? styles.desktopTwoColumn : undefined}>
+              <View style={isLandscapeLayout ? styles.desktopLeftCol : undefined}>
+                {/* Merged Doctor & Details Card */}
+                <View style={styles.mergedCard}>
+                  <View style={styles.mergedDoctorRow}>
+                    {doctor?.avatarUrl ? (
+                      <Image source={{ uri: doctor.avatarUrl }} style={styles.patientAvatar} />
+                    ) : (
+                      <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
+                        <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
+                      </View>
+                    )}
+                    <View style={styles.patientInfo}>
+                      <Text style={styles.patientName}>{t('doctor_history.dr', 'Dr.')} {doctor.firstName} {doctor.lastName}</Text>
+                      <Text style={styles.patientMeta}>{translateSpecialization(doctor.specialization)}</Text>
                     </View>
+                    <Icon name="chevron-right" size={sizes.scale(20)} color={colors.p500} />
+                  </View>
+
+                  <View style={styles.mergedDetailsList}>
+                    <DetailRow icon="calendar" label={t('doctor_history.label_date')} value={formatIsoDate(effectiveDate, 'medium', t)} />
+                    <DetailRow icon="clock" label={t('doctor_history.label_time')} value={timeValue} />
+                    {booking.price !== undefined && booking.price !== null ? (
+                      <DetailRow icon="dollar-sign" label={t('doctor_history.label_price', 'Стоимость')} value={`$${booking.price}`} />
+                    ) : null}
+                    <DetailRow icon="video" label={t('doctor_history.label_format')} value={formatValue} />
+                    <DetailRow icon="file-text" label={t('doctor_history.label_reason', 'Reason:')} value={booking.summary || booking.purpose || '—'} />
+                    <DetailRow
+                      icon="check-circle"
+                      label={t('doctor_history.label_status')}
+                      value={t(getStatusKey(currentStatus))}
+                      valueColor={colors.sBlue}
+                      isLast
+                    />
+                  </View>
+                </View>
+
+                {/* Consultation Summary Banner */}
+                <TouchableOpacity style={styles.summaryCard}>
+                  <View style={styles.summaryIconBox}>
+                    <Icon name="file-text" size={sizes.scale(24)} color={colors.p500} />
+                  </View>
+                  <View style={styles.summaryTexts}>
+                    <Text style={styles.summaryTitle}>{t('doctor_history.consultation_summary', 'Consultation summary')}</Text>
+                    <Text style={styles.summarySub}>{t('doctor_history.summary_desc', "Doctor's diagnosis, conclusion, recommendations & next steps.")}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={sizes.scale(20)} color={colors.n400} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={isLandscapeLayout ? styles.desktopRightCol : undefined}>
+                {/* Files from this visit */}
+                <Text style={styles.sectionTitle}>{t('doctor_history.files_visit', 'Files from this visit')}</Text>
+                <View style={styles.fileCard}>
+                  <View style={styles.fileIconBox}>
+                    <Icon name="file-text" size={sizes.scale(20)} color={colors.sYell} />
+                  </View>
+                  <View style={styles.fileTexts}>
+                    <Text style={styles.fileName}>Prescription_Jun5.pdf</Text>
+                    <Text style={styles.fileMeta}>{t('doctor_history.file_meta', '0.3 MB · by Dr. {{name}}', { name: doctor.lastName })}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={sizes.scale(20)} color={colors.n400} />
+                </View>
+
+                {/* Rate this consultation */}
+                <View style={styles.rateCard}>
+                  <View style={styles.rateHeader}>
+                    <Icon name="star" size={sizes.scale(24)} color={colors.sYell} />
+                    <View style={styles.rateTexts}>
+                      <Text style={styles.rateTitle}>{t('doctor_history.rate_consultation', 'Rate this consultation')}</Text>
+                      <Text style={styles.rateSub}>{t('doctor_history.rate_desc', 'Help others by sharing your experience')}</Text>
+                    </View>
+                  </View>
+
+                  {renderStars()}
+
+                  <View style={styles.commentBox}>
+                    <TextInput
+                      style={[styles.commentInput, isRated && { color: colors.n700 }]}
+                      placeholder={t('doctor_history.leave_comment', 'Leave a comment (optional)')}
+                      placeholderTextColor={colors.n400}
+                      multiline
+                      value={comment}
+                      onChangeText={setComment}
+                      editable={!isRated}
+                    />
+                    {!isRated && <Text style={styles.charCount}>{comment.length}/100</Text>}
+                  </View>
+
+                  {!isRated && (
+                    <Button
+                      title={t('doctor_history.submit_rating', 'Submit rating')}
+                      variant="outlined"
+                      style={styles.submitRatingBtn}
+                      textStyle={styles.submitRatingText}
+                      onPress={submitRating}
+                    />
                   )}
-                  <View style={styles.patientInfo}>
-                    <Text style={styles.patientName}>{t('doctor_history.dr', 'Dr.')} {doctor.firstName} {doctor.lastName}</Text>
-                    <Text style={styles.patientMeta}>{translateSpecialization(doctor.specialization)}</Text>
-                  </View>
-                  <Icon name="chevron-right" size={sizes.scale(20)} color={colors.p500} />
-                </View>
-
-                <View style={styles.mergedDetailsList}>
-                  <DetailRow icon="calendar" label={t('doctor_history.label_date')} value={formatIsoDate(booking.date, 'medium', t)} />
-                  <DetailRow icon="clock" label={t('doctor_history.label_time')} value={timeValue} />
-                  <DetailRow icon="video" label={t('doctor_history.label_format')} value={formatValue} />
-                  <DetailRow icon="file-text" label={t('doctor_history.label_reason', 'Reason:')} value={booking.summary || booking.purpose || '—'} />
-                  <DetailRow
-                    icon="check-circle"
-                    label={t('doctor_history.label_status')}
-                    value={t(getStatusKey(booking.status))}
-                    valueColor={colors.sBlue}
-                    isLast
-                  />
                 </View>
               </View>
-
-              {/* Consultation Summary Banner */}
-              <TouchableOpacity style={styles.summaryCard}>
-                <View style={styles.summaryIconBox}>
-                  <Icon name="file-text" size={sizes.scale(24)} color={colors.p500} />
-                </View>
-                <View style={styles.summaryTexts}>
-                  <Text style={styles.summaryTitle}>{t('doctor_history.consultation_summary', 'Consultation summary')}</Text>
-                  <Text style={styles.summarySub}>{t('doctor_history.summary_desc', "Doctor's diagnosis, conclusion, recommendations & next steps.")}</Text>
-                </View>
-                <Icon name="chevron-right" size={sizes.scale(20)} color={colors.n400} />
-              </TouchableOpacity>
-
-              {/* Files from this visit */}
-              <Text style={styles.sectionTitle}>{t('doctor_history.files_visit', 'Files from this visit')}</Text>
-              <View style={styles.fileCard}>
-                <View style={styles.fileIconBox}>
-                  <Icon name="file-text" size={sizes.scale(20)} color={colors.sYell} />
-                </View>
-                <View style={styles.fileTexts}>
-                  <Text style={styles.fileName}>Prescription_Jun5.pdf</Text>
-                  <Text style={styles.fileMeta}>{t('doctor_history.file_meta', '0.3 MB · by Dr. {{name}}', { name: doctor.lastName })}</Text>
-                </View>
-                <Icon name="chevron-right" size={sizes.scale(20)} color={colors.n400} />
-              </View>
-
-              {/* Rate this consultation */}
-              <View style={styles.rateCard}>
-                <View style={styles.rateHeader}>
-                  <Icon name="star" size={sizes.scale(24)} color={colors.sYell} />
-                  <View style={styles.rateTexts}>
-                    <Text style={styles.rateTitle}>{t('doctor_history.rate_consultation', 'Rate this consultation')}</Text>
-                    <Text style={styles.rateSub}>{t('doctor_history.rate_desc', 'Help others by sharing your experience')}</Text>
-                  </View>
-                </View>
-
-                {renderStars()}
-
-                <View style={styles.commentBox}>
-                  <TextInput
-                    style={[styles.commentInput, isRated && { color: colors.n700 }]}
-                    placeholder={t('doctor_history.leave_comment', 'Leave a comment (optional)')}
-                    placeholderTextColor={colors.n400}
-                    multiline
-                    value={comment}
-                    onChangeText={setComment}
-                    editable={!isRated}
-                  />
-                  {!isRated && <Text style={styles.charCount}>{comment.length}/100</Text>}
-                </View>
-
-                {!isRated && (
-                  <Button
-                    title={t('doctor_history.submit_rating', 'Submit rating')}
-                    variant="outlined"
-                    style={styles.submitRatingBtn}
-                    textStyle={styles.submitRatingText}
-                    onPress={submitRating}
-                  />
-                )}
-              </View>
-            </>
+            </View>
           )}
 
           {/* UPCOMING & CANCELED FLOW */}
@@ -350,10 +365,13 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
 
               {/* Details Card */}
               <View style={styles.detailsCard}>
-                <DetailRow icon="calendar" label={t('doctor_history.label_date')} value={formatIsoDate(booking.date, 'medium', t)} />
+                <DetailRow icon="calendar" label={t('doctor_history.label_date')} value={formatIsoDate(effectiveDate, 'medium', t)} />
                 <DetailRow icon="clock" label={t('doctor_history.label_time')} value={timeValue} />
+                {booking.price !== undefined && booking.price !== null ? (
+                  <DetailRow icon="dollar-sign" label={t('doctor_history.label_price', 'Стоимость')} value={`$${booking.price}`} />
+                ) : null}
                 <DetailRow icon="video" label={t('doctor_history.label_format')} value={formatValue} />
-                <DetailRow icon={isCanceled ? 'x-circle' : 'calendar-clock'} label={t('doctor_history.label_status')} value={t(getStatusKey(booking.status))} valueColor={typeConfig.color} isLast />
+                <DetailRow icon={isCanceled ? 'x-circle' : 'calendar-clock'} label={t('doctor_history.label_status')} value={t(getStatusKey(currentStatus))} valueColor={typeConfig.color} isLast />
               </View>
 
               {/* Reason / Purpose Card */}
@@ -374,14 +392,14 @@ export function PatientConsultationCard({ booking, onBack, onConnect, onCancel, 
         {/* Footer Buttons for Upcoming */}
         {!isCompleted && !isCanceled && (
           <View style={styles.footer}>
-            {!loadingStatus && isDoctorWaiting ? (
+            {isDoctorWaiting ? (
               <Button
                 title={t('consultation.connect_btn')}
                 variant="primary"
                 onPress={() => onConnect && onConnect(booking)}
                 style={styles.connectButton}
               />
-            ) : isScheduled ? (
+            ) : !loadingStatus && isScheduled ? (
               <>
                 <Button
                   title={t('consultation.cancel_booking')}
@@ -430,12 +448,27 @@ const themeStyles = (theme) => ({
     paddingBottom: theme.sizes.spacing.xl,
     paddingTop: theme.sizes.spacing.m,
   },
+  desktopTwoColumn: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.xl,
+    alignItems: 'flex-start',
+  },
+  desktopLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
+  },
   footer: {
     flexDirection: 'row',
     paddingHorizontal: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.l,
     paddingTop: theme.sizes.spacing.m,
-    marginHorizontal: -theme.sizes.spacing.m,
+    marginHorizontal: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 0 : -theme.sizes.spacing.m,
+    borderRadius: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? theme.sizes.borderRadius.large : 0,
+    marginBottom: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? theme.sizes.spacing.m : 0,
     gap: theme.sizes.spacing.m,
     backgroundColor: theme.colors.white,
     borderTopWidth: 1,

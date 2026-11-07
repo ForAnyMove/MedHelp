@@ -17,13 +17,55 @@ import { DoctorRatings } from './extra-screens/DoctorRatings';
 import { PatientProfileSubView } from './extra-screens/PatientProfileSubView';
 
 
+import { useLocalSearchParams } from 'expo-router';
+import { Platform } from 'react-native';
+import { useResponsive } from '../../../theme/useResponsive';
+
 export function DoctorHistoryTab() {
   const styles = useStyles(themeStyles);
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const { t } = useTranslation();
   const { historyController } = useComponentContext();
   const { doctorPastConsultations = [], isLoaded } = historyController;
   const [activeSegment, setActiveSegment] = useState(true);
   const { historyView, historySelectedId, historyPatientProfileId, navigateToHistoryAll, navigateBack } = useDoctorDashboard();
+
+  const searchParams = useLocalSearchParams();
+  const routeView = typeof searchParams?.view === 'string' ? searchParams.view : searchParams?.view?.[0];
+  const routeId = typeof searchParams?.id === 'string' ? searchParams.id : searchParams?.id?.[0];
+
+  const getWebParam = (key) => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.location) return null;
+    try {
+      if (!window.location.pathname.startsWith('/history')) return null;
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get(key);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const [, setPopstateTick] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handlePop = () => setPopstateTick((tick) => tick + 1);
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  const urlView = getWebParam('view');
+  const urlId = getWebParam('id');
+
+  const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && window.location;
+  const isWebHistoryBase = isWeb && window.location.pathname.startsWith('/history') && (!window.location.search || window.location.search === '?');
+
+  const effectiveView = isWebHistoryBase
+    ? 'dashboard'
+    : (historyView !== 'dashboard' ? historyView : (urlView || (routeView || 'dashboard')));
+  const effectiveId = isWebHistoryBase
+    ? null
+    : (historySelectedId || urlId || (routeId || null));
 
   const currentSummary = React.useMemo(() => {
     let data = doctorPastConsultations || [];
@@ -46,19 +88,23 @@ export function DoctorHistoryTab() {
     };
   }, [doctorPastConsultations, activeSegment]);
 
-  if (historyView === 'all') {
+  if (effectiveView === 'all') {
     return <AllConsultations activeSegment={activeSegment} />;
   }
 
-  if (historyView === 'detail' && historySelectedId) {
-    return <CompletedConsultation id={historySelectedId} />;
+  if (effectiveView === 'detail' && effectiveId) {
+    return <CompletedConsultation id={effectiveId} />;
   }
 
-  if (historyView === 'patient-profile' && historyPatientProfileId) {
-    return <PatientProfileSubView patientId={historyPatientProfileId} onBack={navigateBack} />;
+  const targetPatientProfileId = isWebHistoryBase
+    ? null
+    : (historyPatientProfileId || urlId || (routeId || null));
+
+  if (effectiveView === 'patient-profile' && targetPatientProfileId) {
+    return <PatientProfileSubView patientId={targetPatientProfileId} onBack={navigateBack} />;
   }
 
-  if (historyView === 'ratings') {
+  if (effectiveView === 'ratings') {
     return <DoctorRatings />;
   }
 
@@ -95,13 +141,31 @@ export function DoctorHistoryTab() {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.headerTitle}>{t('doctor_history.title') || 'Consultation History'}</Text>
-        <HistorySummaryCard
-          activeSegment={activeSegment}
-          onSegmentChange={(v) => setActiveSegment(v)}
-          summary={currentSummary}
-          onConsultationsPress={() => navigateToHistoryAll(activeSegment ? 'all' : 'latest')}
-        />
-        {renderContent()}
+        {isLandscapeLayout ? (
+          <View style={styles.desktopLayout}>
+            <View style={styles.desktopLeftCol}>
+              <HistorySummaryCard
+                activeSegment={activeSegment}
+                onSegmentChange={(v) => setActiveSegment(v)}
+                summary={currentSummary}
+                onConsultationsPress={() => navigateToHistoryAll(activeSegment ? 'all' : 'latest')}
+              />
+            </View>
+            <View style={styles.desktopRightCol}>
+              {renderContent()}
+            </View>
+          </View>
+        ) : (
+          <>
+            <HistorySummaryCard
+              activeSegment={activeSegment}
+              onSegmentChange={(v) => setActiveSegment(v)}
+              summary={currentSummary}
+              onConsultationsPress={() => navigateToHistoryAll(activeSegment ? 'all' : 'latest')}
+            />
+            {renderContent()}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -113,9 +177,29 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? (theme.responsive?.containerMaxWidth || 1440)
+      : theme.responsive?.isTabletPortrait ? 760 : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
+  },
+  desktopLayout: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    width: '100%',
+  },
+  desktopLeftCol: {
+    width: theme.responsive?.isDesktopLarge ? 420 : 380,
+    flexShrink: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     ...theme.sizes.typography.h2,

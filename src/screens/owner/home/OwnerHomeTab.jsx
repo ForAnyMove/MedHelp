@@ -112,9 +112,17 @@ export function OwnerHomeTab() {
 const themeStyles = (theme) => ({
   screen: { flex: 1, backgroundColor: theme.colors.bg },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1160
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   header: {
     flexDirection: 'row',
@@ -181,7 +189,8 @@ const themeStyles = (theme) => ({
     gap: theme.sizes.spacing.m,
   },
   actionCard: {
-    width: '47%',
+    flex: 1,
+    minWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 220 : '47%',
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,

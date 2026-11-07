@@ -1,10 +1,11 @@
 import React from 'react';
 import { Redirect, useLocalSearchParams } from 'expo-router';
+import { isValidRouteUUID } from '../../src/utils/routeValidation';
 
 export default function LabResultDeepLinkPlaceholder() {
   const { id } = useLocalSearchParams();
-  if (!id || id === 'undefined' || id === 'null') {
-    return <Redirect href="/(patient)?tab=profile" />;
+  if (!isValidRouteUUID(id)) {
+    return <Redirect href="/+not-found" />;
   }
   return <Redirect href={`/(patient)/lab-results/${id}`} />;
 }

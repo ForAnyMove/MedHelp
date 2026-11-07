@@ -1,7 +1,9 @@
-import DoctorTabsInner from '../../src/screens/doctor/DoctorTabs';
+import React from 'react';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 
 export default function DoctorTabs() {
-  const { tab } = require('expo-router').useLocalSearchParams();
-  const currentTab = typeof tab === 'string' ? tab : (tab?.[0] || 'home');
-  return <DoctorTabsInner currentTab={currentTab} />;
+  const params = useLocalSearchParams();
+  const { tab, ...rest } = params || {};
+  const targetTab = typeof tab === 'string' && tab ? tab : 'home';
+  return <Redirect href={{ pathname: `/${targetTab}`, params: rest }} />;
 }

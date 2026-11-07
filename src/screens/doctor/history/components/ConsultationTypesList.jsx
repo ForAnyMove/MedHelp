@@ -6,6 +6,7 @@ import { Icon } from '../../../../components/ui/Icon';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { formatIsoDate } from '../../../../utils/dateUtils';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 
 function formatTime(isoDate) {
     if (!isoDate) return '';
@@ -19,6 +20,8 @@ export function ConsultationTypesList({ title, list = [], type = 'completed' }) 
     const styles = useStyles(themeStyles);
     const { navigateToHistoryDetail } = useDoctorDashboard();
     const { colors, sizes } = useTheme();
+    const responsive = useResponsive();
+    const isWideDesktop = !responsive?.isPortraitShell && (responsive?.isDesktopWide || responsive?.isUltrawide);
 
     const topItems = useMemo(() => {
         if (!list || list.length === 0) return [];
@@ -28,8 +31,8 @@ export function ConsultationTypesList({ title, list = [], type = 'completed' }) 
             const diffB = Math.abs(now - new Date(b.date).getTime());
             return diffA - diffB;
         });
-        return sorted.slice(0, 2);
-    }, [list]);
+        return sorted.slice(0, isWideDesktop ? 4 : 2);
+    }, [list, isWideDesktop]);
 
     const getIconProps = () => {
         switch (type) {
@@ -60,10 +63,11 @@ export function ConsultationTypesList({ title, list = [], type = 'completed' }) 
             </View>
 
             {topItems.length > 0 ? (
-                topItems.map((item) => (
+                <View style={isWideDesktop ? styles.cardsGrid : undefined}>
+                {topItems.map((item) => (
                     <TouchableOpacity
                         key={item.id}
-                        style={styles.card}
+                        style={[styles.card, isWideDesktop && styles.cardWide]}
                         activeOpacity={0.8}
                         onPress={() => handlePress(item.id)}
                     >
@@ -91,7 +95,8 @@ export function ConsultationTypesList({ title, list = [], type = 'completed' }) 
                             <Icon name="chevron-right" size={sizes.scale(20)} color={colors.p500} />
                         </View>
                     </TouchableOpacity>
-                ))
+                ))}
+                </View>
             ) : (
                 <Text style={styles.noDataText}>{t('no_data', 'No data available')}</Text>
             )}
@@ -122,8 +127,20 @@ const themeStyles = (theme) => ({
     },
     badgeText: {
         ...theme.sizes.typography.caption,
-        color: /* TODO: color */ '#1A9C8E',
+        color: '#1A9C8E',
         fontFamily: 'Manrope_600SemiBold',
+    },
+    cardsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.sizes.spacing.m,
+        width: '100%',
+    },
+    cardWide: {
+        flex: 1,
+        minWidth: 280,
+        maxWidth: '48.8%',
+        marginBottom: 0,
     },
     card: {
         backgroundColor: theme.colors.white,

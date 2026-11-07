@@ -103,7 +103,7 @@ export function RegularDoctorCard({ doctor, onProfilePress, onBookPress, variant
               <>
                 <View style={[styles.availabilityItem, { flex: 1 }]}>
                   <Icon name="calendar" size={sizes.scale(24)} color={colors.n400} />
-                  <Text style={[styles.availabilityText, { color: colors.n400 }]}>{t('consultation.no_consultations_day')}</Text>
+                  <Text style={[styles.availabilityText, { color: colors.n400 }]}>{t('consultation.no_available_slots', 'No available slots')}</Text>
                 </View>
                 <View style={styles.divider} />
               </>

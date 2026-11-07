@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Asset } from 'expo-asset';
 import Constants from 'expo-constants';
 import { allImages } from '../assets';
-import { createApiClient, setGlobalTokenRefresher, setGlobalCurrentSession } from '../api/apiClient';
+import { createApiClient, setGlobalTokenRefresher, setGlobalCurrentSession, getApiUrl } from '../api/apiClient';
 
 function decodeBase64(str) {
   if (typeof atob === 'function') {
@@ -42,18 +42,6 @@ const SESSION_KEY = 'medhelp_session';
 const SessionContext = createContext(null);
 
 // ---- API auth helpers ----
-const getApiUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'web') return 'http://localhost:3000/api';
-    const hostUri = Constants.expoConfig?.hostUri;
-    if (hostUri) return `http://${hostUri.split(':')[0]}:3000/api`;
-    return 'http://10.0.2.2:3000/api';
-  }
-  let url = process.env.EXPO_PUBLIC_API_URL;
-  if (url) return url.endsWith('/api') ? url : url + '/api';
-  return '/api';
-};
-
 const API_URL = getApiUrl();
 
 // ---- Storage helpers ----

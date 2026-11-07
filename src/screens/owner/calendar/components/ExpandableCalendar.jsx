@@ -10,12 +10,12 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export function ExpandableCalendar({ selectedDate, onSelectDate, byDate = {} }) {
-  const { sizes, colors } = useTheme();
+export function ExpandableCalendar({ selectedDate, onSelectDate, byDate = {}, defaultExpanded = false, style }) {
+  const { sizes, colors, responsive } = useTheme();
   const styles = useStyles(themeStyles);
   const { t } = useTranslation();
 
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   // Month data for the FlatList
   const [months, setMonths] = useState(() => {
@@ -146,10 +146,12 @@ export function ExpandableCalendar({ selectedDate, onSelectDate, byDate = {} }) 
     );
   };
 
+  const isWideViewport = responsive?.isTablet || responsive?.isDesktop || responsive?.isDesktopLarge;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isWideViewport && styles.containerResponsive, style]}>
       {isExpanded ? (
-        <View style={styles.expandedContainer}>
+        <View style={[styles.expandedContainer, isWideViewport && styles.expandedContainerWide]}>
           {/* Fixed Days of week header */}
           <View style={[styles.daysHeader, styles.fixedDaysHeader]}>
             {dayNames.map((day, idx) => (
@@ -175,7 +177,7 @@ export function ExpandableCalendar({ selectedDate, onSelectDate, byDate = {} }) 
             }}
             scrollEventThrottle={16}
             getItemLayout={(data, index) => {
-              const h = sizes.scale(380);
+              const h = isWideViewport ? sizes.scale(330) : sizes.scale(380);
               return { length: h, offset: h * index, index };
             }}
             initialScrollIndex={2}
@@ -212,8 +214,17 @@ const themeStyles = (theme) => ({
     elevation: 2,
     overflow: 'hidden',
   },
+  containerResponsive: {
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 0,
+  },
   expandedContainer: {
     height: theme.sizes.scale(320), // ~4 rows of weeks + headers
+  },
+  expandedContainerWide: {
+    height: theme.sizes.scale(340),
   },
   toggleBtn: {
     padding: theme.sizes.spacing.s,
@@ -288,7 +299,8 @@ const themeStyles = (theme) => ({
   },
   gridDay: {
     width: `${100/7}%`,
-    aspectRatio: 1,
+    aspectRatio: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? undefined : 1,
+    height: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? theme.sizes.scale(44) : undefined,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.sizes.borderRadius.medium,

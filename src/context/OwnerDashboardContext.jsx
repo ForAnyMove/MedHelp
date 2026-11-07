@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useDashboardNavigator } from '../hooks/useDashboardNavigator';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -16,8 +16,8 @@ export function OwnerDashboardProvider({ children, initialTab = 'home' }) {
 
   const nav = useDashboardNavigator('dashboard', initialIndex);
 
-  const updateUrlParams = (tabName, view, id) => {
-    if (typeof window !== 'undefined' && window.history) {
+  const updateUrlParams = (tabName, view, id, options = {}) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
       const searchParams = new URLSearchParams();
       if (view && view !== 'list' && view !== 'dashboard') {
         searchParams.set('view', view);
@@ -26,11 +26,58 @@ export function OwnerDashboardProvider({ children, initialTab = 'home' }) {
         searchParams.set('id', id);
       }
       const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
-      window.history.pushState(window.history.state, '', `/${tabName}${queryString}`);
+      const newUrl = `/${tabName}${queryString}`;
+      const currentUrl = (window.location.pathname || '') + (window.location.search || '');
+      if (currentUrl === newUrl) return;
+      const currentState = (window.history.state && typeof window.history.state === 'object') ? { ...window.history.state } : {};
+      const nextState = { ...currentState, customTab: tabName, customView: view || null };
+      if (options.replace && typeof window.history?.replaceState === 'function') {
+        window.history.replaceState(nextState, '', newUrl);
+      } else if (typeof window.history?.pushState === 'function') {
+        window.history.pushState(nextState, '', newUrl);
+      }
+      try {
+        window.dispatchEvent(new Event('medhelp:urlchange'));
+      } catch (e) {}
     }
   };
 
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const syncStateFromUrl = (searchParams, tabName) => {
+    const view = searchParams.get('view');
+    const id = searchParams.get('id');
+
+    if (tabName === 'doctors') {
+      if (view === 'requests') {
+        setDoctorsView('requests');
+      } else if (view === 'doctor-profile') {
+        setDoctorsView('doctor-profile');
+        if (id) setSelectedDoctorId(id);
+      } else {
+        setDoctorsView('list');
+        setSelectedDoctorId(null);
+      }
+    } else if (tabName === 'calendar') {
+      if (view === 'consultation-detail') {
+        setCalendarView('consultation-detail');
+        if (id) setSelectedConsultationId(id);
+      } else {
+        setCalendarView('dashboard');
+        setSelectedConsultationId(null);
+      }
+    } else if (tabName === 'history') {
+      if (view === 'detail') {
+        setHistoryView('detail');
+        if (id) setHistorySelectedId(id);
+      } else if (view === 'all') {
+        setHistoryView('all');
+      } else {
+        setHistoryView('dashboard');
+        setHistorySelectedId(null);
+      }
+    }
+  };
+
+  const searchParams = (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const initialView = searchParams.get('view');
   const initialId = searchParams.get('id');
 
@@ -62,6 +109,14 @@ export function OwnerDashboardProvider({ children, initialTab = 'home' }) {
       if (routeId) setHistorySelectedId(routeId);
     } else if (routeView === 'all') {
       setHistoryView('all');
+    } else {
+      // Default reset on root tab navigation or browser back to main view
+      setDoctorsView('list');
+      setSelectedDoctorId(null);
+      setCalendarView('dashboard');
+      setSelectedConsultationId(null);
+      setHistoryView('dashboard');
+      setHistorySelectedId(null);
     }
   }, [routeView, routeId]);
 
@@ -121,22 +176,17 @@ export function OwnerDashboardProvider({ children, initialTab = 'home' }) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     // Reset whichever sub-view is active
     if (nav.tabIndex === 1) {
-      if (doctorsView === 'doctor-profile') {
-        // Go back to requests if we came from there, else list
-        setDoctorsView('list');
-      } else {
-        setDoctorsView('list');
-      }
+      setDoctorsView('list');
       setSelectedDoctorId(null);
-      updateUrlParams('doctors', 'list');
+      updateUrlParams('doctors', 'list', null, { replace: true });
     } else if (nav.tabIndex === 2) {
       setCalendarView('dashboard');
       setSelectedConsultationId(null);
-      updateUrlParams('calendar', 'dashboard');
+      updateUrlParams('calendar', 'dashboard', null, { replace: true });
     } else if (nav.tabIndex === 3) {
       setHistoryView('dashboard');
       setHistorySelectedId(null);
-      updateUrlParams('history', 'dashboard');
+      updateUrlParams('history', 'dashboard', null, { replace: true });
     }
   };
 
@@ -164,6 +214,7 @@ export function OwnerDashboardProvider({ children, initialTab = 'home' }) {
     // shared
     navigateBack,
     updateUrlParams,
+    syncStateFromUrl,
   };
 
   return (

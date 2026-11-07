@@ -8,6 +8,7 @@ import { Icon } from '../../../../components/ui/Icon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { formatIsoDate } from '../../../../utils/dateUtils';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 
 const FILTERS = ['All', 'Completed', 'Upcoming', 'Canceled'];
 
@@ -19,6 +20,8 @@ export function AllConsultations({ activeSegment = true }) {
     const router = useRouter();
     const styles = useStyles(themeStyles);
     const { colors, sizes } = useTheme();
+    const responsive = useResponsive();
+    const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('All');
@@ -126,43 +129,45 @@ export function AllConsultations({ activeSegment = true }) {
                 {Object.keys(groupedData).map(dateKey => (
                     <View key={dateKey} style={styles.groupContainer}>
                         <Text style={styles.dateHeader}>{dateKey}</Text>
-                        {groupedData[dateKey].map(item => {
-                            const iconProps = getIconProps(item.status);
-                            return (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    style={styles.card}
-                                    activeOpacity={0.8}
-                                    onPress={() => handlePress(item.id)}
-                                >
-                                    <View style={styles.cardHeader}>
-                                        <Text style={styles.dateTimeText}>
-                                            {formatIsoDate(item.date, 'short', t)} • {formatIsoDate(item.date, 'time', t) || '10:00'}
-                                        </Text>
-                                    </View>
-
-                                    <View style={styles.cardBody}>
-                                        <View style={[styles.iconContainer, { backgroundColor: iconProps.bg }]}>
-                                            <Icon name={iconProps.name} size={sizes.scale(20)} color={iconProps.color} />
-                                        </View>
-
-                                        <View style={styles.infoContainer}>
-                                            <View style={styles.consultationRow}>
-                                                <Text style={styles.consultationText}>
-                                                    {item.status === 'scheduled' || item.status === 'canceled' ? item.patientName : t('doctor_history.consultation', 'Consultation')} •{' '}
-                                                </Text>
-                                                <View style={[styles.statusDot, { backgroundColor: iconProps.color }]} />
-                                            </View>
-                                            <Text style={styles.doctorText} numberOfLines={1}>
-                                                {item.status === 'scheduled' || item.status === 'canceled' ? item.diagnosis || t('doctor_history.general', 'General') : `${item.patientName || t('doctor_history.patient', 'Patient')} • ${item.diagnosis || t('doctor_history.general', 'General')}`}
+                        <View style={isLandscapeLayout ? styles.desktopGrid : undefined}>
+                            {groupedData[dateKey].map(item => {
+                                const iconProps = getIconProps(item.status);
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[styles.card, isLandscapeLayout && styles.desktopCard]}
+                                        activeOpacity={0.8}
+                                        onPress={() => handlePress(item.id)}
+                                    >
+                                        <View style={styles.cardHeader}>
+                                            <Text style={styles.dateTimeText}>
+                                                {formatIsoDate(item.date, 'short', t)} • {formatIsoDate(item.date, 'time', t) || '10:00'}
                                             </Text>
                                         </View>
 
-                                        <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
+                                        <View style={styles.cardBody}>
+                                            <View style={[styles.iconContainer, { backgroundColor: iconProps.bg }]}>
+                                                <Icon name={iconProps.name} size={sizes.scale(20)} color={iconProps.color} />
+                                            </View>
+
+                                            <View style={styles.infoContainer}>
+                                                <View style={styles.consultationRow}>
+                                                    <Text style={styles.consultationText}>
+                                                        {item.status === 'scheduled' || item.status === 'canceled' ? item.patientName : t('doctor_history.consultation', 'Consultation')} •{' '}
+                                                    </Text>
+                                                    <View style={[styles.statusDot, { backgroundColor: iconProps.color }]} />
+                                                </View>
+                                                <Text style={styles.doctorText} numberOfLines={1}>
+                                                    {item.status === 'scheduled' || item.status === 'canceled' ? item.diagnosis || t('doctor_history.general', 'General') : `${item.patientName || t('doctor_history.patient', 'Patient')} • ${item.diagnosis || t('doctor_history.general', 'General')}`}
+                                                </Text>
+                                            </View>
+
+                                            <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
                     </View>
                 ))}
             </ScrollView>
@@ -178,9 +183,14 @@ const themeStyles = (theme) => ({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingTop: theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.s,
+        width: '100%',
+        maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+          ? (theme.responsive?.containerMaxWidth || 1440)
+          : theme.responsive?.isTabletPortrait ? 760 : undefined,
+        alignSelf: 'center',
     },
     backButton: {
         padding: theme.sizes.spacing.xs,
@@ -204,8 +214,25 @@ const themeStyles = (theme) => ({
         fontFamily: 'Manrope_600SemiBold',
     },
     scrollContent: {
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.xl,
+        width: '100%',
+        maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+          ? (theme.responsive?.containerMaxWidth || 1440)
+          : theme.responsive?.isTabletPortrait ? 760 : undefined,
+        alignSelf: 'center',
+    },
+    desktopGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.sizes.spacing.m,
+        width: '100%',
+    },
+    desktopCard: {
+        flex: 1,
+        minWidth: 320,
+        maxWidth: theme.responsive?.isDesktopLarge ? '32.2%' : '48.8%',
+        marginBottom: 0,
     },
     searchContainer: {
         flexDirection: 'row',

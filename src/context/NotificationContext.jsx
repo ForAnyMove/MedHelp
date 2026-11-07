@@ -38,9 +38,7 @@ export function NotificationProvider({ children }) {
     let targetUrl = data?.url;
     if (!targetUrl && data?.type) {
        if (data.type.includes('appointment') || data.type === 'consultation_started' || data.type === 'completed_consultation') {
-          targetUrl = session?.role === 'doctor' 
-             ? `/(doctor)?tab=history&openHistoryId=${data.reference_id}`
-             : `/(patient)?tab=history&openHistoryId=${data.reference_id}`;
+          targetUrl = `/history?openHistoryId=${data.reference_id}`;
        } else if (data.type.includes('lab')) {
           targetUrl = `/lab-result/${data.reference_id}`;
        } else if (data.type.includes('message')) {
@@ -139,18 +137,32 @@ export function NotificationProvider({ children }) {
 export const useNotification = () => useContext(NotificationContext);
 
 async function registerForPushNotificationsAsync() {
-  let token;
+  let token = null;
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: /* TODO: color */ '#FF231F7C',
-    });
+    try {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Общие уведомления',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#2563EB',
+      });
+      await Notifications.setNotificationChannelAsync('chat-messages', {
+        name: 'Сообщения чата',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#2563EB',
+      });
+    } catch (e) {
+      console.warn('[NotificationContext] setNotificationChannelAsync failed:', e?.message);
+    }
   }
 
-  if (Device.isDevice || Platform.OS === 'web') {
+  if (Platform.OS === 'web') {
+    return null;
+  }
+
+  try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== 'granted') {
@@ -158,20 +170,36 @@ async function registerForPushNotificationsAsync() {
       finalStatus = status;
     }
     if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
-      return;
-    }
-    
-    if (Platform.OS === 'web') {
-      return null; // Skip Expo Push Token on web to avoid VAPID error, but permissions are granted for local notifications
+      console.log('[NotificationContext] Push notification permission not granted');
+      return null;
     }
 
-    // We can get projectId from Constants if we use EAS build
-    const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-    token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-  } else {
-    console.log('Must use physical device for Push Notifications');
+    // 1. Try native FCM device push token (for Firebase Cloud Messaging direct delivery)
+    try {
+      const deviceTokenData = await Notifications.getDevicePushTokenAsync();
+      if (deviceTokenData?.data) {
+        token = deviceTokenData.data;
+        console.log('[NotificationContext] Acquired native FCM push token:', token);
+      }
+    } catch (fcmErr) {
+      // In Expo Go or when native FCM is not linked, fallback to Expo Push API
+    }
+
+    // 2. If no FCM token, try Expo push token
+    if (!token) {
+      try {
+        const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+        const expoTokenData = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+        token = expoTokenData?.data;
+        console.log('[NotificationContext] Acquired Expo push token:', token);
+      } catch (expoErr) {
+        console.log('[NotificationContext] Expo push token not available:', expoErr?.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[NotificationContext] Error in registerForPushNotificationsAsync:', err?.message);
   }
 
   return token;
 }
+

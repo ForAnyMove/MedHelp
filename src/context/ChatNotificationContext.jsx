@@ -104,13 +104,13 @@ export function ChatNotificationProvider({ children }) {
         if (isSelf) {
           title = t('notifications.success');
           body = t('notifications.booking_created_self');
-          targetRoute = `/${session?.role === 'doctor' ? '(doctor)' : '(patient)'}?tab=history&openHistoryId=${channelId}`;
+          targetRoute = `/history?openHistoryId=${channelId}`;
         } else {
           title = t('notifications.new_booking');
           body = session?.role === 'doctor' 
             ? t('notifications.booking_created_patient', { name: creatorName }) 
             : t('notifications.booking_created_doctor', { name: creatorName });
-          targetRoute = `/${session?.role === 'doctor' ? '(doctor)' : '(patient)'}?tab=history&openHistoryId=${channelId}`;
+          targetRoute = `/history?openHistoryId=${channelId}`;
         }
         addNotification({ title, body, targetRoute, type: 'system' });
         refreshUnreadCounts();
@@ -129,11 +129,10 @@ export function ChatNotificationProvider({ children }) {
         const body = event.message_type === 'started' 
           ? t('notifications.consultation_notify_started') 
           : t('notifications.consultation_notify_remind');
-        const role = session?.role === 'doctor' ? '(doctor)' : '(patient)';
         addNotification({
           title,
           body,
-          targetRoute: `/${role}?tab=history&openHistoryId=${event.consultation_id}`,
+          targetRoute: `/history?openHistoryId=${event.consultation_id}`,
           type: 'system'
         });
       }
@@ -148,7 +147,7 @@ export function ChatNotificationProvider({ children }) {
            addNotification({
              title: t('notifications.consultation_completed', 'Консультация завершена'),
              body: t('notifications.consultation_completed_body', 'Доктор завершил консультацию'),
-             targetRoute: `/(patient)?tab=history&openHistoryId=${event.consultation_id || event.channel_id}`,
+             targetRoute: `/history?openHistoryId=${event.consultation_id || event.channel_id}`,
              type: 'system'
            });
         }

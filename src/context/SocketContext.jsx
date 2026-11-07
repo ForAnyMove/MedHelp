@@ -5,16 +5,11 @@ import { useSession } from './SessionContext';
 import { useChatNotifications } from './ChatNotificationContext';
 import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
+import { getApiUrl } from '../api/apiClient';
 
 const getSocketUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'web') return 'http://localhost:3000';
-    const hostUri = Constants.expoConfig?.hostUri;
-    if (hostUri) return `http://${hostUri.split(':')[0]}:3000`;
-    return 'http://10.0.2.2:3000';
-  }
-  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL.replace('/api', '');
-  return ''; // fallback for production web
+  const apiUrl = getApiUrl();
+  return apiUrl ? apiUrl.replace(/\/api\/?$/, '') : '';
 };
 
 const SocketContext = createContext(null);

@@ -43,12 +43,14 @@ export function OwnerConsultationDetail({ consultation, onBack }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: statusColor }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Icon name="arrow-back" size={sizes.scale(24)} color={colors.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('owner_calendar.detail_title')}</Text>
-        <View style={styles.headerSpacer} />
+      <View style={[styles.headerOuter, { backgroundColor: statusColor }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('owner_calendar.detail_title')}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -89,12 +91,18 @@ export function OwnerConsultationDetail({ consultation, onBack }) {
 
 const themeStyles = (theme) => ({
   container: { flex: 1, backgroundColor: theme.colors.bg },
+  headerOuter: {
+    width: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.m,
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 720 : 960,
+    alignSelf: 'center',
   },
   backButton: { padding: theme.sizes.spacing.xs },
   headerTitle: {
@@ -106,8 +114,11 @@ const themeStyles = (theme) => ({
   },
   headerSpacer: { width: theme.sizes.scale(32) },
   scrollContent: {
-    padding: theme.sizes.spacing.m,
+    padding: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 720 : 960,
+    alignSelf: 'center',
   },
   statusPill: {
     flexDirection: 'row',

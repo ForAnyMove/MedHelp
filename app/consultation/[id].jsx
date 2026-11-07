@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '../../src/context/SessionContext';
 import { createApiClient } from '../../src/api/apiClient';
 import { createConsultationsApi } from '../../src/api/consultationsApi';
+import { isValidRouteUUID } from '../../src/utils/routeValidation';
 
 export default function ConsultationDeepLink() {
   const { id } = useLocalSearchParams();
@@ -16,7 +17,11 @@ export default function ConsultationDeepLink() {
   const { session } = useSession();
 
   React.useEffect(() => {
-    if (!session?.role || !id) return;
+    if (!session?.role) return;
+    if (!isValidRouteUUID(id)) {
+      router.replace('/+not-found');
+      return;
+    }
 
     const routeToConsultation = async () => {
       try {
@@ -26,7 +31,7 @@ export default function ConsultationDeepLink() {
 
         if (consultation?.status === 'canceled' || consultation?.status === 'completed') {
           if (session.role === 'patient') {
-            router.replace({ pathname: '/(patient)', params: { tab: 'history', openHistoryId: id } });
+            router.replace({ pathname: '/history', params: { view: 'detail', id: id, openHistoryId: id } });
             return;
           }
         }
@@ -35,9 +40,11 @@ export default function ConsultationDeepLink() {
       }
 
       if (session.role === 'doctor') {
-        router.replace({ pathname: '/(doctor)', params: { tab: 'history', openHistoryId: id } });
+        router.replace({ pathname: '/history', params: { view: 'detail', id: id, openHistoryId: id } });
+      } else if (session.role === 'owner') {
+        router.replace({ pathname: '/calendar', params: { view: 'consultation-detail', id: id } });
       } else {
-        router.replace({ pathname: '/(patient)', params: { tab: 'consultation', id: id, view: 'detail' } });
+        router.replace({ pathname: '/consultation', params: { id: id, view: 'detail' } });
       }
     };
 

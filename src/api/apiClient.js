@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-const getApiUrl = () => {
+export const getApiUrl = () => {
   if (__DEV__) {
     if (Platform.OS === 'web') return 'http://localhost:3000/api';
     const hostUri = Constants.expoConfig?.hostUri;

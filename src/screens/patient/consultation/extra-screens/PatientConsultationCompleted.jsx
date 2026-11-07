@@ -16,7 +16,7 @@ export function PatientConsultationCompleted({ booking, onBackToHome }) {
     : 'Doctor');
 
   return (
-    <SubViewScreen title={t('consultation.rating_title', 'Consultation')} hideHeader>
+    <SubViewScreen title={t('consultation.rating_title', 'Consultation')} hideHeader maxWidth={600}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBackToHome} style={styles.closeButton}>
           <Icon name="x" size={sizes.scale(24)} color={colors.p500} />

@@ -8,27 +8,27 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Dimensions
+  Dimensions,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStyles } from '../../theme/useStyles';
 import { Icon } from './Icon';
 import { getHitSlopForSize } from '../../utils/accessibility';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-export function BottomSheet({ visible, onClose, children, initialHeight }) {
-  const { sizes, colors } = useTheme();
+export function BottomSheet({ visible, onClose, children, initialHeight, maxWidth = 640 }) {
+  const insets = useSafeAreaInsets();
+  const { sizes, colors, responsive } = useTheme();
   const styles = useStyles(themeStyles);
 
+  const isCenteredModal = responsive?.modalMode === 'centeredModal';
+
+  // --- Mobile BottomSheet Metrics ---
   const PARTIAL_HEIGHT = sizes.height - sizes.scale(260);
   const FULL_HEIGHT = sizes.height;
-  // Midpoint between the two snap points — used for snapping decision
   const SNAP_MIDPOINT = (PARTIAL_HEIGHT + FULL_HEIGHT) / 2;
-
   const START_HEIGHT = initialHeight || PARTIAL_HEIGHT;
 
-  // Animated height value; starts at START_HEIGHT (will be revealed by translateY animation)
   const animatedHeight = useRef(new Animated.Value(START_HEIGHT)).current;
   const currentHeight = useRef(START_HEIGHT);
   animatedHeight.addListener(({ value }) => {
@@ -41,66 +41,100 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
     extrapolate: 'clamp',
   });
 
-  // translateY drives the open/close slide animation
-  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const currentTranslateY = useRef(SCREEN_HEIGHT);
+  // translateY drives the slide animation (for bottom sheet)
+  const translateY = useRef(new Animated.Value(sizes.height)).current;
+  const currentTranslateY = useRef(sizes.height);
   translateY.addListener(({ value }) => {
     currentTranslateY.current = value;
   });
 
+  // fade & scale drive the dialog animation (for desktop centered modal)
+  const dialogOpacity = useRef(new Animated.Value(0)).current;
+  const dialogScale = useRef(new Animated.Value(0.94)).current;
+
   useEffect(() => {
     if (visible) {
-      // Reset to initial height whenever sheet opens
-      animatedHeight.setValue(START_HEIGHT);
-      currentHeight.current = START_HEIGHT;
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      if (isCenteredModal) {
+        dialogOpacity.setValue(0);
+        dialogScale.setValue(0.94);
+        Animated.parallel([
+          Animated.timing(dialogOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.spring(dialogScale, {
+            toValue: 1,
+            friction: 8,
+            tension: 65,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } else {
+        animatedHeight.setValue(START_HEIGHT);
+        currentHeight.current = START_HEIGHT;
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+      }
     } else {
-      Animated.timing(translateY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
+      if (isCenteredModal) {
+        Animated.timing(dialogOpacity, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        Animated.timing(translateY, {
+          toValue: sizes.height,
+          duration: 250,
+          useNativeDriver: false,
+        }).start();
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [visible, isCenteredModal, START_HEIGHT, sizes.height]);
 
   const handleClose = () => {
-    Animated.timing(translateY, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      onClose();
-    });
+    if (isCenteredModal) {
+      Animated.timing(dialogOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(() => {
+        onClose();
+      });
+    } else {
+      Animated.timing(translateY, {
+        toValue: sizes.height,
+        duration: 250,
+        useNativeDriver: false,
+      }).start(() => {
+        onClose();
+      });
+    }
   };
 
-  // Blocks text selection inside children while the sheet is being dragged
+  // Dragging gesture for mobile sheet
   const [isDragging, setIsDragging] = useState(false);
-
-  // Track the height at the start of each gesture so we can do relative dragging
   const gestureStartHeight = useRef(PARTIAL_HEIGHT);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Capture panning in either vertical direction
+        if (isCenteredModal) return false;
         return Math.abs(gestureState.dy) > 5;
       },
       onPanResponderGrant: () => {
-        // Snapshot the current height when gesture begins
         gestureStartHeight.current = currentHeight.current;
         setIsDragging(true);
       },
       onPanResponderMove: (_, gestureState) => {
-        // Dragging UP (dy < 0) increases height; dragging DOWN (dy > 0) decreases it
         const newHeight = gestureStartHeight.current - gestureState.dy;
         const clampedHeight = Math.max(
-          PARTIAL_HEIGHT * 0.4, // lower bound — prevents over-shrinking
+          PARTIAL_HEIGHT * 0.4,
           Math.min(FULL_HEIGHT, newHeight)
         );
         animatedHeight.setValue(clampedHeight);
@@ -108,9 +142,8 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
       onPanResponderRelease: (_, gestureState) => {
         setIsDragging(false);
         const releasedHeight = currentHeight.current;
-        const velocity = gestureState.vy; // positive = moving down, negative = moving up
+        const velocity = gestureState.vy;
 
-        // Close if dragged far enough down or with high downward velocity
         if (
           gestureState.dy > 150 ||
           (velocity > 1.5 && releasedHeight < SNAP_MIDPOINT)
@@ -119,25 +152,81 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
           return;
         }
 
-        // Determine snap target based on released position vs midpoint
         const snapTo =
           releasedHeight >= SNAP_MIDPOINT ? FULL_HEIGHT : PARTIAL_HEIGHT;
 
         Animated.timing(animatedHeight, {
           toValue: snapTo,
           duration: 250,
-          useNativeDriver: false, // height animation cannot use native driver
+          useNativeDriver: false,
         }).start();
       },
       onPanResponderTerminate: () => {
-        // Also clear dragging state if gesture is cancelled externally
         setIsDragging(false);
       },
     })
   ).current;
 
-  if (!visible && currentTranslateY.current >= SCREEN_HEIGHT) return null;
+  if (!visible && (!isCenteredModal && currentTranslateY.current >= sizes.height)) {
+    return null;
+  }
 
+  // --- Centered Modal for Tablet & Desktop ---
+  if (isCenteredModal) {
+    return (
+      <Modal
+        transparent
+        visible={visible}
+        animationType="none"
+        onRequestClose={handleClose}
+        accessibilityViewIsModal={true}
+        aria-modal={true}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity
+            style={styles.desktopBackdrop}
+            activeOpacity={1}
+            onPress={handleClose}
+            accessibilityRole="button"
+            accessibilityLabel="Закрыть"
+          />
+
+          <Animated.View
+            style={[
+              styles.dialogContainer,
+              {
+                maxWidth,
+                height: initialHeight ? Math.min(sizes.height * 0.85, 640) : undefined,
+                opacity: dialogOpacity,
+                transform: [{ scale: dialogScale }],
+              },
+            ]}
+          >
+            <View style={styles.dialogHeader}>
+              <TouchableOpacity
+                onPress={handleClose}
+                style={styles.closeBtnInner}
+                accessibilityRole="button"
+                accessibilityLabel="Закрыть"
+                hitSlop={getHitSlopForSize(sizes.scale(32), sizes.scale(32))}
+              >
+                <Icon name="close" size={sizes.scale(22)} color={colors.n900} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.contentWrapper}>
+              {children}
+            </View>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Modal>
+    );
+  }
+
+  // --- Mobile Slide-Up Bottom Sheet ---
   return (
     <Modal
       transparent
@@ -172,8 +261,11 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
           ]}
         >
           {/* Top Drag Indicator Area */}
-          <View 
-            style={styles.handleContainer} 
+          <View
+            style={[
+              styles.handleContainer,
+              { paddingTop: insets.top > 0 ? insets.top + sizes.spacing.xs : sizes.spacing.s },
+            ]}
             {...panResponder.panHandlers}
             accessibilityRole="adjustable"
             accessibilityLabel="Элемент перетаскивания шторки"
@@ -182,38 +274,29 @@ export function BottomSheet({ visible, onClose, children, initialHeight }) {
             <View style={styles.handle} />
           </View>
 
-          {Platform.OS === 'web' && (
-            <Animated.View 
-              style={[
-                styles.closeBtn, 
-                { 
-                  opacity: animatedHeight.interpolate({ 
-                    inputRange: [FULL_HEIGHT - 50, FULL_HEIGHT], 
-                    outputRange: [0, 1], 
-                    extrapolate: 'clamp' 
-                  }),
-                  pointerEvents: 'box-none',
-                }
-              ]}
+          <View
+            style={[
+              styles.closeBtn,
+              {
+                top: insets.top > 0 ? insets.top + sizes.spacing.xs : sizes.spacing.s,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeBtnInner}
+              accessibilityRole="button"
+              accessibilityLabel="Закрыть"
+              hitSlop={getHitSlopForSize(sizes.scale(32), sizes.scale(32))}
             >
-              <TouchableOpacity 
-                onPress={handleClose} 
-                style={styles.closeBtnInner}
-                accessibilityRole="button"
-                accessibilityLabel="Закрыть"
-                hitSlop={getHitSlopForSize(sizes.scale(24), sizes.scale(24))}
-              >
-                <Icon name="close" size={sizes.scale(24)} color={colors.n900} />
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+              <Icon name="close" size={sizes.scale(24)} color={colors.n900} />
+            </TouchableOpacity>
+          </View>
 
-          {/* Content wrapper — overlay blocks text selection while dragging */}
+          {/* Content wrapper */}
           <View style={styles.contentWrapper}>
             {children}
-            {isDragging && (
-              <View style={styles.dragOverlay} />
-            )}
+            {isDragging && <View style={styles.dragOverlay} />}
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -228,11 +311,12 @@ const themeStyles = (theme) => ({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   sheet: {
     backgroundColor: theme.colors.bg,
-    shadowColor: /* TODO: color */ '#000',
-    shadowOffset: { width: theme.sizes.scale(0), height: theme.sizes.scale(-3) },
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 20,
@@ -256,7 +340,6 @@ const themeStyles = (theme) => ({
   },
   dragOverlay: {
     ...StyleSheet.absoluteFillObject,
-    // Transparent overlay — intercepts touches to prevent text selection
     backgroundColor: 'transparent',
   },
   closeBtn: {
@@ -267,6 +350,36 @@ const themeStyles = (theme) => ({
   },
   closeBtnInner: {
     padding: theme.sizes.spacing.xs,
-  }
-});
+  },
 
+  // Centered Desktop Dialog styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.sizes.spacing.m,
+  },
+  desktopBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+  },
+  dialogContainer: {
+    width: '92%',
+    maxHeight: '90%',
+    backgroundColor: theme.colors.bg,
+    borderRadius: theme.sizes.scale(24),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.22,
+    shadowRadius: 32,
+    elevation: 24,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  dialogHeader: {
+    position: 'absolute',
+    top: theme.sizes.spacing.s,
+    right: theme.sizes.spacing.s,
+    zIndex: 100,
+  },
+});

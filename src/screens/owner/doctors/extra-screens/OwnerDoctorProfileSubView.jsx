@@ -151,12 +151,14 @@ export function OwnerDoctorProfileSubView({ onBack }) {
 // ---------------- Tabs ----------------
 
 function ProfileTab({ doctorData, consultations, isConfirmedMember, ownerController, doctorId, onBack }) {
-  const { sizes, colors } = useTheme();
+  const { sizes, colors, responsive } = useTheme();
   const styles = useStyles(themeStyles);
   const { t, i18n } = useTranslation();
   const lang = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
   const [isRemoving, setIsRemoving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
 
   const handleRemoveDoctor = () => setShowConfirmModal(true);
 
@@ -182,8 +184,8 @@ function ProfileTab({ doctorData, consultations, isConfirmedMember, ownerControl
     </View>
   );
 
-  return (
-    <View>
+  const aboutAndDetails = (
+    <View style={isLandscapeLayout ? styles.desktopLeftCol : undefined}>
       <Text style={styles.sectionTitle}>{t('doctor_history.about', 'About')}</Text>
       <View style={styles.card}>
         <Text style={styles.bioText}>{doctorData.description || t('doctor_history.no_description', 'No description provided.')}</Text>
@@ -199,67 +201,85 @@ function ProfileTab({ doctorData, consultations, isConfirmedMember, ownerControl
       </View>
 
       {isConfirmedMember && (
-        <>
-          <TouchableOpacity
-            style={[styles.removeBtn, isRemoving && { opacity: 0.7 }]}
-            onPress={handleRemoveDoctor}
-            disabled={isRemoving}
-            activeOpacity={0.8}
-          >
-            {isRemoving ? (
-              <ActivityIndicator size="small" color={colors.danger} />
-            ) : (
-              <>
-                <Icon name="close" size={sizes.scale(18)} color={colors.danger} />
-                <Text style={styles.removeBtnText}>{t('owner_doctors.remove_doctor_btn', 'Remove from Organization')}</Text>
-              </>
-            )}
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.removeBtn, isRemoving && { opacity: 0.7 }]}
+          onPress={handleRemoveDoctor}
+          disabled={isRemoving}
+          activeOpacity={0.8}
+        >
+          {isRemoving ? (
+            <ActivityIndicator size="small" color={colors.danger} />
+          ) : (
+            <>
+              <Icon name="close" size={sizes.scale(18)} color={colors.danger} />
+              <Text style={styles.removeBtnText}>{t('owner_doctors.remove_doctor_btn', 'Remove from Organization')}</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
-          <Text style={styles.sectionTitle}>{t('owner_doctors.doctor_consultations', 'Consultations')}</Text>
-          <View style={styles.visitsContainer}>
-            {consultations.length > 0 ? consultations.map((c) => {
-              const date = c.date ? new Date(c.date).toLocaleDateString(lang, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-              const time = c.date ? new Date(c.date).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) : '';
-              const desc = c.patientName || t('common.unknown', 'Unknown');
+  const consultationsBlock = isConfirmedMember ? (
+    <View style={isLandscapeLayout ? styles.desktopRightCol : undefined}>
+      <Text style={styles.sectionTitle}>{t('owner_doctors.doctor_consultations', 'Consultations')}</Text>
+      <View style={styles.visitsContainer}>
+        {consultations.length > 0 ? consultations.map((c) => {
+          const date = c.date ? new Date(c.date).toLocaleDateString(lang, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          const time = c.date ? new Date(c.date).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }) : '';
+          const desc = c.patientName || t('common.unknown', 'Unknown');
 
-              let iconName = 'stethoscope';
-              let iconColor = colors.p500;
-              let iconBg = colors.p100;
+          let iconName = 'stethoscope';
+          let iconColor = colors.p500;
+          let iconBg = colors.p100;
 
-              if (c.status === 'scheduled') {
-                iconName = 'calendar';
-                iconColor = colors.info || colors.info;
-                iconBg = (colors.info || colors.info) + '22';
-              } else if (c.status === 'canceled') {
-                iconName = 'CalendarX';
-                iconColor = colors.danger || colors.danger;
-                iconBg = (colors.danger || colors.danger) + '22';
-              }
+          if (c.status === 'scheduled') {
+            iconName = 'calendar';
+            iconColor = colors.info || colors.info;
+            iconBg = (colors.info || colors.info) + '22';
+          } else if (c.status === 'canceled') {
+            iconName = 'CalendarX';
+            iconColor = colors.danger || colors.danger;
+            iconBg = (colors.danger || colors.danger) + '22';
+          }
 
-              return (
-                <View
-                  key={c.id}
-                  style={styles.visitCard}
-                >
-                  <View style={[styles.visitIconBox, { backgroundColor: iconBg }]}>
-                    <Icon name={iconName} size={sizes.scale(20)} color={iconColor} />
-                  </View>
-                  <View style={styles.visitInfo}>
-                    <Text style={styles.visitDate}>{date} {time ? `· ${time}` : ''}</Text>
-                    <Text style={styles.visitDesc}>{desc}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, c.status === 'completed' && styles.statusCompleted, c.status === 'canceled' && styles.statusCanceled]}>
-                    <Text style={styles.statusText}>{t(`doctor_history.status_${c.status}`) || c.status}</Text>
-                  </View>
-                </View>
-              );
-            }) : (
-              <View style={{ paddingVertical: sizes.scale(16), alignItems: 'center' }}>
-                <Text style={{ fontFamily: 'Manrope_500Medium', color: colors.n500 }}>{t('doctor_history.no_previous_visits', 'No previous visits.')}</Text>
+          return (
+            <View
+              key={c.id}
+              style={styles.visitCard}
+            >
+              <View style={[styles.visitIconBox, { backgroundColor: iconBg }]}>
+                <Icon name={iconName} size={sizes.scale(20)} color={iconColor} />
               </View>
-            )}
+              <View style={styles.visitInfo}>
+                <Text style={styles.visitDate}>{date} {time ? `· ${time}` : ''}</Text>
+                <Text style={styles.visitDesc}>{desc}</Text>
+              </View>
+              <View style={[styles.statusBadge, c.status === 'completed' && styles.statusCompleted, c.status === 'canceled' && styles.statusCanceled]}>
+                <Text style={styles.statusText}>{t(`doctor_history.status_${c.status}`) || c.status}</Text>
+              </View>
+            </View>
+          );
+        }) : (
+          <View style={{ paddingVertical: sizes.scale(16), alignItems: 'center' }}>
+            <Text style={{ fontFamily: 'Manrope_500Medium', color: colors.n500 }}>{t('doctor_history.no_previous_visits', 'No previous visits.')}</Text>
           </View>
+        )}
+      </View>
+    </View>
+  ) : null;
+
+  return (
+    <View>
+      {isLandscapeLayout && isConfirmedMember ? (
+        <View style={styles.desktopSplitRow}>
+          {aboutAndDetails}
+          {consultationsBlock}
+        </View>
+      ) : (
+        <>
+          {aboutAndDetails}
+          {consultationsBlock}
         </>
       )}
 
@@ -324,7 +344,9 @@ const themeStyles = (theme) => ({
   },
   header: {
     backgroundColor: theme.colors.p400,
-    paddingTop: theme.sizes.spacing.xxl + 10,
+    paddingTop: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? theme.sizes.spacing.l
+      : theme.sizes.spacing.xxl + 10,
     paddingBottom: theme.sizes.spacing.l,
     borderBottomLeftRadius: theme.sizes.borderRadius.large,
     borderBottomRightRadius: theme.sizes.borderRadius.large,
@@ -332,8 +354,15 @@ const themeStyles = (theme) => ({
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : 960,
+    alignSelf: 'center',
   },
   backButton: {
     padding: theme.sizes.spacing.xs,
@@ -348,7 +377,14 @@ const themeStyles = (theme) => ({
   profileInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : 960,
+    alignSelf: 'center',
   },
   avatar: {
     width: theme.sizes.scale(64),
@@ -386,8 +422,26 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.scale(2),
   },
   scrollContent: {
-    padding: theme.sizes.spacing.m,
+    padding: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xxl,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : 960,
+    alignSelf: 'center',
+  },
+  desktopSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.xl,
+  },
+  desktopLeftCol: {
+    flex: 1,
+  },
+  desktopRightCol: {
+    flex: 1.2,
   },
   segmented: {
     marginBottom: theme.sizes.spacing.l,

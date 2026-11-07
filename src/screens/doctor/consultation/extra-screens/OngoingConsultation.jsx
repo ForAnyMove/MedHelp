@@ -1,24 +1,33 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, AppState, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, AppState, Alert, Modal, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 import { SubViewScreen } from '../../../../components/common/SubViewScreen';
 import { useRouter } from 'expo-router';
 import { useSession } from '../../../../context/SessionContext';
+import { useStreamContext } from '../../../../context/Stream';
+import { useChatNotifications } from '../../../../context/ChatNotificationContext';
+import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 
 import { useConsultationTimer } from '../../../../hooks/useConsultationTimer';
 
 export function OngoingConsultation({ consultation, onEndConsultation }) {
   const { colors, sizes } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
   const router = useRouter();
   const [notes, setNotes] = React.useState('');
   
   const { session, refreshSessionToken } = useSession();
+  const { chatClient } = useStreamContext();
+  const { setPendingChannelId } = useChatNotifications();
+  const { navigateToHistoryPatientProfile, navigateToPatientDetails } = useDoctorDashboard();
 
   const {
     timerSeconds,
@@ -34,6 +43,7 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
   );
       
   const [isOvertime, setIsOvertime] = React.useState(false);
+  const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
 
   React.useEffect(() => {
     const duration = consultation.slot?.duration || consultation.duration;
@@ -119,6 +129,24 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
     }
   };
 
+  const openPatientChat = async () => {
+    const patientUserId = consultation?.patient?.id || consultation?.patientId || consultation?.patient_profile_id;
+    try {
+      if (chatClient && chatClient.userID && patientUserId) {
+        const channel = chatClient.channel('messaging', {
+          members: [String(chatClient.userID), String(patientUserId)],
+        });
+        await channel.watch();
+        if (channel.id) {
+          setPendingChannelId?.(channel.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not pre-watch patient chat channel:', err);
+    }
+    router.push('/(chat)/list');
+  };
+
   const handleActionPress = async (actionId) => {
     if (actionId === 'video') {
       try {
@@ -135,10 +163,20 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
       } finally {
         setIsStartingCall(false);
       }
+    } else if (actionId === 'chat' || actionId === 'messages') {
+      await openPatientChat();
+    } else if (actionId === 'files') {
+      const patientUserId = consultation?.patient?.id || consultation?.patientId || consultation?.patient_profile_id;
+      if (patientUserId && navigateToHistoryPatientProfile) {
+        navigateToHistoryPatientProfile(patientUserId, 'consultation');
+      } else if (navigateToPatientDetails) {
+        navigateToPatientDetails();
+      }
     }
   };
 
   const performEndConsultation = async () => {
+    setIsConfirmVisible(false);
     try {
       const { createApiClient } = require('../../../../api/apiClient');
       const { createConsultationsApi } = require('../../../../api/consultationsApi');
@@ -146,6 +184,9 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
       const consultApi = createConsultationsApi(api);
       
       await consultApi.update(consultation.id, { status: 'completed' });
+
+      const { DeviceEventEmitter } = require('react-native');
+      DeviceEventEmitter.emit('consultation_completed', { consultation_id: consultation.id });
     } catch (e) {
       console.error('Failed to update consultation status:', e);
     }
@@ -153,157 +194,173 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
   };
 
   const handleEndConsultation = () => {
-    Alert.alert(
-      t('consultation.end_confirm_title', 'Завершить приём?'),
-      t('consultation.end_confirm_desc', 'Вы уверены, что хотите завершить консультацию и перейти к сохранению протокола?'),
-      [
-        { text: t('common.cancel', 'Отмена'), style: 'cancel' },
-        { text: t('consultation.end_btn', 'Завершить'), style: 'destructive', onPress: performEndConsultation }
-      ]
-    );
+    setIsConfirmVisible(true);
   };
+
+  const leftControlsNode = (
+    <>
+      <View style={styles.unifiedBadge}>
+        <View style={styles.unifiedSection}>
+          <Icon name="profile" size={sizes.scale(24)} color={colors.sBlue} wrapperStyle={styles.iconCircle} wrapped />
+          <Text style={styles.patientName}>{consultation.patient.firstName} {consultation.patient.lastName}</Text>
+        </View>
+        <View style={styles.unifiedDivider} />
+        <View style={styles.unifiedSection}>
+          <Icon name="time" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={[styles.iconCircle]} wrapped />
+          <Text style={styles.patientName}>{consultation.time}</Text>
+        </View>
+      </View>
+
+      <View style={styles.actionGrid}>
+        {!isPatientJoined && (
+          <View style={styles.notifyBlock}>
+            <View style={styles.notifyInfo}>
+              <View style={styles.notifyIconBox}>
+                <Icon name="bell" size={sizes.scale(24)} color={colors.white} />
+              </View>
+              <View style={styles.notifyTexts}>
+                <Text style={styles.notifyTitle}>{t('consultation.notify_patient')}</Text>
+                <Text style={styles.notifySubtitle}>
+                  {t('consultation.notify_patient_subtitle', { name: consultation.patient.firstName })}
+                </Text>
+              </View>
+            </View>
+            <Button
+              title={t('consultation.send')}
+              variant="primary"
+              onPress={handleNotifyPress}
+              disabled={isNotifying}
+              style={styles.notifyBtn}
+              textStyle={styles.notifyBtnText}
+            />
+          </View>
+        )}
+
+        <View style={styles.row}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleActionPress('chat')}>
+            <Icon name="chat" size={sizes.scale(24)} color={colors.sCoral} wrapperStyle={[styles.actionIcon]} wrapped />
+            <Text style={styles.actionText}>{t('actions.chat')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionCard} 
+            onPress={() => handleActionPress('video')}
+            disabled={isStartingCall}
+          >
+            {isStartingCall ? (
+              <View style={styles.actionIcon}>
+                <ActivityIndicator size="small" color={colors.p500} />
+              </View>
+            ) : (
+              <Icon name="video" size={sizes.scale(24)} color={colors.p500} wrapperStyle={[styles.actionIcon]} wrapped />
+            )}
+            <Text style={styles.actionText}>{isStartingCall ? t('common.loading') : t('actions.video')}</Text>
+            {isOtherUserInCall && <View style={styles.redDot} />}
+          </TouchableOpacity>
+        </View>
+        <View style={styles.row}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleActionPress('files')}>
+            <Icon name="medical-document" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={[styles.actionIcon]} wrapped />
+            <Text style={styles.actionText}>{t('actions.files')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionCard} onPress={() => handleActionPress('messages')}>
+            <Icon name="message" size={sizes.scale(24)} color={colors.sBlue} wrapperStyle={[styles.actionIcon]} wrapped />
+            <Text style={styles.actionText}>{t('actions.messages')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.timerBlock}>
+        <View style={styles.timerHeader}>
+          <Icon name="timer" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={styles.timerIconBox} wrapped />
+          <Text style={styles.timerTitle}>{t('consultation.timer')}</Text>
+        </View>
+        <View style={styles.timerDivider} />
+        {isOvertime && (
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.warning + '20',
+            borderWidth: 1,
+            borderColor: colors.warning,
+            borderRadius: sizes.scale(8),
+            paddingHorizontal: sizes.spacing.m,
+            paddingVertical: sizes.scale(6),
+            marginHorizontal: sizes.spacing.m,
+            marginBottom: sizes.spacing.s,
+            alignSelf: 'center',
+          }}>
+            <Icon name="info" size={sizes.scale(16)} color={colors.warning} style={{ marginRight: sizes.scale(6) }} />
+            <Text style={{ color: colors.warning, ...sizes.typography.caption, fontWeight: '600' }}>
+              {t('consultation.time_exceeded', 'Время консультации истекло. Вы можете продолжить приём или завершить его.')}
+            </Text>
+          </View>
+        )}
+        {(isDoctorJoined && isPatientJoined) || timerSeconds > 0 ? (
+          <View style={styles.timerGrid}>
+            <View style={styles.digitBox}><Text style={styles.digit}>{digits[0]}</Text></View>
+            <View style={styles.digitBox}><Text style={styles.digit}>{digits[1]}</Text></View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.digitBox}><Text style={styles.digit}>{digits[2]}</Text></View>
+            <View style={styles.digitBox}><Text style={styles.digit}>{digits[3]}</Text></View>
+            <Text style={styles.colon}>:</Text>
+            <View style={styles.digitBox}><Text style={styles.digit}>{digits[4]}</Text></View>
+            <View style={styles.digitBox}><Text style={styles.digit}>{digits[5]}</Text></View>
+          </View>
+        ) : (
+          <View style={styles.waitingContainer}>
+            <ActivityIndicator size="small" color={colors.p500} style={{ marginRight: sizes.scale(8) }} />
+            <Text style={styles.waitingText}>{t('consultation.waiting_for_connection', 'Waiting for connection...')}</Text>
+          </View>
+        )}
+      </View>
+    </>
+  );
+
+  const rightNotesNode = (
+    <>
+      <View style={styles.notesBlock}>
+        <Text style={styles.blockTitle}>{t('doctor_consultation.private_notes')}</Text>
+        <View style={styles.notesInputContainer}>
+          <View style={styles.notesInputHeader}>
+            <Text style={styles.notesLabel}>{t('doctor_consultation.important_notes')}</Text>
+            <TextInput
+              style={[styles.notesInput, isLandscapeLayout && { minHeight: sizes.scale(220) }]}
+              multiline
+              placeholder={t('doctor_consultation.notes_placeholder')}
+              value={notes}
+              onChangeText={setNotes}
+              maxLength={800}
+            />
+          </View>
+          <Text style={styles.charCount}>{notes.length}/800</Text>
+        </View>
+      </View>
+
+      <View style={styles.recordingTextContainer}>
+        <Text style={styles.recordingText}>{t('consultation.recording')}</Text>
+      </View>
+    </>
+  );
 
   return (
     <SubViewScreen title={t('consultation.title')}>
       <View style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} style={{ flex: 1 }}>
-          <View style={styles.unifiedBadge}>
-            <View style={styles.unifiedSection}>
-              <Icon name="profile" size={sizes.scale(24)} color={colors.sBlue} wrapperStyle={styles.iconCircle} wrapped />
-              <Text style={styles.patientName}>{consultation.patient.firstName} {consultation.patient.lastName}</Text>
-            </View>
-            <View style={styles.unifiedDivider} />
-            <View style={styles.unifiedSection}>
-              <Icon name="time" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={[styles.iconCircle]} wrapped />
-              <Text style={styles.patientName}>{consultation.time}</Text>
-            </View>
-          </View>
-
-
-          <View style={styles.actionGrid}>
-            {!isPatientJoined && (
-              <View style={styles.notifyBlock}>
-                <View style={styles.notifyInfo}>
-                  <View style={styles.notifyIconBox}>
-                    <Icon name="bell" size={sizes.scale(24)} color={colors.white} />
-                  </View>
-                  <View style={styles.notifyTexts}>
-                    <Text style={styles.notifyTitle}>{t('consultation.notify_patient')}</Text>
-                    <Text style={styles.notifySubtitle}>
-                      {t('consultation.notify_patient_subtitle', { name: consultation.patient.firstName })}
-                    </Text>
-                  </View>
-                </View>
-                <Button
-                  title={t('consultation.send')}
-                  variant="primary"
-                  onPress={handleNotifyPress}
-                  disabled={isNotifying}
-                  style={styles.notifyBtn}
-                  textStyle={styles.notifyBtnText}
-                />
+          {isLandscapeLayout ? (
+            <View style={styles.desktopSplitRow}>
+              <View style={styles.desktopLeftCol}>
+                {leftControlsNode}
               </View>
-            )}
-
-            <View style={styles.row}>
-              <TouchableOpacity style={styles.actionCard} onPress={() => handleActionPress('chat')}>
-                <Icon name="chat" size={sizes.scale(24)} color={colors.sCoral} wrapperStyle={[styles.actionIcon]} wrapped />
-                <Text style={styles.actionText}>{t('actions.chat')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.actionCard} 
-                onPress={() => handleActionPress('video')}
-                disabled={isStartingCall}
-              >
-                {isStartingCall ? (
-                  <View style={styles.actionIcon}>
-                    <ActivityIndicator size="small" color={colors.p500} />
-                  </View>
-                ) : (
-                  <Icon name="video" size={sizes.scale(24)} color={colors.p500} wrapperStyle={[styles.actionIcon]} wrapped />
-                )}
-                <Text style={styles.actionText}>{isStartingCall ? t('common.loading') : t('actions.video')}</Text>
-                {isOtherUserInCall && <View style={styles.redDot} />}
-              </TouchableOpacity>
-            </View>
-            <View style={styles.row}>
-              <TouchableOpacity style={styles.actionCard}>
-                <Icon name="medical-document" size={sizes.scale(24)} color={colors.sYell} wrapperStyle={[styles.actionIcon]} wrapped />
-                <Text style={styles.actionText}>{t('actions.files')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionCard}>
-                <Icon name="message" size={sizes.scale(24)} color={colors.sBlue} wrapperStyle={[styles.actionIcon]} wrapped />
-                <Text style={styles.actionText}>{t('actions.messages')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.timerBlock}>
-            <View style={styles.timerHeader}>
-              <Icon name="timer" size={sizes.scale(24)} color={colors.sPink} wrapperStyle={styles.timerIconBox} wrapped />
-              <Text style={styles.timerTitle}>{t('consultation.timer')}</Text>
-            </View>
-            <View style={styles.timerDivider} />
-            {isOvertime && (
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: colors.warning + '20',
-                borderWidth: 1,
-                borderColor: colors.warning,
-                borderRadius: sizes.scale(8),
-                paddingHorizontal: sizes.spacing.m,
-                paddingVertical: sizes.scale(6),
-                marginHorizontal: sizes.spacing.m,
-                marginBottom: sizes.spacing.s,
-                alignSelf: 'center',
-              }}>
-                <Icon name="info" size={sizes.scale(16)} color={colors.warning} style={{ marginRight: sizes.scale(6) }} />
-                <Text style={{ color: colors.warning, ...sizes.typography.caption, fontWeight: '600' }}>
-                  {t('consultation.time_exceeded', 'Время консультации истекло. Вы можете продолжить приём или завершить его.')}
-                </Text>
+              <View style={styles.desktopRightCol}>
+                {rightNotesNode}
               </View>
-            )}
-            {(isDoctorJoined && isPatientJoined) || timerSeconds > 0 ? (
-              <View style={styles.timerGrid}>
-                <View style={styles.digitBox}><Text style={styles.digit}>{digits[0]}</Text></View>
-                <View style={styles.digitBox}><Text style={styles.digit}>{digits[1]}</Text></View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.digitBox}><Text style={styles.digit}>{digits[2]}</Text></View>
-                <View style={styles.digitBox}><Text style={styles.digit}>{digits[3]}</Text></View>
-                <Text style={styles.colon}>:</Text>
-                <View style={styles.digitBox}><Text style={styles.digit}>{digits[4]}</Text></View>
-                <View style={styles.digitBox}><Text style={styles.digit}>{digits[5]}</Text></View>
-              </View>
-            ) : (
-              <View style={styles.waitingContainer}>
-                <ActivityIndicator size="small" color={colors.p500} style={{ marginRight: sizes.scale(8) }} />
-                <Text style={styles.waitingText}>{t('consultation.waiting_for_connection', 'Waiting for connection...')}</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.notesBlock}>
-            <Text style={styles.blockTitle}>{t('doctor_consultation.private_notes')}</Text>
-            <View style={styles.notesInputContainer}>
-              <View style={styles.notesInputHeader}>
-                <Text style={styles.notesLabel}>{t('doctor_consultation.important_notes')}</Text>
-                <TextInput
-                  style={styles.notesInput}
-                  multiline
-                  placeholder={t('doctor_consultation.notes_placeholder')}
-                  value={notes}
-                  onChangeText={setNotes}
-                  maxLength={800}
-                />
-              </View>
-              <Text style={styles.charCount}>{notes.length}/800</Text>
             </View>
-          </View>
-
-          <View style={styles.recordingTextContainer}>
-            <Text style={styles.recordingText}>{t('consultation.recording')}</Text>
-          </View>
+          ) : (
+            <>
+              {leftControlsNode}
+              {rightNotesNode}
+            </>
+          )}
         </ScrollView>
 
         <View style={styles.footer}>
@@ -319,6 +376,36 @@ export function OngoingConsultation({ consultation, onEndConsultation }) {
             </View>
           </TouchableOpacity>
         </View>
+
+        <Modal
+          visible={isConfirmVisible}
+          transparent
+          animationType="fade"
+          accessibilityViewIsModal={true}
+          aria-modal={true}
+          onRequestClose={() => setIsConfirmVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmBox}>
+              <Text style={styles.confirmTitle}>{t('consultation.end_confirm_title', 'Завершить приём?')}</Text>
+              <Text style={styles.confirmText}>{t('consultation.end_confirm_desc', 'Вы уверены, что хотите завершить консультацию и перейти к сохранению протокола?')}</Text>
+              <View style={styles.confirmButtons}>
+                <Button
+                  title={t('common.cancel', 'Отмена')}
+                  variant="outlined"
+                  onPress={() => setIsConfirmVisible(false)}
+                  style={styles.confirmBtn}
+                />
+                <Button
+                  title={t('consultation.end_btn', 'Завершить')}
+                  variant="primary"
+                  onPress={performEndConsultation}
+                  style={styles.confirmBtn}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SubViewScreen>
   );
@@ -331,6 +418,20 @@ const themeStyles = (theme) => ({
   },
   scrollContent: {
     paddingBottom: theme.sizes.spacing.l,
+  },
+  desktopSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    width: '100%',
+  },
+  desktopLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
   },
   unifiedBadge: {
     flexDirection: 'row',
@@ -599,5 +700,41 @@ const themeStyles = (theme) => ({
   endText: {
     ...theme.sizes.typography.h3,
     color: theme.colors.danger,
-  }
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.sizes.spacing.l,
+  },
+  confirmBox: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: 420,
+    alignItems: 'center',
+  },
+  confirmTitle: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n900,
+    marginBottom: theme.sizes.spacing.s,
+    textAlign: 'center',
+  },
+  confirmText: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n700,
+    textAlign: 'center',
+    marginBottom: theme.sizes.spacing.xl,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.m,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  confirmBtn: {
+    flex: 1,
+  },
 });

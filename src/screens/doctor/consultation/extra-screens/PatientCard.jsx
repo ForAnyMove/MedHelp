@@ -20,7 +20,7 @@ export function PatientCard({ consultation, onBack, onViewDetails, onStartConsul
   const { patient } = consultation;
 
   return (
-    <SubViewScreen title={t('doctor_consultation.patient_card')} onBack={onBack}>
+    <SubViewScreen title={t('doctor_consultation.patient_card')} onBack={onBack} maxWidth={680}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
           <View style={styles.profileRow}>
@@ -76,9 +76,10 @@ export function PatientCard({ consultation, onBack, onViewDetails, onStartConsul
                 const api = createApiClient(session, refreshSessionToken);
                 const consultApi = createConsultationsApi(api);
                 await consultApi.update(consultation.id, { status: 'occupied' });
-                onStartConsultation(); // optimistic update locally
               } catch (e) {
                 console.error(e);
+              } finally {
+                onStartConsultation(consultation);
               }
             }}
             style={styles.startButton}

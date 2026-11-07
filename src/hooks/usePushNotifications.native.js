@@ -36,12 +36,16 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('chat-messages', {
-      name: i18n.t('actions.messages', 'Сообщения'),
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: colors.p500,
-    });
+    try {
+      await Notifications.setNotificationChannelAsync('chat-messages', {
+        name: i18n.t('actions.messages', 'Сообщения'),
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#2563EB',
+      });
+    } catch (e) {
+      console.warn('[PushNotifications] setNotificationChannelAsync failed:', e?.message);
+    }
   }
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();

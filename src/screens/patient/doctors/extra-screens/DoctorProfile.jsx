@@ -9,6 +9,7 @@ import { DoctorAvatar } from '../../../../components/doctor/DoctorAvatar';
 import { SlotPicker } from '../../../../components/doctor/SlotPicker';
 import { useSession } from '../../../../context/SessionContext';
 import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 import ReportModal from '../../../../components/common/ReportModal';
 
 export function DoctorProfile() {
@@ -65,79 +66,144 @@ export function DoctorProfile() {
       }
     } else {
       goBack();
-      if (updateUrlParams) updateUrlParams('doctors');
+      if (updateUrlParams) updateUrlParams('doctors', null, null, null, null, { replace: true });
     }
   };
 
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const styles = useStyles(themeStyles);
 
   if (!selectedDoctor) return null;
 
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
-          </TouchableOpacity>
-          <View style={{flex: 1}} />
-          <TouchableOpacity onPress={() => setReportModalVisible(true)}>
-            <Icon name="AlertCircle" size={sizes.scale(24)} color={colors.danger} />
-          </TouchableOpacity>
+  const renderDoctorDossier = () => (
+    <>
+      {selectedDoctor.acceptingNewPatients === false && (
+        <View style={styles.pausedBanner}>
+          <Icon name="AlertCircle" size={sizes.scale(22)} color={colors.warning} />
+          <View style={{ flex: 1, marginLeft: sizes.spacing.m }}>
+            <Text style={styles.pausedBannerTitle}>
+              {t('doctors.accepting_paused_title', 'Приём пациентов временно приостановлен')}
+            </Text>
+            <Text style={styles.pausedBannerDesc}>
+              {t('doctors.accepting_paused_full_desc', 'Этот врач временно не принимает новых пациентов. Вы можете ознакомиться с информацией и отзывами, но запись на новую консультацию сейчас закрыта.')}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.profileCard}>
+        <View style={styles.profileTop}>
+          <DoctorAvatar
+            url={selectedDoctor.avatarUrl}
+            firstName={selectedDoctor.firstName}
+            lastName={selectedDoctor.lastName}
+            size={isLandscapeLayout ? sizes.scale(88) : sizes.scale(78)}
+          />
+          <View style={styles.profileMainInfo}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{selectedDoctor.firstName} {selectedDoctor.lastName}</Text>
+              {selectedDoctor.isVerified && (
+                <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6), marginBottom: sizes.scale(4) }} />
+              )}
+            </View>
+            <Text style={styles.doctorSpec}>{t(selectedDoctor.specialization)}</Text>
+          </View>
         </View>
 
-        <Text style={styles.title}>{t('doctors.profile_title')}</Text>
-        <View style={styles.profileCard}>
-          <View style={styles.profileTop}>
-            <DoctorAvatar
-              url={selectedDoctor.avatarUrl}
-              firstName={selectedDoctor.firstName}
-              lastName={selectedDoctor.lastName}
-              size={sizes.scale(78)}
-            />
-            <View style={styles.profileMainInfo}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{selectedDoctor.firstName} {selectedDoctor.lastName}</Text>
-                {selectedDoctor.isVerified && (
-                  <Icon name="BadgeCheck" size={sizes.scale(20)} color={colors.p300} style={{ marginLeft: sizes.scale(6), marginBottom: sizes.scale(4) }} />
-                )}
-              </View>
-              <Text style={styles.doctorSpec}>{t(selectedDoctor.specialization)}</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>{t('doctors.rating')}</Text>
+            <View style={styles.statValueRow}>
+              <Icon name="star" size={sizes.scale(18)} color={colors.sYell} />
+              <Text style={styles.statValue}>{selectedDoctor.rating} ({selectedDoctor.reviewsCount})</Text>
             </View>
           </View>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>{t('doctors.rating')}</Text>
-              <View style={styles.statValueRow}>
-                <Icon name="star" size={sizes.scale(18)} color={colors.sYell} />
-                <Text style={styles.statValue}>{selectedDoctor.rating} ({selectedDoctor.reviewsCount})</Text>
-              </View>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>{t('doctors.experience')}</Text>
-              <Text style={styles.statValue}>{selectedDoctor.experience} {t('doctors.years')}</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>{t('doctors.price')}</Text>
-              <Text style={styles.statValue}>${selectedDoctor.price}{t('doctors.per_hour')}</Text>
-            </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>{t('doctors.experience')}</Text>
+            <Text style={styles.statValue}>{selectedDoctor.experience} {t('doctors.years')}</Text>
           </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>{t('doctors.price')}</Text>
+            {selectedSlot?.slotId && selectedSlot?.price !== undefined ? (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.statValue}>${selectedSlot.price}</Text>
+                <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+              </View>
+            ) : availableSlots?.minPrice !== null && availableSlots?.minPrice !== undefined && availableSlots.minPrice > 0 ? (
+              availableSlots.minPrice === availableSlots.maxPrice ? (
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={styles.statValue}>${availableSlots.minPrice}</Text>
+                  <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={styles.statValue}>от ${availableSlots.minPrice}</Text>
+                  <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+                </View>
+              )
+            ) : selectedDoctor.minPrice && selectedDoctor.maxPrice && selectedDoctor.minPrice > 0 ? (
+              selectedDoctor.minPrice === selectedDoctor.maxPrice ? (
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={styles.statValue}>${selectedDoctor.minPrice}</Text>
+                  <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+                </View>
+              ) : (
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={styles.statValue}>от ${selectedDoctor.minPrice}</Text>
+                  <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+                </View>
+              )
+            ) : selectedDoctor.price > 0 ? (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.statValue}>${selectedDoctor.price}</Text>
+                <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.statValue}>{t('doctors.flexible_pricing', 'По слоту')}</Text>
+                <Text style={styles.statSubValue}>{t('doctors.per_visit', 'за приём')}</Text>
+              </View>
+            )}
+          </View>
+        </View>
 
+        <View style={styles.bioContainer}>
+          {isLandscapeLayout && (
+            <Text style={styles.bioSectionTitle}>{t('doctors.about_specialist', 'О специалисте')}</Text>
+          )}
           <Text style={styles.description}>
             {selectedDoctor.description}
           </Text>
         </View>
+      </View>
+    </>
+  );
 
-        <View style={styles.bookingSection}>
-          <Text style={styles.bookingTitle}>{t('doctors.book_online_consultation')}</Text>
+  const renderBookingSection = () => (
+    <View style={styles.bookingSection}>
+      <Text style={styles.bookingTitle}>{t('doctors.book_online_consultation')}</Text>
+      {selectedDoctor.acceptingNewPatients === false ? (
+        <View style={[styles.bookingCard, { alignItems: 'center', padding: sizes.spacing.xl }]}>
+          <Icon name="CalendarX" size={sizes.scale(40)} color={colors.sn500 || colors.n500} />
+          <Text style={[styles.bookingTitle, { fontSize: sizes.scale(16), marginTop: sizes.spacing.m, textAlign: 'center' }]}>
+            {t('doctors.booking_paused_heading', 'Запись временно недоступна')}
+          </Text>
+          <Text style={[styles.bookingSubtitle, { textAlign: 'center', marginBottom: sizes.spacing.m }]}>
+            {t('doctors.booking_paused_explanation', 'Врач временно приостановил приём новых пациентов. Пожалуйста, выберите другого доступного специалиста из списка.')}
+          </Text>
+          <Button
+            title={t('doctors.back_to_list', 'Вернуться к списку врачей')}
+            variant="outlined"
+            onPress={handleBack}
+            style={{ width: '100%', maxWidth: sizes.scale(280) }}
+          />
+        </View>
+      ) : (
+        <>
           <Text style={styles.bookingSubtitle}>{t('doctors.available_dates_hint') || t('doctors.choose_datetime')}</Text>
-
           <View style={styles.bookingCard}>
             <SlotPicker
               availableSlots={availableSlots}
@@ -160,9 +226,50 @@ export function DoctorProfile() {
               style={styles.bookButton}
             />
           </View>
-
           <Text style={styles.disclaimer}>{t('doctors.free_cancellation')}</Text>
+        </>
+      )}
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
+          </TouchableOpacity>
+          {isLandscapeLayout && (
+            <Text style={styles.headerTitleText}>{t('doctors.profile_title')}</Text>
+          )}
+          <View style={{flex: 1}} />
+          <TouchableOpacity onPress={() => setReportModalVisible(true)} style={styles.reportButton}>
+            <Icon name="AlertCircle" size={sizes.scale(24)} color={colors.danger} />
+          </TouchableOpacity>
         </View>
+
+        {!isLandscapeLayout && (
+          <Text style={styles.title}>{t('doctors.profile_title')}</Text>
+        )}
+
+        {isLandscapeLayout ? (
+          <View style={styles.desktopTwoColumnContainer}>
+            <View style={styles.desktopLeftColumn}>
+              {renderDoctorDossier()}
+            </View>
+            <View style={styles.desktopRightColumn}>
+              {renderBookingSection()}
+            </View>
+          </View>
+        ) : (
+          <>
+            {renderDoctorDossier()}
+            {renderBookingSection()}
+          </>
+        )}
       </ScrollView>
 
       <Modal visible={modalState !== 'hidden'} transparent animationType="fade">
@@ -236,13 +343,56 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.m,
-    paddingBottom: theme.sizes.spacing.s,
+    paddingBottom: theme.sizes.spacing.xl,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 760
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: theme.sizes.spacing.m,
+  },
+  headerTitleText: {
+    ...theme.sizes.typography.h3,
+    color: theme.colors.n700,
+    fontWeight: '700',
+  },
+  reportButton: {
+    padding: theme.sizes.spacing.xs,
+  },
+  desktopTwoColumnContainer: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.l,
+    alignItems: 'flex-start',
+    marginTop: theme.sizes.spacing.xs,
+    width: '100%',
+  },
+  desktopLeftColumn: {
+    flex: 3,
+    minWidth: 0,
+  },
+  desktopRightColumn: {
+    flex: 2,
+    minWidth: 0,
+  },
+  bioContainer: {
+    marginTop: theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.m,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.n200,
+  },
+  bioSectionTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n800,
+    fontWeight: '700',
     marginBottom: theme.sizes.spacing.s,
   },
   backButton: {
@@ -309,6 +459,12 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.n700,
     marginLeft: theme.sizes.spacing.xs,
+    fontWeight: '700',
+  },
+  statSubValue: {
+    fontSize: theme.sizes.scale(10),
+    color: theme.colors.n500,
+    marginTop: 1,
   },
   statDivider: {
     width: theme.sizes.scale(1),
@@ -381,5 +537,26 @@ const themeStyles = (theme) => ({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  pausedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: theme.colors.warning + '18',
+    borderWidth: 1,
+    borderColor: theme.colors.warning,
+    borderRadius: theme.sizes.borderRadius.large,
+    padding: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.m,
+  },
+  pausedBannerTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n900,
+    fontWeight: '700',
+    marginBottom: theme.sizes.scale(2),
+  },
+  pausedBannerDesc: {
+    ...theme.sizes.typography.bodySmall,
+    color: theme.colors.n700,
+    lineHeight: theme.sizes.scale(18),
   }
 });

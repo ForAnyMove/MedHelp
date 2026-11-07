@@ -1,18 +1,23 @@
 import React from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Redirect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Screen } from '../../../src/components/ui/Screen';
 import { DoctorRatings } from '../../../src/screens/doctor/history/extra-screens/DoctorRatings';
-import { DoctorDashboardProvider } from '../../../src/context/DoctorDashboardContext';
+import { isValidRouteUUID } from '../../../src/utils/routeValidation';
 
 export default function DoctorRatingsRoute() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
+  if (!isValidRouteUUID(id)) {
+    return <Redirect href="/+not-found" />;
+  }
+
   return (
     <Screen>
-      <DoctorDashboardProvider>
-        <DoctorRatings doctorId={id} onBack={() => router.back()} />
-      </DoctorDashboardProvider>
+      <DoctorRatings
+        doctorId={id}
+        onBack={() => (router.canGoBack() ? router.back() : router.replace('/home'))}
+      />
     </Screen>
   );
 }

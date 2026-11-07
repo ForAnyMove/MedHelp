@@ -179,23 +179,42 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
 
   // ── Derived helpers ───────────────────────────────────────────────────────
 
+  const isConsultationMissed = useCallback((c) => {
+    if (!c) return true;
+    if (c.status === 'completed' || c.status === 'canceled') return true;
+    if (!c.date) return false;
+    const startMs = new Date(c.date).getTime();
+    if (Number.isNaN(startMs)) return false;
+    const durationMins = Number(c.duration || c.slot?.duration) || 30;
+    const endMs = startMs + durationMins * 60 * 1000;
+    const now = Date.now();
+    // If the consultation was previously started ('occupied' / 'in_progress'), allow a 2-hour grace window from endMs;
+    // any consultation from past days or older than 2 hours after its scheduled end is considered stale/missed.
+    if (c.status === 'occupied' || c.status === 'in_progress') {
+      return endMs + 2 * 60 * 60 * 1000 < now;
+    }
+    return endMs < now;
+  }, []);
+
   const getDashboardData = useCallback(() => {
     const toLocalDateString = (d) => {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
     const todayStr = toLocalDateString(new Date());
     
-    const consultationsToday = consultations.filter(c => {
+    const validUpcoming = consultations.filter(c => !isConsultationMissed(c));
+
+    const consultationsToday = validUpcoming.filter(c => {
       if (!c.date) return false;
       return toLocalDateString(new Date(c.date)) === todayStr;
     });
 
     return {
       profile,
-      nextConsultation: consultations[0] ?? null,
+      nextConsultation: validUpcoming[0] ?? null,
       consultationsTodayCount: consultationsToday.length,
     };
-  }, [profile, consultations]);
+  }, [profile, consultations, isConsultationMissed]);
 
   const getGroupedConsultations = useCallback(() => {
     const toLocalDateString = (d) => {
@@ -240,12 +259,16 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
         data: groupsMap[dateKey]
       };
     });
-  }, [consultations]);
+  }, [consultations, isConsultationMissed]);
 
   const getConsultationById = useCallback(
     (id) => consultations.find(c => c.id === id) ?? null,
     [consultations]
   );
+
+  const upcomingCount = useMemo(() => {
+    return consultations.length;
+  }, [consultations]);
 
   const slotsApi = useMemo(() => {
     if (!session) return null;
@@ -255,6 +278,7 @@ export default function myDoctorProfileManager(setAppLoading, session, refreshSe
   return {
     profile,
     consultations,
+    upcomingCount,
     pastConsultations,
     isLoaded,
     loadData: load,

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScrollView, View, Text, FlatList, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { ScrollView, View, Text, FlatList, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useComponentContext } from '../../../context/GlobalContext';
 import { useStyles } from '../../../theme/useStyles';
@@ -12,10 +12,13 @@ import { BookingSummary } from './extra-screens/BookingSummary';
 import { SearchComponent } from '../../../components/ui/SearchComponent';
 import { useSession } from '../../../context/SessionContext';
 import { usePatientDashboard } from '../../../context/PatientDashboardContext';
+import { useResponsive } from '../../../theme/useResponsive';
 
 export function DoctorsTab() {
   const { t, i18n } = useTranslation();
   const { doctorController, themeController: { colors, sizes } } = useComponentContext();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const { getProfessions } = useSession();
   const {
     doctors,
@@ -77,11 +80,19 @@ export function DoctorsTab() {
 
   const { tabIndex, updateUrlParams, doctorFilter, setDoctorFilter } = usePatientDashboard();
 
+  const [popstateTick, setPopstateTick] = React.useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handlePop = () => setPopstateTick(t => t + 1);
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
   // Handle URL & Context filter sync
   useEffect(() => {
     if (tabIndex === 1) {
       let activeFilter = doctorFilter;
-      if (typeof window !== 'undefined') {
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
         const searchParams = new URLSearchParams(window.location.search);
         const view = searchParams.get('view');
         const id = searchParams.get('id');
@@ -110,21 +121,28 @@ export function DoctorsTab() {
         }
 
         if (!activeFilter) {
-          activeFilter = searchParams.get('filter');
+          const rawFilter = searchParams.get('filter');
+          if (rawFilter && rawFilter !== 'all') {
+            activeFilter = rawFilter;
+          }
         }
       }
 
-      if (activeFilter) {
+      if (activeFilter && typeof activeFilter === 'string' && activeFilter !== 'all') {
         const found = professions.find(p => p.code === activeFilter);
         if (found) {
           setSearchQuery(found.name);
         } else {
           const translatedFilter = t(`specializations.${activeFilter}`, t(`professions.${activeFilter}`, activeFilter));
-          setSearchQuery(translatedFilter);
+          if (translatedFilter && typeof translatedFilter === 'string' && !translatedFilter.startsWith('[object')) {
+            setSearchQuery(translatedFilter);
+          }
         }
+      } else {
+        setSearchQuery(prev => (prev === 'all' || prev === '[object Object]' ? '' : prev));
       }
     }
-  }, [tabIndex, doctorFilter, doctors.length, professions]);
+  }, [tabIndex, doctorFilter, doctors.length, professions, popstateTick]);
 
   // Wrap selectDoctor to push URL
   const handleSelectDoctor = (doctor) => {
@@ -167,7 +185,7 @@ export function DoctorsTab() {
               )}
               keyExtractor={(item) => item.id}
               contentContainerStyle={[styles.vipList, { paddingRight: sizes.spacing.l }]}
-              snapToInterval={cardWidth + sizes.spacing.m}
+              snapToInterval={isLandscapeLayout ? sizes.scale(380) : cardWidth + sizes.spacing.m}
               decelerationRate="fast"
               snapToAlignment="start"
             />
@@ -186,14 +204,35 @@ export function DoctorsTab() {
           professions={professions}
         />
 
-        {filteredDoctors.map((doctor) => (
-          <RegularDoctorCard
-            key={doctor.id}
-            doctor={doctor}
-            onProfilePress={() => handleSelectDoctor(doctor)}
-            onBookPress={() => handleSelectDoctor(doctor)}
-          />
-        ))}
+        {filteredDoctors.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="search" size={sizes.scale(44)} color={colors.n300} />
+            <Text style={styles.emptyTitle}>{t('doctors.no_doctors_found', 'Врачи не найдены')}</Text>
+            <Text style={styles.emptyDesc}>{t('doctors.try_another_search', 'Попробуйте изменить поисковый запрос')}</Text>
+          </View>
+        ) : isLandscapeLayout ? (
+          <View style={styles.desktopDoctorGrid}>
+            {filteredDoctors.map((doctor) => (
+              <View key={doctor.id} style={styles.desktopDoctorCol}>
+                <RegularDoctorCard
+                  doctor={doctor}
+                  onProfilePress={() => handleSelectDoctor(doctor)}
+                  onBookPress={() => handleSelectDoctor(doctor)}
+                  containerStyle={styles.desktopDoctorCardContainer}
+                />
+              </View>
+            ))}
+          </View>
+        ) : (
+          filteredDoctors.map((doctor) => (
+            <RegularDoctorCard
+              key={doctor.id}
+              doctor={doctor}
+              onProfilePress={() => handleSelectDoctor(doctor)}
+              onBookPress={() => handleSelectDoctor(doctor)}
+            />
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -205,9 +244,17 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1280
+      : theme.responsive?.isTabletPortrait
+        ? 760
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   header: {
     flexDirection: 'row',
@@ -230,5 +277,40 @@ const themeStyles = (theme) => ({
   subtitle: {
     ...theme.sizes.typography.h3,
     color: theme.colors.n700,
-  }
+  },
+  desktopDoctorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.sizes.spacing.m,
+    marginTop: theme.sizes.spacing.xs,
+    width: '100%',
+  },
+  desktopDoctorCol: {
+    flexGrow: 0,
+    width: '49%',
+    minWidth: theme.sizes.scale(320),
+    maxWidth: theme.sizes.scale(620),
+  },
+  desktopDoctorCardContainer: {
+    height: '100%',
+    marginBottom: 0,
+    justifyContent: 'space-between',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.sizes.spacing.xl * 2,
+    gap: theme.sizes.spacing.s,
+  },
+  emptyTitle: {
+    ...theme.sizes.typography.h4,
+    color: theme.colors.n700,
+    marginTop: theme.sizes.spacing.s,
+  },
+  emptyDesc: {
+    ...theme.sizes.typography.bodyMedium,
+    color: theme.colors.n500,
+    textAlign: 'center',
+    maxWidth: theme.sizes.scale(360),
+  },
 });

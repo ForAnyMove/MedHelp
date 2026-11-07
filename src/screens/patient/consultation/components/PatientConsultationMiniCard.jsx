@@ -4,19 +4,31 @@ import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 
-export function PatientConsultationMiniCard({ consultation, onPress }) {
+export function PatientConsultationMiniCard({ consultation, onPress, style }) {
   const { colors, sizes } = useTheme();
   const styles = useStyles(themeStyles);
   
   const doctor = consultation.doctor || {};
-  const isConnectable = consultation.status === 'occupied';
-
+  
   const dateObj = new Date(consultation.slot?.date ?? consultation.date);
-  const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  const time = !isNaN(dateObj.getTime())
+    ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    : '—';
+
+  // Consultation is only actively connectable with red dot if it's occupied/in_progress AND not expired in the past
+  const isConnectable = (() => {
+    if (consultation.status !== 'occupied' && consultation.status !== 'in_progress') return false;
+    if (isNaN(dateObj.getTime())) return true;
+    const now = Date.now();
+    const durationMins = Number(consultation.duration || consultation.slot?.duration) || 30;
+    // Allow up to 2 hours after scheduled end time for active consultation window
+    const maxActiveWindowMs = (durationMins + 120) * 60 * 1000;
+    return (dateObj.getTime() + maxActiveWindowMs) >= now;
+  })();
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, style]}
       activeOpacity={0.8}
       onPress={() => onPress(consultation)}
     >

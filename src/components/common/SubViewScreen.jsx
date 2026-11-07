@@ -42,11 +42,20 @@ export function SubViewScreen({
   confirmLabel = 'Leave',
   cancelLabel = 'Stay',
   headerRight,
+  maxWidth,
   children,
 }) {
   const styles = useStyles(themeStyles);
-  const { sizes, colors } = useTheme();
+  const { sizes, colors, responsive } = useTheme();
   const [showConfirm, setShowConfirm] = React.useState(false);
+
+  const isLandscape = responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge;
+  const isTabletPortrait = responsive?.isTabletPortrait;
+  const resolvedMaxWidth = isLandscape
+    ? (maxWidth || 1120)
+    : isTabletPortrait
+      ? Math.min(maxWidth || 720, 720)
+      : undefined;
 
   // Animate in on mount
   useEffect(() => {
@@ -67,18 +76,20 @@ export function SubViewScreen({
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backBtn} hitSlop={{ top: sizes.scale(8), bottom: sizes.scale(8), left: sizes.scale(8), right: sizes.scale(8) }}>
-          <Icon name="arrow-back" size={sizes.scale(24)} color={styles.backIcon.color} />
-        </TouchableOpacity>
-        {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
-        {headerRight && <View style={styles.headerRightContainer}>{headerRight}</View>}
-      </View>
+    <View style={[styles.container, (isLandscape || isTabletPortrait) && styles.containerResponsive]}>
+      <View style={[styles.innerContainer, resolvedMaxWidth && { maxWidth: resolvedMaxWidth }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} hitSlop={{ top: sizes.scale(8), bottom: sizes.scale(8), left: sizes.scale(8), right: sizes.scale(8) }}>
+            <Icon name="arrow-back" size={sizes.scale(24)} color={styles.backIcon.color} />
+          </TouchableOpacity>
+          {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
+          {headerRight && <View style={styles.headerRightContainer}>{headerRight}</View>}
+        </View>
 
-      {/* Content */}
-      {children}
+        {/* Content */}
+        {children}
+      </View>
 
       {/* Confirmation modal */}
       <Modal
@@ -111,6 +122,16 @@ const themeStyles = (theme) => ({
     flex: 1,
     backgroundColor: theme.colors.bg,
     paddingHorizontal: theme.sizes.spacing.m,
+  },
+  containerResponsive: {
+    paddingHorizontal: theme.sizes.spacing.xl,
+  },
+  innerContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   header: {
     flexDirection: 'row',
@@ -150,6 +171,7 @@ const themeStyles = (theme) => ({
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.xl,
     width: '100%',
+    maxWidth: 440,
     alignItems: 'center',
   },
   modalTitle: {

@@ -8,6 +8,7 @@ import { Button } from '../../../../components/ui/Button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { formatIsoDate } from '../../../../utils/dateUtils';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { useDoctorDashboard } from '../../../../context/DoctorDashboardContext';
 import { createApiClient } from '../../../../api/apiClient';
 import { createConsultationsApi } from '../../../../api/consultationsApi';
@@ -58,6 +59,8 @@ export function CompletedConsultation({ id }) {
     const { navigateBack, navigateToHistoryPatientProfile, openConsultationById } = useDoctorDashboard();
     const styles = useStyles(themeStyles);
     const { colors, sizes } = useTheme();
+    const responsive = useResponsive();
+    const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
 
     const [consultation, setConsultation] = useState(null);
     const [patientHistory, setPatientHistory] = useState(null);
@@ -235,173 +238,364 @@ export function CompletedConsultation({ id }) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-                {/* UPCOMING: Reminder Pill */}
-                {isScheduled && getReminderText() && (
-                    <View style={styles.reminderPill}>
-                        <Icon name="clock" size={sizes.scale(16)} color={colors.info} />
-                        <Text style={styles.reminderText}>{getReminderText()}</Text>
-                    </View>
-                )}
-
-                {/* Patient Info Card */}
-                <TouchableOpacity
-                    style={[styles.patientCard, { backgroundColor: typeConfig.bg, borderColor: typeConfig.borderColor }]}
-                    onPress={() => navigateToHistoryPatientProfile(consultation.patientId)}
-                >
-                    <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
-                        <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
-                    </View>
-                    <View style={styles.patientInfo}>
-                        <Text style={styles.patientName}>
-                            {consultation.patientName || t('doctor_history.label_patient')}
-                        </Text>
-                        {consultation.patientMeta ? (
-                            <Text style={[styles.patientMeta, { color: typeConfig.color }]}>
-                                {translateMeta(consultation.patientMeta)}
-                            </Text>
-                        ) : null}
-                    </View>
-
-                    {/* Type badge */}
-                    <View style={[styles.typeBadge, { backgroundColor: typeConfig.color }]}>
-                        <Icon name={typeConfig.icon} size={sizes.scale(14)} color={colors.white} />
-                    </View>
-                </TouchableOpacity>
-
-                {/* CANCELED: Info Card */}
-                {isCanceled && (
-                    <View style={styles.canceledCard}>
-                        <View style={styles.canceledHeader}>
-                            <Icon name="info" size={sizes.scale(18)} color={colors.danger} />
-                            <Text style={styles.canceledTitle}>
-                                {consultation.canceledBy === consultation.patientId
-                                    ? t('doctor_history.canceled_by_patient')
-                                    : t('doctor_history.canceled_by_doctor')}
-                            </Text>
-                        </View>
-                        <Text style={styles.canceledDate}>
-                            {consultation.canceledAt ? formatIsoDate(consultation.canceledAt, 'medium', t) : ''}
-                        </Text>
-                        <Text style={styles.canceledReason}>
-                            {consultation.cancelReason || t('doctor_history.no_reason')}
-                        </Text>
-                    </View>
-                )}
-
-                {/* Details Card */}
-                <View style={styles.detailsCard}>
-                    <DetailRow
-                        icon="calendar"
-                        label={t('doctor_history.label_date')}
-                        value={formatIsoDate(consultation.date, 'medium', t)}
-                    />
-                    <DetailRow
-                        icon="clock"
-                        label={t('doctor_history.label_time')}
-                        value={timeValue}
-                    />
-                    {consultation.duration ? (
-                        <DetailRow
-                            icon="timer"
-                            label={t('doctor_history.label_duration')}
-                            value={t('doctor_history.duration', { duration: consultation.duration })}
-                        />
-                    ) : null}
-                    <DetailRow
-                        icon="video"
-                        label={t('doctor_history.label_format')}
-                        value={formatValue}
-                    />
-                    <DetailRow
-                        icon={isCanceled ? 'x-circle' : isCompleted ? 'check-circle' : 'calendar-clock'}
-                        label={t('doctor_history.label_status')}
-                        value={t(getStatusKey(consultation.status))}
-                        valueColor={typeConfig.color}
-                        isLast
-                    />
-                </View>
-
-                {/* UPCOMING: Patient's Note Card */}
-                {isScheduled && consultation.purpose && (
-                    <View style={styles.purposeCard}>
-                        <View style={styles.purposeHeader}>
-                            <Icon name="file-text" size={sizes.scale(18)} color={colors.p500} />
-                            <Text style={styles.purposeTitle}>{t('doctor_history.patient_note_title')}</Text>
-                        </View>
-                        <Text style={styles.purposeText}>{consultation.purpose}</Text>
-                    </View>
-                )}
-
-                {/* COMPLETED: Diagnosis & Notes */}
-                {isCompleted && (
-                    <View style={styles.resultsContainer}>
-                        {consultation._resultError ? (
-                            <View style={styles.notesCard}>
-                                <View style={[styles.notesHeader, { marginBottom: 0 }]}>
-                                    <Icon name="alert-circle" size={sizes.scale(20)} color={colors.danger} style={{ marginRight: sizes.spacing.s }} />
-                                    <Text style={[styles.notesTitle, { color: colors.danger }]}>{t('common.error', 'Failed to load results')}</Text>
+                {isLandscapeLayout ? (
+                    <View style={styles.desktopSplitRow}>
+                        <View style={styles.desktopLeftCol}>
+                            {/* UPCOMING: Reminder Pill */}
+                            {isScheduled && getReminderText() && (
+                                <View style={styles.reminderPill}>
+                                    <Icon name="clock" size={sizes.scale(16)} color={colors.info} />
+                                    <Text style={styles.reminderText}>{getReminderText()}</Text>
                                 </View>
-                            </View>
-                        ) : consultation.hasResult ? (
-                            <ResultBlocks consultation={consultation} styles={styles} colors={colors} sizes={sizes} t={t} />
-                        ) : (
-                            <View style={styles.notesCard}>
-                                <View style={styles.notesHeader}>
-                                    <Text style={styles.notesTitle}>{t('doctor_history.diagnosis_notes_title')}</Text>
+                            )}
+
+                            {/* Patient Info Card */}
+                            <TouchableOpacity
+                                style={[styles.patientCard, { backgroundColor: typeConfig.bg, borderColor: typeConfig.borderColor }]}
+                                onPress={() => navigateToHistoryPatientProfile(consultation.patientId)}
+                            >
+                                <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
+                                    <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
                                 </View>
-                                <View style={styles.notesReadOnlyContainer}>
-                                    <Text style={styles.notesPlaceholder}>{t('doctor_history.diagnosis_empty')}</Text>
+                                <View style={styles.patientInfo}>
+                                    <Text style={styles.patientName}>
+                                        {consultation.patientName || t('doctor_history.label_patient')}
+                                    </Text>
+                                    {consultation.patientMeta ? (
+                                        <Text style={[styles.patientMeta, { color: typeConfig.color }]}>
+                                            {translateMeta(consultation.patientMeta)}
+                                        </Text>
+                                    ) : null}
                                 </View>
-                            </View>
-                        )}
 
-                        {(!consultation.hasResult || consultation.is_draft) && (
-                            <Button
-                                title={consultation.hasResult ? t('doctor_history.save_send', "Save & send") : t('doctor_history.fill_results', "Fill results")}
-                                variant="primary"
-                                onPress={() => {
-                                    openConsultationById(consultation.id, 'form', 'history');
-                                }}
-                                style={styles.saveBtn}
-                                textStyle={styles.saveBtnText}
-                            />
-                        )}
-                    </View>
-                )}
+                                {/* Type badge */}
+                                <View style={[styles.typeBadge, { backgroundColor: typeConfig.color }]}>
+                                    <Icon name={typeConfig.icon} size={sizes.scale(14)} color={colors.white} />
+                                </View>
+                            </TouchableOpacity>
 
-                {/* UPCOMING or CANCELED: Previous Visits */}
-                {(isScheduled || isCanceled) && (
-                    <View style={styles.previousVisitsCard}>
-                        <Text style={styles.previousVisitsTitle}>{t('doctor_history.previous_visits_title')}</Text>
+                            {/* CANCELED: Info Card */}
+                            {isCanceled && (
+                                <View style={styles.canceledCard}>
+                                    <View style={styles.canceledHeader}>
+                                        <Icon name="info" size={sizes.scale(18)} color={colors.danger} />
+                                        <Text style={styles.canceledTitle}>
+                                            {consultation.canceledBy === consultation.patientId
+                                                ? t('doctor_history.canceled_by_patient')
+                                                : t('doctor_history.canceled_by_doctor')}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.canceledDate}>
+                                        {consultation.canceledAt ? formatIsoDate(consultation.canceledAt, 'medium', t) : ''}
+                                    </Text>
+                                    <Text style={styles.canceledReason}>
+                                        {consultation.cancelReason || t('doctor_history.no_reason')}
+                                    </Text>
+                                </View>
+                            )}
 
-                        {loadingHistory ? (
-                            <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
-                        ) : patientHistory?._error ? (
-                            <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
-                        ) : patientHistory && patientHistory.totalVisits > 0 ? (
-                            <View style={styles.visitsList}>
+                            {/* Details Card */}
+                            <View style={styles.detailsCard}>
                                 <DetailRow
                                     icon="calendar"
-                                    label={t('doctor_history.label_last_visit')}
-                                    value={formatIsoDate(patientHistory.lastVisitDate, 'medium', t)}
+                                    label={t('doctor_history.label_date')}
+                                    value={formatIsoDate(consultation.date, 'medium', t)}
                                 />
                                 <DetailRow
-                                    icon="file-text"
-                                    label={t('doctor_history.label_last_diagnosis')}
-                                    value={patientHistory.lastDiagnosis || '—'}
+                                    icon="clock"
+                                    label={t('doctor_history.label_time')}
+                                    value={timeValue}
+                                />
+                                {consultation.duration ? (
+                                    <DetailRow
+                                        icon="timer"
+                                        label={t('doctor_history.label_duration')}
+                                        value={t('doctor_history.duration', { duration: consultation.duration })}
+                                    />
+                                ) : null}
+                                {consultation.price !== undefined && consultation.price !== null ? (
+                                    <DetailRow
+                                        icon="dollar-sign"
+                                        label={t('doctor_history.label_price', 'Стоимость')}
+                                        value={`$${consultation.price}`}
+                                    />
+                                ) : null}
+                                <DetailRow
+                                    icon="video"
+                                    label={t('doctor_history.label_format')}
+                                    value={formatValue}
                                 />
                                 <DetailRow
-                                    icon="activity"
-                                    label={t('doctor_history.label_total_visits')}
-                                    value={String(patientHistory.totalVisits)}
+                                    icon={isCanceled ? 'x-circle' : isCompleted ? 'check-circle' : 'calendar-clock'}
+                                    label={t('doctor_history.label_status')}
+                                    value={t(getStatusKey(consultation.status))}
+                                    valueColor={typeConfig.color}
                                     isLast
                                 />
                             </View>
-                        ) : (
-                            <Text style={styles.noVisitsText}>{t('doctor_history.no_previous_visits')}</Text>
-                        )}
+                        </View>
+
+                        <View style={styles.desktopRightCol}>
+                            {/* UPCOMING: Patient's Note Card */}
+                            {isScheduled && consultation.purpose && (
+                                <View style={styles.purposeCard}>
+                                    <View style={styles.purposeHeader}>
+                                        <Icon name="file-text" size={sizes.scale(18)} color={colors.p500} />
+                                        <Text style={styles.purposeTitle}>{t('doctor_history.patient_note_title')}</Text>
+                                    </View>
+                                    <Text style={styles.purposeText}>{consultation.purpose}</Text>
+                                </View>
+                            )}
+
+                            {/* COMPLETED: Diagnosis & Notes */}
+                            {isCompleted && (
+                                <View style={styles.resultsContainer}>
+                                    {consultation._resultError ? (
+                                        <View style={styles.notesCard}>
+                                            <View style={[styles.notesHeader, { marginBottom: 0 }]}>
+                                                <Icon name="alert-circle" size={sizes.scale(20)} color={colors.danger} style={{ marginRight: sizes.spacing.s }} />
+                                                <Text style={[styles.notesTitle, { color: colors.danger }]}>{t('common.error', 'Failed to load results')}</Text>
+                                            </View>
+                                        </View>
+                                    ) : consultation.hasResult ? (
+                                        <ResultBlocks consultation={consultation} styles={styles} colors={colors} sizes={sizes} t={t} />
+                                    ) : (
+                                        <View style={styles.notesCard}>
+                                            <View style={styles.notesHeader}>
+                                                <Text style={styles.notesTitle}>{t('doctor_history.diagnosis_notes_title')}</Text>
+                                            </View>
+                                            <View style={styles.notesReadOnlyContainer}>
+                                                <Text style={styles.notesPlaceholder}>{t('doctor_history.diagnosis_empty')}</Text>
+                                            </View>
+                                        </View>
+                                    )}
+
+                                    {(!consultation.hasResult || consultation.is_draft) && (
+                                        <Button
+                                            title={consultation.hasResult ? t('doctor_history.save_send', "Save & send") : t('doctor_history.fill_results', "Fill results")}
+                                            variant="primary"
+                                            onPress={() => {
+                                                openConsultationById(consultation.id, 'form', 'history');
+                                            }}
+                                            style={styles.saveBtn}
+                                            textStyle={styles.saveBtnText}
+                                        />
+                                    )}
+                                </View>
+                            )}
+
+                            {/* UPCOMING or CANCELED: Previous Visits */}
+                            {(isScheduled || isCanceled) && (
+                                <View style={styles.previousVisitsCard}>
+                                    <Text style={styles.previousVisitsTitle}>{t('doctor_history.previous_visits_title')}</Text>
+
+                                    {loadingHistory ? (
+                                        <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
+                                    ) : patientHistory?._error ? (
+                                        <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
+                                    ) : patientHistory && patientHistory.totalVisits > 0 ? (
+                                        <View style={styles.visitsList}>
+                                            <DetailRow
+                                                icon="calendar"
+                                                label={t('doctor_history.label_last_visit')}
+                                                value={formatIsoDate(patientHistory.lastVisitDate, 'medium', t)}
+                                            />
+                                            <DetailRow
+                                                icon="file-text"
+                                                label={t('doctor_history.label_last_diagnosis')}
+                                                value={patientHistory.lastDiagnosis || '—'}
+                                            />
+                                            <DetailRow
+                                                icon="activity"
+                                                label={t('doctor_history.label_total_visits')}
+                                                value={String(patientHistory.totalVisits)}
+                                                isLast
+                                            />
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.noVisitsText}>{t('doctor_history.no_previous_visits')}</Text>
+                                    )}
+                                </View>
+                            )}
+                        </View>
                     </View>
+                ) : (
+                    <>
+                        {/* UPCOMING: Reminder Pill */}
+                        {isScheduled && getReminderText() && (
+                            <View style={styles.reminderPill}>
+                                <Icon name="clock" size={sizes.scale(16)} color={colors.info} />
+                                <Text style={styles.reminderText}>{getReminderText()}</Text>
+                            </View>
+                        )}
+
+                        {/* Patient Info Card */}
+                        <TouchableOpacity
+                            style={[styles.patientCard, { backgroundColor: typeConfig.bg, borderColor: typeConfig.borderColor }]}
+                            onPress={() => navigateToHistoryPatientProfile(consultation.patientId)}
+                        >
+                            <View style={[styles.patientAvatar, { backgroundColor: typeConfig.color }]}>
+                                <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
+                            </View>
+                            <View style={styles.patientInfo}>
+                                <Text style={styles.patientName}>
+                                    {consultation.patientName || t('doctor_history.label_patient')}
+                                </Text>
+                                {consultation.patientMeta ? (
+                                    <Text style={[styles.patientMeta, { color: typeConfig.color }]}>
+                                        {translateMeta(consultation.patientMeta)}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            {/* Type badge */}
+                            <View style={[styles.typeBadge, { backgroundColor: typeConfig.color }]}>
+                                <Icon name={typeConfig.icon} size={sizes.scale(14)} color={colors.white} />
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* CANCELED: Info Card */}
+                        {isCanceled && (
+                            <View style={styles.canceledCard}>
+                                <View style={styles.canceledHeader}>
+                                    <Icon name="info" size={sizes.scale(18)} color={colors.danger} />
+                                    <Text style={styles.canceledTitle}>
+                                        {consultation.canceledBy === consultation.patientId
+                                            ? t('doctor_history.canceled_by_patient')
+                                            : t('doctor_history.canceled_by_doctor')}
+                                    </Text>
+                                </View>
+                                <Text style={styles.canceledDate}>
+                                    {consultation.canceledAt ? formatIsoDate(consultation.canceledAt, 'medium', t) : ''}
+                                </Text>
+                                <Text style={styles.canceledReason}>
+                                    {consultation.cancelReason || t('doctor_history.no_reason')}
+                                </Text>
+                            </View>
+                        )}
+
+                        {/* Details Card */}
+                        <View style={styles.detailsCard}>
+                            <DetailRow
+                                icon="calendar"
+                                label={t('doctor_history.label_date')}
+                                value={formatIsoDate(consultation.date, 'medium', t)}
+                            />
+                            <DetailRow
+                                icon="clock"
+                                label={t('doctor_history.label_time')}
+                                value={timeValue}
+                            />
+                            {consultation.duration ? (
+                                <DetailRow
+                                    icon="timer"
+                                    label={t('doctor_history.label_duration')}
+                                    value={t('doctor_history.duration', { duration: consultation.duration })}
+                                />
+                            ) : null}
+                            {consultation.price !== undefined && consultation.price !== null ? (
+                                <DetailRow
+                                    icon="dollar-sign"
+                                    label={t('doctor_history.label_price', 'Стоимость')}
+                                    value={`$${consultation.price}`}
+                                />
+                            ) : null}
+                            <DetailRow
+                                icon="video"
+                                label={t('doctor_history.label_format')}
+                                value={formatValue}
+                            />
+                            <DetailRow
+                                icon={isCanceled ? 'x-circle' : isCompleted ? 'check-circle' : 'calendar-clock'}
+                                label={t('doctor_history.label_status')}
+                                value={t(getStatusKey(consultation.status))}
+                                valueColor={typeConfig.color}
+                                isLast
+                            />
+                        </View>
+
+                        {/* UPCOMING: Patient's Note Card */}
+                        {isScheduled && consultation.purpose && (
+                            <View style={styles.purposeCard}>
+                                <View style={styles.purposeHeader}>
+                                    <Icon name="file-text" size={sizes.scale(18)} color={colors.p500} />
+                                    <Text style={styles.purposeTitle}>{t('doctor_history.patient_note_title')}</Text>
+                                </View>
+                                <Text style={styles.purposeText}>{consultation.purpose}</Text>
+                            </View>
+                        )}
+
+                        {/* COMPLETED: Diagnosis & Notes */}
+                        {isCompleted && (
+                            <View style={styles.resultsContainer}>
+                                {consultation._resultError ? (
+                                    <View style={styles.notesCard}>
+                                        <View style={[styles.notesHeader, { marginBottom: 0 }]}>
+                                            <Icon name="alert-circle" size={sizes.scale(20)} color={colors.danger} style={{ marginRight: sizes.spacing.s }} />
+                                            <Text style={[styles.notesTitle, { color: colors.danger }]}>{t('common.error', 'Failed to load results')}</Text>
+                                        </View>
+                                    </View>
+                                ) : consultation.hasResult ? (
+                                    <ResultBlocks consultation={consultation} styles={styles} colors={colors} sizes={sizes} t={t} />
+                                ) : (
+                                    <View style={styles.notesCard}>
+                                        <View style={styles.notesHeader}>
+                                            <Text style={styles.notesTitle}>{t('doctor_history.diagnosis_notes_title')}</Text>
+                                        </View>
+                                        <View style={styles.notesReadOnlyContainer}>
+                                            <Text style={styles.notesPlaceholder}>{t('doctor_history.diagnosis_empty')}</Text>
+                                        </View>
+                                    </View>
+                                )}
+
+                                {(!consultation.hasResult || consultation.is_draft) && (
+                                    <Button
+                                        title={consultation.hasResult ? t('doctor_history.save_send', "Save & send") : t('doctor_history.fill_results', "Fill results")}
+                                        variant="primary"
+                                        onPress={() => {
+                                            openConsultationById(consultation.id, 'form', 'history');
+                                        }}
+                                        style={styles.saveBtn}
+                                        textStyle={styles.saveBtnText}
+                                    />
+                                )}
+                            </View>
+                        )}
+
+                        {/* UPCOMING or CANCELED: Previous Visits */}
+                        {(isScheduled || isCanceled) && (
+                            <View style={styles.previousVisitsCard}>
+                                <Text style={styles.previousVisitsTitle}>{t('doctor_history.previous_visits_title')}</Text>
+
+                                {loadingHistory ? (
+                                    <Text style={styles.loadingHistoryText}>{t('doctor_history.loading')}</Text>
+                                ) : patientHistory?._error ? (
+                                    <Text style={[styles.noVisitsText, { color: colors.danger }]}>{t('common.error', 'Failed to load history')}</Text>
+                                ) : patientHistory && patientHistory.totalVisits > 0 ? (
+                                    <View style={styles.visitsList}>
+                                        <DetailRow
+                                            icon="calendar"
+                                            label={t('doctor_history.label_last_visit')}
+                                            value={formatIsoDate(patientHistory.lastVisitDate, 'medium', t)}
+                                        />
+                                        <DetailRow
+                                            icon="file-text"
+                                            label={t('doctor_history.label_last_diagnosis')}
+                                            value={patientHistory.lastDiagnosis || '—'}
+                                        />
+                                        <DetailRow
+                                            icon="activity"
+                                            label={t('doctor_history.label_total_visits')}
+                                            value={String(patientHistory.totalVisits)}
+                                            isLast
+                                        />
+                                    </View>
+                                ) : (
+                                    <Text style={styles.noVisitsText}>{t('doctor_history.no_previous_visits')}</Text>
+                                )}
+                            </View>
+                        )}
+                    </>
                 )}
 
             </ScrollView>
@@ -546,11 +740,16 @@ const themeStyles = (theme) => ({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingTop: theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.s,
         backgroundColor: theme.colors.bg,
         justifyContent: 'space-between',
+        width: '100%',
+        maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+          ? (theme.responsive?.containerMaxWidth || 1440)
+          : theme.responsive?.isTabletPortrait ? 760 : undefined,
+        alignSelf: 'center',
     },
     backButton: {
         width: theme.sizes.scale(48),
@@ -576,9 +775,28 @@ const themeStyles = (theme) => ({
         fontFamily: 'Manrope_600SemiBold',
     },
     scrollContent: {
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingTop: theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.xl,
+        width: '100%',
+        maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+          ? (theme.responsive?.containerMaxWidth || 1440)
+          : theme.responsive?.isTabletPortrait ? 760 : undefined,
+        alignSelf: 'center',
+    },
+    desktopSplitRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: theme.sizes.spacing.l,
+        width: '100%',
+    },
+    desktopLeftCol: {
+        flex: 1,
+        minWidth: 0,
+    },
+    desktopRightCol: {
+        flex: 1.35,
+        minWidth: 0,
     },
 
     /* ── Reminder Pill ── */
@@ -915,10 +1133,13 @@ const themeStyles = (theme) => ({
         borderTopWidth: 1,
         borderTopColor: theme.colors.n200,
         backgroundColor: theme.colors.white,
+        alignItems: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge) ? 'center' : 'stretch',
     },
     viewProfileBtn: {
         height: theme.sizes.scale(56),
         borderWidth: 2,
+        width: '100%',
+        maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge) ? 480 : undefined,
     },
     viewProfileText: {
         ...theme.sizes.typography.h3,

@@ -17,7 +17,8 @@ export function PatientAllConsultations({ activeSegment = 'all' }) {
     const { pastConsultations } = historyController;
     const { navigateToHistoryDetail, navigateBack } = usePatientDashboard();
     const styles = useStyles(themeStyles);
-    const { colors, sizes } = useTheme();
+    const { colors, sizes, responsive } = useTheme();
+    const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('All');
@@ -82,7 +83,14 @@ export function PatientAllConsultations({ activeSegment = 'all' }) {
         <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
+                <TouchableOpacity 
+                    onPress={navigateBack} 
+                    style={styles.backButton}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Назад"
+                    testID="back-button"
+                >
                     <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{t('doctor_history.all_consultations', 'All Consultations')}</Text>
@@ -126,49 +134,51 @@ export function PatientAllConsultations({ activeSegment = 'all' }) {
                 {Object.keys(groupedData).map(dateKey => (
                     <View key={dateKey} style={styles.groupContainer}>
                         <Text style={styles.dateHeader}>{dateKey}</Text>
-                        {groupedData[dateKey].map(item => {
-                            const iconProps = getIconProps(item.status);
-                            return (
-                                <TouchableOpacity
-                                    key={item.id}
-                                    style={styles.card}
-                                    activeOpacity={0.8}
-                                    onPress={() => handlePress(item.id)}
-                                >
-                                    <View style={styles.cardHeader}>
-                                        <Text style={styles.dateTimeText}>
-                                            {formatIsoDate(item.date, 'short', t)} • {formatIsoDate(item.date, 'time', t) || '10:00'}
-                                        </Text>
-                                    </View>
-
-                                    <View style={styles.cardBody}>
-                                        <View style={[styles.iconContainer, { backgroundColor: iconProps.bg }]}>
-                                            <Icon name={iconProps.name} size={sizes.scale(20)} color={iconProps.color} />
-                                        </View>
-
-                                        <View style={styles.infoContainer}>
-                                            <View style={styles.consultationRow}>
-                                                <Text style={styles.consultationText}>
-                                                    {item.status === 'scheduled' || item.status === 'canceled' ? `${t('doctors.dr_prefix')}${item.doctorName}` : t('doctor_history.consultation', 'Consultation')}
-                                                </Text>
-                                                {item.doctorIsVerified && (item.status === 'scheduled' || item.status === 'canceled') && (
-                                                    <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
-                                                )}
-                                                <Text style={styles.consultationText}> •{' '}</Text>
-                                                <View style={[styles.statusDot, { backgroundColor: iconProps.color }]} />
-                                            </View>
-                                            <Text style={styles.doctorText} numberOfLines={1}>
-                                                {item.status === 'scheduled' || item.status === 'canceled' 
-                                                    ? t(item.specialty || 'doctors.general') 
-                                                    : `${t('doctors.dr_prefix')}${item.doctorName || t('doctor_history.doctor', 'Doctor')} • ${t(item.specialty || 'doctors.general')}`}
+                        <View style={isLandscapeLayout ? styles.desktopGroupGrid : undefined}>
+                            {groupedData[dateKey].map(item => {
+                                const iconProps = getIconProps(item.status);
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[styles.card, isLandscapeLayout && styles.desktopCard]}
+                                        activeOpacity={0.8}
+                                        onPress={() => handlePress(item.id)}
+                                    >
+                                        <View style={styles.cardHeader}>
+                                            <Text style={styles.dateTimeText}>
+                                                {formatIsoDate(item.date, 'short', t)} • {formatIsoDate(item.date, 'time', t) || '10:00'}
                                             </Text>
                                         </View>
 
-                                        <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
+                                        <View style={styles.cardBody}>
+                                            <View style={[styles.iconContainer, { backgroundColor: iconProps.bg }]}>
+                                                <Icon name={iconProps.name} size={sizes.scale(20)} color={iconProps.color} />
+                                            </View>
+
+                                            <View style={styles.infoContainer}>
+                                                <View style={styles.consultationRow}>
+                                                    <Text style={styles.consultationText}>
+                                                        {item.status === 'scheduled' || item.status === 'canceled' ? `${t('doctors.dr_prefix')}${item.doctorName}` : t('doctor_history.consultation', 'Consultation')}
+                                                    </Text>
+                                                    {item.doctorIsVerified && (item.status === 'scheduled' || item.status === 'canceled') && (
+                                                        <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                                                    )}
+                                                    <Text style={styles.consultationText}> •{' '}</Text>
+                                                    <View style={[styles.statusDot, { backgroundColor: iconProps.color }]} />
+                                                </View>
+                                                <Text style={styles.doctorText} numberOfLines={1}>
+                                                    {item.status === 'scheduled' || item.status === 'canceled' 
+                                                        ? t(item.specialty || 'doctors.general') 
+                                                        : `${t('doctors.dr_prefix')}${item.doctorName || t('doctor_history.doctor', 'Doctor')} • ${t(item.specialty || 'doctors.general')}`}
+                                                </Text>
+                                            </View>
+
+                                            <Icon name="arrow-right" size={sizes.scale(20)} color={colors.p500} />
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
                     </View>
                 ))}
             </ScrollView>
@@ -184,9 +194,16 @@ const themeStyles = (theme) => ({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingTop: theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.s,
+        width: '100%',
+        maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+            ? 1160
+            : theme.responsive?.isTabletPortrait
+                ? 760
+                : undefined,
+        alignSelf: 'center',
     },
     backButton: {
         padding: theme.sizes.spacing.xs,
@@ -210,8 +227,25 @@ const themeStyles = (theme) => ({
         fontFamily: 'Manrope_600SemiBold',
     },
     scrollContent: {
-        paddingHorizontal: theme.sizes.spacing.m,
+        paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
         paddingBottom: theme.sizes.spacing.xl,
+        width: '100%',
+        maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+            ? 1160
+            : theme.responsive?.isTabletPortrait
+                ? 760
+                : undefined,
+        alignSelf: 'center',
+    },
+    desktopGroupGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.sizes.spacing.m,
+    },
+    desktopCard: {
+        width: '49%',
+        minWidth: 320,
+        marginBottom: 0,
     },
     searchContainer: {
         flexDirection: 'row',

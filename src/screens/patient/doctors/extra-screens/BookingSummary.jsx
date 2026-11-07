@@ -28,7 +28,7 @@ export function BookingSummary() {
 
   const handleBack = () => {
     goBack();
-    if (updateUrlParams) updateUrlParams('doctors', 'profile', selectedDoctor?.id);
+    if (updateUrlParams) updateUrlParams('doctors', 'profile', selectedDoctor?.id, null, null, { replace: true });
   };
 
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -131,7 +131,11 @@ export function BookingSummary() {
             <Icon name="price" size={sizes.scale(24)} color={colors.p400} />
             <Text style={styles.labelText}>{t('doctors.price')}</Text>
           </View>
-          <Text style={styles.valueText}>${selectedDoctor.price}</Text>
+          <Text style={styles.valueText}>
+            ${selectedSlot?.price !== undefined && selectedSlot?.price !== null
+              ? selectedSlot.price
+              : (selectedDoctor.price || 0)}
+          </Text>
         </View>
 
         {/* Level 2 Guard: UI Checkup Confirmation Card */}
@@ -187,6 +191,10 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
     paddingHorizontal: theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 680 : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   header: {
     flexDirection: 'row',

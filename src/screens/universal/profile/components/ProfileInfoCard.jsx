@@ -3,25 +3,35 @@ import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 
-export function ProfileInfoCard({ user }) {
+export function ProfileInfoCard({ user, style }) {
   const { t } = useTranslation();
   const styles = useStyles(themeStyles);
 
+  const genderValue = user.gender 
+    ? t(`profile.genders.${user.gender}`, user.gender === 'male' ? 'Мужской' : user.gender === 'female' ? 'Женский' : user.gender)
+    : '-';
+
   return (
-    <View style={styles.card}>
-      <InfoRow label={t('profile.phone_number')} value={user.phone ? user.phone : '-'} isFirst />
-      <InfoRow label={t('profile.dob')} value={user.dob ? user.dob : '-'} />
-      <InfoRow label={t('profile.gender')} value={user.gender ? t(`profile.genders.${user.gender}`) : '-'} />
+    <View style={[styles.card, style]}>
+      <InfoRow label={t('profile.phone_number', 'Номер телефона')} value={user.phone ? user.phone : '-'} isFirst />
+      <InfoRow label={t('profile.dob', 'Дата рождения')} value={user.dob ? user.dob : '-'} />
+      <InfoRow label={t('profile.gender', 'Пол')} value={genderValue} />
       {user.role === 'patient' && (
         <>
-          <InfoRow label={t('profile.height_weight')} value={user.height || user.weight ? `${user.height || '--'} ${t('dashboard.cm')} / ${user.weight || '--'} ${t('dashboard.kg')}` : '--'} />
-          <InfoRow label={t('profile.blood_type')} value={user.bloodType || t('profile.not_specified')} />
+          <InfoRow 
+            label={t('profile.height_weight', 'Рост/Вес')} 
+            value={user.height || user.weight ? `${user.height || '--'} ${t('dashboard.cm', 'см')} / ${user.weight || '--'} ${t('dashboard.kg', 'кг')}` : '--'} 
+          />
+          <InfoRow 
+            label={t('profile.blood_type', 'Группа крови')} 
+            value={user.bloodType || t('profile.not_specified', 'Не указано')} 
+          />
         </>
       )}
       {user.role === 'doctor' && (
         <>
           <InfoRow 
-            label={t('profile.specializations')} 
+            label={t('profile.specializations', 'Специализации')} 
             value={
               user.professionCodes?.length > 0 
                 ? user.professionCodes.map(c => t(`specializations.${c}`)).join(', ') 

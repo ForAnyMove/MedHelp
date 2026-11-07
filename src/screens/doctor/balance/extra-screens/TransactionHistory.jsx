@@ -36,7 +36,7 @@ export function TransactionHistory() {
   };
 
   return (
-    <SubViewScreen title={t('doctor_balance.transaction_history') || 'Transaction history'} onBack={navigateBack}>
+    <SubViewScreen title={t('doctor_balance.transaction_history') || 'Transaction history'} onBack={navigateBack} maxWidth={760}>
       {loading ? (
         <View style={{ padding: sizes.spacing.l }}>
           {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} lines={2} />)}

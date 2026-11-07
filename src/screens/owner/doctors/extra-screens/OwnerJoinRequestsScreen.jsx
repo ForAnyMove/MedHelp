@@ -11,10 +11,12 @@ import { Button } from '../../../../components/ui/Button';
 
 export function OwnerJoinRequestsScreen({ onBack }) {
   const styles = useStyles(themeStyles);
-  const { sizes, colors } = useTheme();
+  const { sizes, colors, responsive } = useTheme();
   const { t } = useTranslation();
   const { ownerController } = useComponentContext();
   const { navigateToDoctorProfile } = useOwnerDashboard();
+
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
 
   const joinRequests = ownerController?.joinRequests || [];
   const acceptRequest = ownerController?.acceptRequest;
@@ -53,57 +55,59 @@ export function OwnerJoinRequestsScreen({ onBack }) {
             description={t('owner_doctors.no_requests_desc')}
           />
         ) : (
-          joinRequests.map((request) => (
-            <View
-              key={request.requestId}
-              style={styles.card}
-            >
-              <TouchableOpacity
-                style={styles.cardTop}
-                activeOpacity={0.7}
-                onPress={() => navigateToDoctorProfile(request.doctorId)}
+          <View style={isLandscapeLayout ? styles.desktopGrid : undefined}>
+            {joinRequests.map((request) => (
+              <View
+                key={request.requestId}
+                style={[styles.card, isLandscapeLayout && styles.desktopCard]}
               >
-                {request.avatarUrl ? (
-                  <Image source={{ uri: request.avatarUrl }} style={styles.avatar} />
-                ) : (
-                  <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Icon name="profile" size={sizes.scale(24)} color={colors.n400} />
+                <TouchableOpacity
+                  style={styles.cardTop}
+                  activeOpacity={0.7}
+                  onPress={() => navigateToDoctorProfile(request.doctorId)}
+                >
+                  {request.avatarUrl ? (
+                    <Image source={{ uri: request.avatarUrl }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
+                      <Icon name="profile" size={sizes.scale(24)} color={colors.n400} />
+                    </View>
+                  )}
+                  <View style={styles.cardBody}>
+                    <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{request.fullName}</Text>
+                    <Text style={styles.specialty}>{request.specialization || t('common.unknown')}</Text>
+                    <View style={styles.metaRow}>
+                      <Icon name="star" size={sizes.scale(14)} color={colors.warning || '#F59E0B'} />
+                      <Text style={styles.metaText}>{(request.rating || 0).toFixed(1)}</Text>
+                      <Text style={styles.metaSep}>·</Text>
+                      <Text style={styles.metaText}>{request.experience || 0} {t('doctor_history.years_count', { count: request.experience || 0 })}</Text>
+                    </View>
                   </View>
-                )}
-                <View style={styles.cardBody}>
-                  <Text style={styles.doctorName}>{t('doctors.dr_prefix')}{request.fullName}</Text>
-                  <Text style={styles.specialty}>{request.specialization || t('common.unknown')}</Text>
-                  <View style={styles.metaRow}>
-                    <Icon name="star" size={sizes.scale(14)} color={colors.warning || '#F59E0B'} />
-                    <Text style={styles.metaText}>{(request.rating || 0).toFixed(1)}</Text>
-                    <Text style={styles.metaSep}>·</Text>
-                    <Text style={styles.metaText}>{request.experience || 0} {t('doctor_history.years_count', { count: request.experience || 0 })}</Text>
-                  </View>
-                </View>
-                <Icon name="arrow-forward" size={sizes.scale(20)} color={colors.n400} />
-              </TouchableOpacity>
+                  <Icon name="arrow-forward" size={sizes.scale(20)} color={colors.n400} />
+                </TouchableOpacity>
 
-              {/* Action buttons - don't propagate press to card */}
-              <View style={styles.actionRow}>
-                <TouchableOpacity
-                  style={styles.rejectBtn}
-                  onPress={() => handleReject(request)}
-                  activeOpacity={0.8}
-                >
-                  <Icon name="close" size={sizes.scale(18)} color={colors.danger || '#F05252'} />
-                  <Text style={styles.rejectBtnText}>{t('owner_doctors.reject_btn')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.acceptBtn}
-                  onPress={() => handleAccept(request)}
-                  activeOpacity={0.8}
-                >
-                  <Icon name="check2" size={sizes.scale(18)} color={colors.white} />
-                  <Text style={styles.acceptBtnText}>{t('owner_doctors.accept_btn')}</Text>
-                </TouchableOpacity>
+                {/* Action buttons - don't propagate press to card */}
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={() => handleReject(request)}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="close" size={sizes.scale(18)} color={colors.danger || '#F05252'} />
+                    <Text style={styles.rejectBtnText}>{t('owner_doctors.reject_btn')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.acceptBtn}
+                    onPress={() => handleAccept(request)}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="check2" size={sizes.scale(18)} color={colors.white} />
+                    <Text style={styles.acceptBtnText}>{t('owner_doctors.accept_btn')}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))
+            ))}
+          </View>
         )}
       </ScrollView>
     </View>
@@ -116,9 +120,16 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
   },
   backBtn: {
     padding: theme.sizes.spacing.xs,
@@ -132,8 +143,25 @@ const themeStyles = (theme) => ({
     textAlign: 'center',
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
+  },
+  desktopGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.sizes.spacing.m,
+  },
+  desktopCard: {
+    width: '49%',
+    minWidth: 320,
+    marginBottom: 0,
   },
   card: {
     backgroundColor: theme.colors.white,

@@ -12,7 +12,8 @@ const FILTERS = ['All', 'Urgent', 'Routine', 'Selfcare'];
 
 export function PatientAllCheckups({ activeSegment = 'all', checkups = [], loading = false, onSelectCheckup, onBack, onStartCheckup }) {
   const { t, i18n } = useTranslation();
-  const { colors, sizes } = useTheme();
+  const { colors, sizes, responsive } = useTheme();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
   const currentLang = i18n.language && i18n.language.startsWith('ru') ? 'ru' : 'en';
   const activeDict = currentLang === 'ru' ? quizRu.quiz : quizEn.quiz;
 
@@ -126,13 +127,21 @@ export function PatientAllCheckups({ activeSegment = 'all', checkups = [], loadi
     }
   };
 
-  const st = styles(colors, sizes);
+  const st = styles(colors, sizes, responsive);
 
   return (
     <View style={st.container}>
       {/* Header */}
       <View style={st.header}>
-        <TouchableOpacity onPress={onBack} style={st.backButton} activeOpacity={0.7}>
+        <TouchableOpacity 
+          onPress={onBack} 
+          style={st.backButton} 
+          activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Назад"
+          testID="back-button"
+        >
           <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
         </TouchableOpacity>
         <Text style={st.headerTitle}>{t('history.all_checkups', currentLang === 'ru' ? 'Результаты опросов' : 'Survey Results')}</Text>
@@ -187,7 +196,7 @@ export function PatientAllCheckups({ activeSegment = 'all', checkups = [], loadi
 
         {/* Checkups List */}
         {!loading && filteredData.length > 0 && (
-          <View style={st.list}>
+          <View style={[st.list, isLandscapeLayout && st.desktopList]}>
             {filteredData.map((item) => {
               const engineResult = item.payload?.result || item.engineResult || {};
               const resType = engineResult.type || 'UNKNOWN';
@@ -210,7 +219,7 @@ export function PatientAllCheckups({ activeSegment = 'all', checkups = [], loadi
               return (
                 <TouchableOpacity
                   key={item.id}
-                  style={st.card}
+                  style={[st.card, isLandscapeLayout && st.desktopCard]}
                   activeOpacity={0.7}
                   onPress={() => onSelectCheckup && onSelectCheckup(item)}
                 >
@@ -279,7 +288,7 @@ export function PatientAllCheckups({ activeSegment = 'all', checkups = [], loadi
   );
 }
 
-const styles = (colors, sizes) =>
+const styles = (colors, sizes, responsive) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -289,9 +298,16 @@ const styles = (colors, sizes) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: sizes.spacing.m,
+      paddingHorizontal: responsive?.contentPadding || sizes.spacing.m,
       paddingTop: sizes.spacing.m,
       paddingBottom: sizes.spacing.s,
+      width: '100%',
+      maxWidth: responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge
+        ? 1160
+        : responsive?.isTabletPortrait
+          ? 760
+          : undefined,
+      alignSelf: 'center',
     },
     backButton: {
       padding: sizes.spacing.xs,
@@ -315,8 +331,15 @@ const styles = (colors, sizes) =>
       color: colors.p500 || '#1A9C8E',
     },
     scrollContent: {
-      paddingHorizontal: sizes.spacing.m,
+      paddingHorizontal: responsive?.contentPadding || sizes.spacing.m,
       paddingBottom: sizes.spacing.xl,
+      width: '100%',
+      maxWidth: responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge
+        ? 1160
+        : responsive?.isTabletPortrait
+          ? 760
+          : undefined,
+      alignSelf: 'center',
     },
     searchContainer: {
       flexDirection: 'row',
@@ -376,6 +399,16 @@ const styles = (colors, sizes) =>
     },
     list: {
       gap: sizes.spacing.m,
+    },
+    desktopList: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    desktopCard: {
+      width: '49%',
+      minWidth: 320,
+      marginBottom: 0,
+      justifyContent: 'space-between',
     },
     card: {
       backgroundColor: colors.white,

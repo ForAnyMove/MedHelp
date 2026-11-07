@@ -4,12 +4,12 @@ import { useStyles } from '../../../../theme/useStyles';
 import { Icon } from '../../../../components/ui/Icon';
 import { useTheme } from '../../../../theme/ThemeContext';
 
-export function ProfileSection({ title, children, onEdit }) {
+export function ProfileSection({ title, children, onEdit, style, cardStyle }) {
   const styles = useStyles(themeStyles);
   const { sizes, colors } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>{title}</Text>
         {onEdit && (
@@ -18,7 +18,7 @@ export function ProfileSection({ title, children, onEdit }) {
           </TouchableOpacity>
         )}
       </View>
-      <View style={styles.card}>
+      <View style={[styles.card, cardStyle]}>
         {children}
       </View>
     </View>
@@ -27,7 +27,9 @@ export function ProfileSection({ title, children, onEdit }) {
 
 const themeStyles = (theme) => ({
   container: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.isLandscape && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? 0
+      : theme.sizes.spacing.m,
     marginTop: theme.sizes.spacing.l,
   },
   headerRow: {

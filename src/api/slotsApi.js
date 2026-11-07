@@ -10,7 +10,8 @@ export function createSlotsApi(apiClient) {
     listMine: (params = {}) => apiClient.get('/doctor-slots/mine', params),
 
     /** Doctor: create a single slot */
-    create: (start_at, duration) => apiClient.post('/doctor-slots', { start_at, duration }),
+    create: (start_at, duration, price = 0, profession_codes = null) =>
+      apiClient.post('/doctor-slots', { start_at, duration, price, profession_codes }),
 
     /** Doctor: create multiple slots at once */
     createBulk: (slots) => apiClient.post('/doctor-slots/bulk', { slots }),

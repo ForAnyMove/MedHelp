@@ -9,22 +9,54 @@ import { Icon } from '../../../components/ui/Icon';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { OwnerJoinRequestsScreen } from './extra-screens/OwnerJoinRequestsScreen';
 import { OwnerDoctorProfileSubView } from './extra-screens/OwnerDoctorProfileSubView';
+import { useLocalSearchParams } from 'expo-router';
+import { Platform } from 'react-native';
+import { useResponsive } from '../../../theme/useResponsive';
 
 export function OwnerDoctorsTab() {
   const styles = useStyles(themeStyles);
   const { sizes, colors } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const { t } = useTranslation();
   const { ownerController } = useComponentContext();
   const { doctorsView, navigateToRequests, navigateToDoctorProfile, navigateBack } = useOwnerDashboard();
+
+  const searchParams = useLocalSearchParams();
+  const routeView = typeof searchParams?.view === 'string' ? searchParams.view : searchParams?.view?.[0];
+
+  const getWebParam = (key) => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.location) return null;
+    try {
+      if (!window.location.pathname.startsWith('/doctors')) return null;
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get(key);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const [, setPopstateTick] = React.useState(0);
+  React.useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handlePop = () => setPopstateTick((t) => t + 1);
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  const urlView = getWebParam('view');
+  const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && window.location;
+  const isWebDoctorsBase = isWeb && window.location.pathname.startsWith('/doctors') && (!window.location.search || window.location.search === '?');
+  const effectiveView = isWebDoctorsBase ? 'list' : (doctorsView !== 'list' ? doctorsView : (urlView || (routeView || 'list')));
 
   const doctors = ownerController?.doctors || [];
   const pendingCount = ownerController?.pendingRequestsCount || 0;
 
   // Sub-view rendering
-  if (doctorsView === 'requests') {
+  if (effectiveView === 'requests') {
     return <OwnerJoinRequestsScreen onBack={navigateBack} />;
   }
-  if (doctorsView === 'doctor-profile') {
+  if (effectiveView === 'doctor-profile') {
     return <OwnerDoctorProfileSubView onBack={navigateBack} />;
   }
 
@@ -57,6 +89,39 @@ export function OwnerDoctorsTab() {
             title={t('owner_doctors.no_doctors_title')}
             description={t('owner_doctors.no_doctors_desc')}
           />
+        ) : isLandscapeLayout ? (
+          <View style={styles.desktopDoctorGrid}>
+            {doctors.map((doctor, index) => (
+              <View key={doctor.id || doctor.profileId || doctor.requestId || index} style={styles.desktopDoctorCol}>
+                <TouchableOpacity
+                  style={[styles.card, styles.desktopDoctorCard]}
+                  activeOpacity={0.85}
+                  onPress={() => navigateToDoctorProfile(doctor.id)}
+                >
+                  {doctor.avatarUrl ? (
+                    <Image source={{ uri: doctor.avatarUrl }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
+                      <Icon name="profile" size={sizes.scale(24)} color={colors.n400} />
+                    </View>
+                  )}
+                  <View style={styles.cardBody}>
+                    <Text style={styles.doctorName}>
+                      {t('doctors.dr_prefix')}{doctor.fullName}
+                    </Text>
+                    <Text style={styles.specialty}>{doctor.specialization || t('common.unknown')}</Text>
+                    <View style={styles.metaRow}>
+                      <Icon name="star" size={sizes.scale(14)} color={colors.warning || '#F59E0B'} />
+                      <Text style={styles.metaText}>{(doctor.rating || 0).toFixed(1)}</Text>
+                      <Text style={styles.metaSep}>·</Text>
+                      <Text style={styles.metaText}>{doctor.experience || 0} {t('doctor_history.years_count', { count: doctor.experience || 0 })}</Text>
+                    </View>
+                  </View>
+                  <Icon name="arrow-forward" size={sizes.scale(20)} color={colors.n400} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         ) : (
           doctors.map((doctor, index) => (
             <TouchableOpacity
@@ -99,9 +164,17 @@ const themeStyles = (theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
   },
   title: {
     ...theme.sizes.typography.h2,
@@ -126,8 +199,32 @@ const themeStyles = (theme) => ({
     fontFamily: 'Manrope_700Bold',
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
+  },
+  desktopDoctorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.sizes.spacing.m,
+    width: '100%',
+  },
+  desktopDoctorCol: {
+    flexGrow: 0,
+    width: '49%',
+    minWidth: theme.sizes.scale(310),
+    maxWidth: theme.sizes.scale(600),
+  },
+  desktopDoctorCard: {
+    marginBottom: 0,
+    height: '100%',
   },
   card: {
     flexDirection: 'row',

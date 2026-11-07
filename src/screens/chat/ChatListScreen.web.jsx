@@ -14,7 +14,20 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Icon } from '../../components/ui/Icon';
 import { useTranslation } from 'react-i18next';
 import { useChatNotifications } from '../../context/ChatNotificationContext';
+import ReportModal from '../../components/common/ReportModal';
 import 'stream-chat-react/dist/css/index.css';
+
+const formatChannelTime = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const now = new Date();
+  const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  if (isToday) {
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  return d.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+};
 
 const getWebTypo = (typo) => ({
   fontFamily: typo.fontFamily,
@@ -129,6 +142,10 @@ export default function ChatListScreen() {
   const [channels, setChannels] = useState([]);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
+  const [infoPanelView, setInfoPanelView] = useState('main'); // 'main' | 'media'
+  const [mutedChannels, setMutedChannels] = useState({});
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTargetId, setReportTargetId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
   const [unreadMap, setUnreadMap] = useState({});
@@ -201,15 +218,38 @@ export default function ChatListScreen() {
 
   const handleChannelSelect = async (channel) => {
     setShowInfoPanel(false);
+    setInfoPanelView('main');
     try {
       await channel.watch();
       setSelectedChannel(channel);
+      try {
+        const muteStatus = channel.muteStatus?.();
+        if (muteStatus && typeof muteStatus.muted === 'boolean') {
+          setMutedChannels(prev => ({ ...prev, [channel.id]: muteStatus.muted }));
+        }
+      } catch (_) {}
       // Mark as read and refresh unread counts
       try { await channel.markRead(); } catch (_) { }
       refreshUnreadCounts();
       setUnreadMap(prev => ({ ...prev, [channel.id]: 0 }));
     } catch (err) {
       setSelectedChannel(channel);
+    }
+  };
+
+  const handleToggleMute = async (channel) => {
+    if (!channel) return;
+    const currentlyMuted = !!mutedChannels[channel.id];
+    const nextMuted = !currentlyMuted;
+    setMutedChannels(prev => ({ ...prev, [channel.id]: nextMuted }));
+    try {
+      if (nextMuted) {
+        await channel.mute?.();
+      } else {
+        await channel.unmute?.();
+      }
+    } catch (e) {
+      console.warn('Channel mute toggle fallback:', e);
     }
   };
 
@@ -275,7 +315,7 @@ export default function ChatListScreen() {
           display: none !important;
         }
         .str-chat__message-simple {
-          padding-left: sizes.scale(0) !important;
+          padding-left: 0px !important;
         }
 
         /* INPUT OVERRIDES */
@@ -314,8 +354,17 @@ export default function ChatListScreen() {
             height: '100%',
             backgroundColor: colors.white
           }}>
-            <View style={[styles.header, { borderBottomColor: colors.n200, paddingHorizontal: sizes.spacing.m, height: sizes.scale(68) }]}>
-              <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
+            <View style={[styles.header, { borderBottomColor: colors.n200, borderBottomWidth: 1, paddingHorizontal: sizes.spacing.m, height: sizes.scale(68) }]}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace('/home');
+                  }
+                }}
+                style={styles.backButton}
+              >
                 <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
               </TouchableOpacity>
               <Text style={[{ color: colors.n900, marginLeft: sizes.spacing.s }, sizes.typography.h3]}>{t('chat.messages')}</Text>
@@ -324,10 +373,10 @@ export default function ChatListScreen() {
 
             <div style={{
               backgroundColor: colors.p300,
-              borderRadius: sizes.scale(24),
+              borderRadius: sizes.scale(20),
               margin: sizes.spacing.m,
               padding: sizes.spacing.m,
-              paddingVertical: sizes.scale(24),
+              paddingVertical: isPortrait ? sizes.scale(20) : sizes.scale(14),
               overflow: 'hidden',
             }}>
               <div style={{
@@ -355,6 +404,11 @@ export default function ChatListScreen() {
                     ...getWebTypo(sizes.typography.bodyMedium)
                   }}
                 />
+                {!!searchQuery && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: sizes.scale(4) }}>
+                    <Icon name="x" size={sizes.scale(16)} color={colors.n500} />
+                  </TouchableOpacity>
+                )}
               </div>
             </div>
 
@@ -362,10 +416,10 @@ export default function ChatListScreen() {
               flex: 1,
               overflowY: 'auto',
               backgroundColor: colors.white,
-              borderTopLeftRadius: sizes.scale(24),
-              borderTopRightRadius: sizes.scale(24),
-              margin: `0 ${sizes.spacing.m}px`,
-              boxShadow: '0 4px 15px rgba(0,0,0,0.05)'
+              borderTopLeftRadius: isPortrait ? sizes.scale(24) : 0,
+              borderTopRightRadius: isPortrait ? sizes.scale(24) : 0,
+              margin: isPortrait ? `0 ${sizes.spacing.m}px` : 0,
+              boxShadow: isPortrait ? '0 4px 15px rgba(0,0,0,0.05)' : 'none'
             }}>
               {filteredChannels.length === 0 ? (
                 <div style={{ padding: sizes.spacing.xl, textAlign: 'center', color: colors.n500, ...getWebTypo(sizes.typography.bodyMedium) }}>
@@ -378,6 +432,9 @@ export default function ChatListScreen() {
                   const otherMember = Object.values(channel.state.members).find(m => m.user_id !== chatClient.userID)?.user;
                   const unreadCount = unreadMap[channel.id] || 0;
                   const hasUnread = unreadCount > 0 && !isSelected;
+                  const lastMessageTime = formatChannelTime(lastMessage?.created_at || channel.data?.last_message_at);
+                  const lastMessagePreview = lastMessage?.text
+                    || (lastMessage?.attachments?.length ? `📎 ${t('chat.attachment', 'Вложение')}` : t('chat.no_messages'));
 
                   return (
                     <div
@@ -426,9 +483,14 @@ export default function ChatListScreen() {
                               <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4), flexShrink: 0 }} />
                             )}
                           </div>
+                          {!!lastMessageTime && (
+                            <span style={{ ...getWebTypo(sizes.typography.caption), color: hasUnread ? colors.p500 : colors.n400, fontWeight: hasUnread ? '600' : '400', flexShrink: 0 }}>
+                              {lastMessageTime}
+                            </span>
+                          )}
                         </div>
                         <span style={{ ...getWebTypo(sizes.typography.bodyMedium), color: hasUnread ? colors.n900 : colors.n500, fontWeight: hasUnread ? '600' : '400', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                          {lastMessage?.text || t('chat.no_messages')}
+                          {lastMessagePreview}
                         </span>
                       </div>
 
@@ -474,7 +536,10 @@ export default function ChatListScreen() {
                 <Window>
                   <CustomChannelHeader
                     onBack={() => setSelectedChannel(null)}
-                    onHeaderClick={() => setShowInfoPanel(!showInfoPanel)}
+                    onHeaderClick={() => {
+                      setShowInfoPanel(!showInfoPanel);
+                      setInfoPanelView('main');
+                    }}
                     isPortrait={isPortrait}
                     colors={colors}
                     sizes={sizes}
@@ -501,16 +566,107 @@ export default function ChatListScreen() {
                     zIndex: 10
                   }}>
                     <div style={{ padding: sizes.spacing.m, borderBottom: `1px solid ${colors.n200}`, display: 'flex', alignItems: 'center', height: sizes.scale(68) }}>
-                      <TouchableOpacity onPress={() => setShowInfoPanel(false)}>
-                        <Icon name="x" size={sizes.scale(24)} color={colors.n900} />
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (infoPanelView !== 'main') {
+                            setInfoPanelView('main');
+                          } else {
+                            setShowInfoPanel(false);
+                          }
+                        }}
+                      >
+                        <Icon name={infoPanelView !== 'main' ? 'arrow-back' : 'x'} size={sizes.scale(24)} color={colors.n900} />
                       </TouchableOpacity>
-                      <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.h4), color: colors.n900 }}>{t('chat.info')}</span>
+                      <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.h4), color: colors.n900 }}>
+                        {infoPanelView === 'media' ? t('chat.media_and_files') : t('chat.info')}
+                      </span>
                     </div>
 
                     {(() => {
                       const otherMember = Object.values(selectedChannel.state.members).find(m => m.user_id !== chatClient.userID)?.user;
                       const pName = otherMember?.name || otherMember?.id || t('actions.chat', 'Чат');
                       const pOnline = otherMember?.online;
+                      const isChannelMuted = !!mutedChannels[selectedChannel.id];
+
+                      const sharedAttachments = (selectedChannel.state?.messages || []).reduce((acc, msg) => {
+                        if (Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+                          msg.attachments.forEach((att, idx) => {
+                            acc.push({
+                              id: `${msg.id}-${idx}`,
+                              type: att.type || (att.image_url || att.thumb_url ? 'image' : 'file'),
+                              url: att.image_url || att.asset_url || att.thumb_url,
+                              title: att.title || att.fallback || t('chat.attachment', 'Вложение'),
+                              createdAt: msg.created_at,
+                            });
+                          });
+                        }
+                        return acc;
+                      }, []);
+
+                      if (infoPanelView === 'media') {
+                        return (
+                          <div style={{ flex: 1, overflowY: 'auto', padding: sizes.spacing.m }}>
+                            {sharedAttachments.length === 0 ? (
+                              <div style={{ padding: sizes.spacing.xl, textAlign: 'center', color: colors.n500, ...getWebTypo(sizes.typography.bodyMedium) }}>
+                                {t('chat.no_media', 'Нет медиафайлов и документов')}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: sizes.spacing.s }}>
+                                {sharedAttachments.map((item) => (
+                                  <a
+                                    key={item.id}
+                                    href={item.url || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      padding: sizes.spacing.s,
+                                      borderRadius: sizes.borderRadius.medium,
+                                      border: `1px solid ${colors.n200}`,
+                                      textDecoration: 'none',
+                                      color: colors.n900,
+                                      gap: sizes.spacing.s,
+                                    }}
+                                  >
+                                    {item.type === 'image' && item.url ? (
+                                      <img
+                                        src={item.url}
+                                        alt={item.title}
+                                        style={{ width: sizes.scale(48), height: sizes.scale(48), borderRadius: sizes.scale(8), objectFit: 'cover', flexShrink: 0 }}
+                                      />
+                                    ) : (
+                                      <div style={{
+                                        width: sizes.scale(48),
+                                        height: sizes.scale(48),
+                                        borderRadius: sizes.scale(8),
+                                        backgroundColor: colors.p100,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                      }}>
+                                        <Icon name="file" size={sizes.scale(22)} color={colors.p500} />
+                                      </div>
+                                    )}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ ...getWebTypo(sizes.typography.bodyMedium), fontWeight: '600', color: colors.n900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {item.title}
+                                      </div>
+                                      {!!item.createdAt && (
+                                        <div style={{ ...getWebTypo(sizes.typography.caption), color: colors.n500 }}>
+                                          {formatChannelTime(item.createdAt)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
                       return (
                         <>
                           <div style={{ padding: `${sizes.spacing.xl}px ${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', flexDirection: 'column', alignItems: 'center', borderBottom: `1px solid ${colors.n200}` }}>
@@ -534,19 +690,41 @@ export default function ChatListScreen() {
                             </span>
                           </div>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', padding: `${sizes.spacing.s}px 0` }}>
-                            <div style={{ padding: `${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                              <Icon name="bell" size={sizes.scale(24)} color={colors.n500} />
-                              <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.bodyLarge), color: colors.n900 }}>{t('chat.notifications_on')}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', padding: `${sizes.spacing.s}px 0`, flex: 1 }}>
+                            <div
+                              onClick={() => handleToggleMute(selectedChannel)}
+                              style={{ padding: `${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                            >
+                              <Icon name={isChannelMuted ? 'bell-off' : 'bell'} size={sizes.scale(24)} color={isChannelMuted ? colors.n400 : colors.p500} />
+                              <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.bodyLarge), color: colors.n900, flex: 1 }}>
+                                {isChannelMuted ? t('chat.notifications_off', 'Уведомления выключены') : t('chat.notifications_on')}
+                              </span>
                             </div>
-                            <div style={{ padding: `${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <div
+                              onClick={() => setInfoPanelView('media')}
+                              style={{ padding: `${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                            >
                               <Icon name="image" size={sizes.scale(24)} color={colors.n500} />
-                              <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.bodyLarge), color: colors.n900 }}>{t('chat.media_and_files')}</span>
+                              <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.bodyLarge), color: colors.n900, flex: 1 }}>
+                                {t('chat.media_and_files')}
+                              </span>
+                              <span style={{ ...getWebTypo(sizes.typography.caption), color: colors.n400, marginRight: sizes.spacing.xs }}>
+                                {sharedAttachments.length}
+                              </span>
+                              <Icon name="chevron-right" size={sizes.scale(18)} color={colors.n400} />
                             </div>
-                            <div style={{ padding: `${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', alignItems: 'center', cursor: 'pointer', marginTop: 'auto' }}>
-                              <Icon name="slash" size={sizes.scale(24)} color={colors.danger} />
-                              <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.bodyLarge), color: colors.danger }}>{t('chat.block_user')}</span>
-                            </div>
+                            {otherMember?.id && (
+                              <div
+                                onClick={() => {
+                                  setReportTargetId(otherMember.id);
+                                  setReportModalVisible(true);
+                                }}
+                                style={{ padding: `${sizes.spacing.m}px ${sizes.spacing.l}px`, display: 'flex', alignItems: 'center', cursor: 'pointer', marginTop: 'auto' }}
+                              >
+                                <Icon name="slash" size={sizes.scale(24)} color={colors.danger} />
+                                <span style={{ marginLeft: sizes.spacing.m, ...getWebTypo(sizes.typography.bodyLarge), color: colors.danger }}>{t('chat.block_user')}</span>
+                              </div>
+                            )}
                           </div>
                         </>
                       );
@@ -563,6 +741,15 @@ export default function ChatListScreen() {
           </div>
         )}
       </div>
+
+      {reportTargetId && (
+        <ReportModal
+          visible={reportModalVisible}
+          onClose={() => setReportModalVisible(false)}
+          targetType="profile"
+          targetId={reportTargetId}
+        />
+      )}
     </View>
   );
 }

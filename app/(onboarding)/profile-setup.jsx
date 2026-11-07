@@ -11,6 +11,7 @@ import { Icon } from '../../src/components/ui/Icon';
 import { useSession } from '../../src/context/SessionContext';
 import { AvatarPicker } from '../../src/components/ui/AvatarPicker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useUnsavedChangesGuard } from '../../src/utils/routeValidation';
 
 export default function ProfileSetup() {
   const router = useRouter();
@@ -87,6 +88,13 @@ export default function ProfileSetup() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
+
+  const isDirty = !loading && Boolean(
+    fullName.trim() !== [session?.firstName || '', session?.lastName || ''].filter(Boolean).join(' ') ||
+    phone.trim() !== (session?.phone || '') ||
+    avatarUrl
+  );
+  useUnsavedChangesGuard(isDirty);
 
   useEffect(() => {
     if (isDoctor) {
@@ -460,6 +468,9 @@ const themeStyles = (theme) => ({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: theme.sizes.spacing.s,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 600 : undefined,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -582,5 +593,8 @@ const themeStyles = (theme) => ({
   footer: {
     paddingBottom: theme.sizes.scale(40),
     marginTop: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 600 : undefined,
+    alignSelf: 'center',
   }
 });

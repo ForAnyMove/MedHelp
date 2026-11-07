@@ -17,6 +17,6 @@ export function Screen({ children, style }) {
 const themeStyles = (theme) => ({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.bg || '#F3F9FE',
   },
 });

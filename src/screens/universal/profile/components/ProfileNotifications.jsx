@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, Platform, StatusBar } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { formatRelativeTime } from '../../../../utils/dateUtils';
@@ -50,6 +50,20 @@ export function ProfileNotifications({ user, onClose }) {
       return;
     }
 
+    // 2b. Doctor clinic invitations
+    if (item.type === 'doctor_clinic_invite') {
+      if (onClose) onClose();
+      router.push('/doctors?view=requests');
+      return;
+    }
+
+    // 2c. Doctor new review received
+    if (item.type === 'new_review_received') {
+      if (onClose) onClose();
+      router.push('/profile?view=reviews');
+      return;
+    }
+
     // 3. Consultation lifecycle routing
     const isConsultation = 
       item.type === 'consultation_started' ||
@@ -58,6 +72,10 @@ export function ProfileNotifications({ user, onClose }) {
       item.type === 'canceled_appointment' ||
       item.type === 'rescheduled_appointment' ||
       item.type === 'new_appointment' ||
+      item.type === 'consultation_reminder_1h' ||
+      item.type === 'consultation_reminder_15m' ||
+      item.type === 'patient_waiting' ||
+      item.type === 'rate_consultation_invite' ||
       item.data?.url?.includes('consultation');
 
     if (isConsultation) {
@@ -68,15 +86,27 @@ export function ProfileNotifications({ user, onClose }) {
       if (consultationId) {
         if (onClose) onClose();
 
+        // Patient waiting room -> doctor joins call immediately
+        if (item.type === 'patient_waiting') {
+          router.push(`/consultation/${consultationId}`);
+          return;
+        }
+
+        // Rate consultation invite -> patient review screen
+        if (item.type === 'rate_consultation_invite') {
+          router.push(`/history?openHistoryId=${consultationId}&rate=true`);
+          return;
+        }
+
         // Doctor perspective
         if (user?.role === 'doctor') {
           if (item.type === 'consultation_started' || item.type === 'consultation_resumed') {
             router.push(`/consultation/${consultationId}`);
-          } else if (item.type === 'new_appointment') {
-            router.push(`/(doctor)?tab=consultation&openConsultationId=${consultationId}&action=view`);
+          } else if (item.type === 'new_appointment' || item.type === 'consultation_reminder_1h' || item.type === 'consultation_reminder_15m') {
+            router.push(`/consultation?openConsultationId=${consultationId}&action=view`);
           } else {
             // Completed, canceled, rescheduled -> consultation history detail
-            router.push(`/(doctor)?tab=history&openHistoryId=${consultationId}`);
+            router.push(`/history?openHistoryId=${consultationId}`);
           }
           return;
         }
@@ -86,12 +116,12 @@ export function ProfileNotifications({ user, onClose }) {
           if (item.type === 'consultation_started' || item.type === 'consultation_resumed') {
             // Active live call room
             router.push(`/consultation/${consultationId}`);
-          } else if (item.type === 'rescheduled_appointment') {
+          } else if (item.type === 'rescheduled_appointment' || item.type === 'consultation_reminder_1h' || item.type === 'consultation_reminder_15m') {
             // Upcoming appointments tab
-            router.push('/(patient)?tab=consultations');
+            router.push('/consultation');
           } else {
             // Completed, canceled -> patient history detail (diagnosis, prescription, summary)
-            router.push(`/(patient)?tab=history&openHistoryId=${consultationId}`);
+            router.push(`/history?openHistoryId=${consultationId}`);
           }
           return;
         }
@@ -131,9 +161,9 @@ export function ProfileNotifications({ user, onClose }) {
     if (item.reference_id) {
       if (onClose) onClose();
       if (user?.role === 'doctor') {
-        router.push(`/(doctor)?tab=history&openHistoryId=${item.reference_id}`);
+        router.push(`/history?openHistoryId=${item.reference_id}`);
       } else {
-        router.push(`/(patient)?tab=history&openHistoryId=${item.reference_id}`);
+        router.push(`/history?openHistoryId=${item.reference_id}`);
       }
       return;
     }
@@ -145,11 +175,22 @@ export function ProfileNotifications({ user, onClose }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>
-          {t('profile.notifications')} {unreadCount > 0 && <Text style={styles.unreadCount}>({unreadCount})</Text>}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: sizes.spacing.s, flex: 1 }}>
+          {onClose && (
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Icon name="arrow-left" size={sizes.scale(24)} color={colors.n700} />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.title} numberOfLines={1}>
+            {t('profile.notifications')} {unreadCount > 0 && <Text style={styles.unreadCount}>({unreadCount})</Text>}
+          </Text>
+        </View>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={markAllAsRead}>
+          <TouchableOpacity 
+            onPress={markAllAsRead}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            style={{ zIndex: 10, paddingVertical: 4, paddingHorizontal: 6 }}
+          >
             <Text style={styles.markAllText}>{t('profile.mark_all_read')}</Text>
           </TouchableOpacity>
         )}
@@ -220,6 +261,10 @@ const NotificationItem = ({ item, onPress }) => {
       case 'new_appointment':
         return { name: 'calendar', bgColor: colors.p100, color: colors.p500 };
 
+      case 'consultation_reminder_1h':
+      case 'consultation_reminder_15m':
+        return { name: 'Clock', bgColor: colors.warning + '22', color: colors.warning };
+
       case 'canceled_appointment':
         return { name: 'calendar-x', bgColor: colors.danger + '22', color: colors.danger };
 
@@ -228,10 +273,15 @@ const NotificationItem = ({ item, onPress }) => {
 
       case 'consultation_started':
       case 'consultation_resumed':
+      case 'patient_waiting':
         return { name: 'video', bgColor: colors.success + '22', color: colors.success };
 
       case 'consultation_completed':
         return { name: 'medic-history', bgColor: colors.p100, color: colors.p500 };
+
+      case 'rate_consultation_invite':
+      case 'new_review_received':
+        return { name: 'Star', bgColor: colors.warning + '22', color: colors.warning };
 
       case 'test_results_ready':
       case 'additional_lab_requested':
@@ -239,6 +289,24 @@ const NotificationItem = ({ item, onPress }) => {
 
       case 'new_message':
         return { name: 'chat', bgColor: colors.p100, color: colors.p500 };
+
+      case 'subscription_created':
+      case 'subscription_renewed':
+      case 'payment_success':
+        return { name: 'CreditCard', bgColor: colors.success + '22', color: colors.success };
+
+      case 'subscription_renewal_failed':
+      case 'subscription_expired':
+      case 'subscription_grace_period':
+      case 'payment_cancelled':
+        return { name: 'CreditCard', bgColor: colors.danger + '22', color: colors.danger };
+
+      case 'account_blocked':
+      case 'password_changed':
+        return { name: 'ShieldAlert', bgColor: colors.danger + '22', color: colors.danger };
+
+      case 'doctor_clinic_invite':
+        return { name: 'UserPlus', bgColor: colors.info + '22', color: colors.sBlue };
 
       case 'doctor_join_rejected':
       case 'join_request_cancelled':
@@ -250,10 +318,14 @@ const NotificationItem = ({ item, onPress }) => {
       case 'doctor_join_accepted':
       case 'moderation_approved':
       case 'report_resolved':
+      case 'doc_verification_approved':
+      case 'org_verification_approved':
         return { name: 'check', bgColor: colors.success + '22', color: colors.success };
 
       case 'moderation_rejected':
       case 'report_dismissed':
+      case 'doc_verification_rejected':
+      case 'org_verification_rejected':
         return { name: 'warning', bgColor: colors.danger + '22', color: colors.danger };
 
       case 'owner_join_request':
@@ -292,13 +364,14 @@ const themeStyles = (theme) => ({
   container: {
     flex: 1,
     paddingHorizontal: theme.sizes.spacing.m,
-    paddingTop: theme.sizes.spacing.s,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + theme.sizes.spacing.s : theme.sizes.spacing.s,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: theme.sizes.spacing.m,
+    paddingRight: theme. sizes.scale(42),
   },
   title: {
     ...theme.sizes.typography.h2,

@@ -17,12 +17,53 @@ const STATUS_COLORS = {
   upcoming: '#6366F1',
 };
 
+import { useLocalSearchParams } from 'expo-router';
+import { Platform } from 'react-native';
+
 export function OwnerHistoryTab() {
   const styles = useStyles(themeStyles);
-  const { sizes, colors } = useTheme();
+  const { sizes, colors, responsive } = useTheme();
   const { t } = useTranslation();
   const { ownerController } = useComponentContext();
   const { historyView, historySelectedId, navigateToHistoryDetail, navigateToHistoryAll, navigateBack } = useOwnerDashboard();
+
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
+
+  const searchParams = useLocalSearchParams();
+  const routeView = typeof searchParams?.view === 'string' ? searchParams.view : searchParams?.view?.[0];
+  const routeId = typeof searchParams?.id === 'string' ? searchParams.id : searchParams?.id?.[0];
+
+  const getWebParam = (key) => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.location) return null;
+    try {
+      if (!window.location.pathname.startsWith('/history')) return null;
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get(key);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const [, setPopstateTick] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.addEventListener) return;
+    const handlePop = () => setPopstateTick((t) => t + 1);
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
+
+  const urlView = getWebParam('view');
+  const urlId = getWebParam('id');
+
+  const isWeb = Platform.OS === 'web' && typeof window !== 'undefined' && window.location;
+  const isWebHistoryBase = isWeb && window.location.pathname.startsWith('/history') && (!window.location.search || window.location.search === '?');
+
+  const effectiveView = isWebHistoryBase
+    ? 'dashboard'
+    : (historyView !== 'dashboard' ? historyView : (urlView || (routeView || 'dashboard')));
+  const effectiveId = isWebHistoryBase
+    ? null
+    : (historySelectedId || urlId || (routeId || null));
 
   const [filterIndex, setFilterIndex] = useState(0);
   const filters = [t('doctor_history.all'), t('doctor_history.completed'), t('doctor_history.upcoming'), t('doctor_history.canceled')];
@@ -37,8 +78,8 @@ export function OwnerHistoryTab() {
   }, [allConsultations, filterIndex]);
 
   // Sub-view: detail
-  if (historyView === 'detail') {
-    const consultation = allConsultations.find(c => c.id === historySelectedId);
+  if (effectiveView === 'detail' && effectiveId) {
+    const consultation = allConsultations.find(c => String(c.id) === String(effectiveId));
     return <OwnerConsultationDetail consultation={consultation} onBack={navigateBack} />;
   }
 
@@ -53,23 +94,43 @@ export function OwnerHistoryTab() {
       </View>
 
       {/* Stats summary cards */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsScrollContent}>
-        {[
-          { label: t('doctor_history.all'), count: allConsultations.length, color: colors.p500 },
-          { label: t('doctor_history.completed'), count: allConsultations.filter(c => c.status === 'completed').length, color: STATUS_COLORS.completed },
-          { label: t('doctor_history.upcoming'), count: allConsultations.filter(c => c.status === 'upcoming' || c.status === 'scheduled').length, color: STATUS_COLORS.scheduled },
-          { label: t('doctor_history.canceled'), count: allConsultations.filter(c => c.status === 'canceled').length, color: STATUS_COLORS.canceled },
-        ].map((s, i) => (
-          <TouchableOpacity
-            key={i}
-            style={[styles.statCard, filterIndex === i && { borderColor: s.color, borderWidth: 2 }]}
-            onPress={() => setFilterIndex(i)}
-          >
-            <Text style={[styles.statCount, { color: s.color }]}>{s.count}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {isLandscapeLayout ? (
+        <View style={styles.desktopStatsRow}>
+          {[
+            { label: t('doctor_history.all'), count: allConsultations.length, color: colors.p500 },
+            { label: t('doctor_history.completed'), count: allConsultations.filter(c => c.status === 'completed').length, color: STATUS_COLORS.completed },
+            { label: t('doctor_history.upcoming'), count: allConsultations.filter(c => c.status === 'upcoming' || c.status === 'scheduled').length, color: STATUS_COLORS.scheduled },
+            { label: t('doctor_history.canceled'), count: allConsultations.filter(c => c.status === 'canceled').length, color: STATUS_COLORS.canceled },
+          ].map((s, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.statCard, styles.desktopStatCard, filterIndex === i && { borderColor: s.color, borderWidth: 2 }]}
+              onPress={() => setFilterIndex(i)}
+            >
+              <Text style={[styles.statCount, { color: s.color }]}>{s.count}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsScrollContent}>
+          {[
+            { label: t('doctor_history.all'), count: allConsultations.length, color: colors.p500 },
+            { label: t('doctor_history.completed'), count: allConsultations.filter(c => c.status === 'completed').length, color: STATUS_COLORS.completed },
+            { label: t('doctor_history.upcoming'), count: allConsultations.filter(c => c.status === 'upcoming' || c.status === 'scheduled').length, color: STATUS_COLORS.scheduled },
+            { label: t('doctor_history.canceled'), count: allConsultations.filter(c => c.status === 'canceled').length, color: STATUS_COLORS.canceled },
+          ].map((s, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.statCard, filterIndex === i && { borderColor: s.color, borderWidth: 2 }]}
+              onPress={() => setFilterIndex(i)}
+            >
+              <Text style={[styles.statCount, { color: s.color }]}>{s.count}</Text>
+              <Text style={styles.statLabel}>{s.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {filteredConsultations.length === 0 ? (
@@ -79,45 +140,47 @@ export function OwnerHistoryTab() {
             description={t('doctor_history.empty_desc')}
           />
         ) : (
-          filteredConsultations.map(c => {
-            const date = c.date ? new Date(c.date) : null;
-            const dateStr = date ? date.toLocaleDateString(t('common.locale') || 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-            const timeStr = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            const statusColor = STATUS_COLORS[c.status] || colors.n400;
+          <View style={isLandscapeLayout ? styles.desktopConsultGrid : undefined}>
+            {filteredConsultations.map(c => {
+              const date = c.date ? new Date(c.date) : null;
+              const dateStr = date ? date.toLocaleDateString(t('common.locale') || 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+              const timeStr = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              const statusColor = STATUS_COLORS[c.status] || colors.n400;
 
-            return (
-              <TouchableOpacity
-                key={c.id}
-                style={styles.consultCard}
-                activeOpacity={0.85}
-                onPress={() => navigateToHistoryDetail(c.id)}
-              >
-                <View style={[styles.statusStripe, { backgroundColor: statusColor }]} />
-                <View style={styles.cardBody}>
-                  <View style={styles.cardRow}>
-                    <Text style={styles.dateText}>{dateStr}</Text>
-                    <Text style={styles.timeText}>{timeStr}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[styles.doctorName, { marginBottom: 0 }]}>{t('doctors.dr_prefix')}{c.doctorName}</Text>
-                    {c.doctorIsVerified && (
-                      <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
-                    )}
-                  </View>
-                  <Text style={styles.patientName}>{t('owner_calendar.patient')}: {c.patientName}</Text>
-                  <View style={styles.cardFooter}>
-                    <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                      <Text style={[styles.statusText, { color: statusColor }]}>
-                        {t(`doctor_history.status_${c.status}`) || c.status}
-                      </Text>
+              return (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.consultCard, isLandscapeLayout && styles.desktopConsultCard]}
+                  activeOpacity={0.85}
+                  onPress={() => navigateToHistoryDetail(c.id)}
+                >
+                  <View style={[styles.statusStripe, { backgroundColor: statusColor }]} />
+                  <View style={styles.cardBody}>
+                    <View style={styles.cardRow}>
+                      <Text style={styles.dateText}>{dateStr}</Text>
+                      <Text style={styles.timeText}>{timeStr}</Text>
                     </View>
-                    {c.price ? <Text style={styles.priceText}>${c.price}</Text> : null}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={[styles.doctorName, { marginBottom: 0 }]}>{t('doctors.dr_prefix')}{c.doctorName}</Text>
+                      {c.doctorIsVerified && (
+                        <Icon name="BadgeCheck" size={sizes.scale(16)} color={colors.p300} style={{ marginLeft: sizes.scale(4) }} />
+                      )}
+                    </View>
+                    <Text style={styles.patientName}>{t('owner_calendar.patient')}: {c.patientName}</Text>
+                    <View style={styles.cardFooter}>
+                      <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
+                        <Text style={[styles.statusText, { color: statusColor }]}>
+                          {t(`doctor_history.status_${c.status}`) || c.status}
+                        </Text>
+                      </View>
+                      {c.price ? <Text style={styles.priceText}>${c.price}</Text> : null}
+                    </View>
                   </View>
-                </View>
-                <Icon name="arrow-forward" size={sizes.scale(20)} color={colors.n400} />
-              </TouchableOpacity>
-            );
-          })
+                  <Icon name="arrow-forward" size={sizes.scale(20)} color={colors.n400} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
     </View>
@@ -127,9 +190,16 @@ export function OwnerHistoryTab() {
 const themeStyles = (theme) => ({
   container: { flex: 1, backgroundColor: theme.colors.bg },
   header: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.l,
     paddingBottom: theme.sizes.spacing.s,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
   },
   title: {
     ...theme.sizes.typography.h2,
@@ -141,9 +211,27 @@ const themeStyles = (theme) => ({
     color: theme.colors.n500,
     marginTop: theme.sizes.scale(2),
   },
-  statsScroll: { maxHeight: theme.sizes.scale(100) },
+  desktopStatsRow: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.xl,
+    paddingVertical: theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
+  },
+  desktopStatCard: {
+    flex: 1,
+    paddingVertical: theme.sizes.spacing.m,
+  },
+  statsScroll: {
+    maxHeight: theme.sizes.scale(100),
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
+  },
   statsScrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingVertical: theme.sizes.spacing.m,
     gap: theme.sizes.spacing.s,
   },
@@ -168,8 +256,27 @@ const themeStyles = (theme) => ({
   },
   statLabel: { ...theme.sizes.typography.caption, color: theme.colors.n500 },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl * 2,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1240
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : undefined,
+    alignSelf: 'center',
+    marginHorizontal: 'auto',
+  },
+  desktopConsultGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.sizes.spacing.m,
+  },
+  desktopConsultCard: {
+    width: '49%',
+    minWidth: 340,
+    marginBottom: 0,
+    paddingRight: theme.sizes.spacing.m,
   },
   consultCard: {
     flexDirection: 'row',

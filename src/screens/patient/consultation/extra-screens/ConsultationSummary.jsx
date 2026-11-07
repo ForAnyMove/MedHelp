@@ -14,6 +14,9 @@ export function ConsultationSummary({ booking, onClose }) {
   const { doctorController, themeController: { colors, sizes } } = useComponentContext();
   const { setTabIndex } = usePatientDashboard();
   const styles = useStyles(themeStyles);
+  const { useTheme } = require('../../../../theme/ThemeContext');
+  const { responsive } = useTheme();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isTabletLandscape || responsive?.isDesktop || responsive?.isDesktopLarge);
 
   if (!booking) {
     return null;
@@ -66,92 +69,98 @@ export function ConsultationSummary({ booking, onClose }) {
         <Text style={styles.subtitle}>{t('consultation.completed')} <Text style={styles.bold}>{t('consultation.duration_val', { duration: booking.duration })}</Text></Text>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.summaryCardWrapper}>
-          <RegularDoctorCard
-            doctor={doctor || {}}
-            variant="compact"
-            onProfilePress={() => { }}
-            containerStyle={styles.doctorCard}
-            customSubtitle={`${t('dashboard.consultation_title')}: ${t('doctors.online').charAt(0).toUpperCase() + t('doctors.online').slice(1)}`}
-          />
+        <View style={isLandscapeLayout ? styles.desktopTwoColumn : undefined}>
+          <View style={isLandscapeLayout ? styles.desktopLeftCol : undefined}>
+            <View style={styles.summaryCardWrapper}>
+              <RegularDoctorCard
+                doctor={doctor || {}}
+                variant="compact"
+                onProfilePress={() => { }}
+                containerStyle={styles.doctorCard}
+                customSubtitle={`${t('dashboard.consultation_title')}: ${t('doctors.online').charAt(0).toUpperCase() + t('doctors.online').slice(1)}`}
+              />
 
-          <View style={styles.cardDivider} />
+              <View style={styles.cardDivider} />
 
-          <View style={styles.section}>
-            <Text style={styles.description}>
-              {overview}
-            </Text>
-            {(findingsRaw && findingsRaw.length > 0) ? (
-              <>
-                <Text style={styles.infoText}>{t('consultation.you_have')}</Text>
-                {findingsRaw.map((finding, index) => (
-                  <View key={index} style={styles.bulletRow}>
-                    <View style={styles.bullet} />
-                    <Text style={styles.bulletText}>{finding}</Text>
-                  </View>
-                ))}
-              </>
-            ) : (
-              <>
-                <Text style={styles.infoText}>{t('consultation.you_have')}</Text>
-                <View style={styles.bulletRow}>
-                  <View style={styles.bullet} />
-                  <Text style={styles.bulletText}>{t('consultation.finding_ferritin')}</Text>
-                </View>
-                <View style={styles.bulletRow}>
-                  <View style={styles.bullet} />
-                  <Text style={styles.bulletText}>{t('consultation.finding_cholesterol')}</Text>
-                </View>
-                <View style={styles.bulletRow}>
-                  <View style={styles.bullet} />
-                  <Text style={styles.bulletText}>{t('consultation.finding_monitoring')}</Text>
-                </View>
-              </>
-            )}
+              <View style={styles.section}>
+                <Text style={styles.description}>
+                  {overview}
+                </Text>
+                {(findingsRaw && findingsRaw.length > 0) ? (
+                  <>
+                    <Text style={styles.infoText}>{t('consultation.you_have')}</Text>
+                    {findingsRaw.map((finding, index) => (
+                      <View key={index} style={styles.bulletRow}>
+                        <View style={styles.bullet} />
+                        <Text style={styles.bulletText}>{finding}</Text>
+                      </View>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.infoText}>{t('consultation.you_have')}</Text>
+                    <View style={styles.bulletRow}>
+                      <View style={styles.bullet} />
+                      <Text style={styles.bulletText}>{t('consultation.finding_ferritin')}</Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <View style={styles.bullet} />
+                      <Text style={styles.bulletText}>{t('consultation.finding_cholesterol')}</Text>
+                    </View>
+                    <View style={styles.bulletRow}>
+                      <View style={styles.bullet} />
+                      <Text style={styles.bulletText}>{t('consultation.finding_monitoring')}</Text>
+                    </View>
+                  </>
+                )}
+              </View>
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.sectionTitle}>{t('consultation.recommendations')}</Text>
-        <View style={styles.card}>
-          {(recommendationsList || [
-            { id: 1, text: t('symptoms.rec_4'), icon: 'anemia', color: colors.sPink },
-            { id: 2, text: t('symptoms.rec_5'), icon: 'anemia', color: colors.p500 },
-            { id: 3, text: t('symptoms.rec_6'), icon: 'anemia', color: colors.sCoral },
-            { id: 4, text: t('symptoms.rec_7'), icon: 'anemia', color: colors.sYell },
-          ]).map(item => (
-            <View key={item.id} style={styles.recItem}>
-              <Icon name={item.icon} size={sizes.scale(24)} color={item.color} wrapperStyle={styles.recIcon} wrapped />
-              <Text style={styles.recText}>{item.text}</Text>
+          <View style={isLandscapeLayout ? styles.desktopRightCol : undefined}>
+            <Text style={styles.sectionTitle}>{t('consultation.recommendations')}</Text>
+            <View style={[styles.card, { marginBottom: sizes.spacing.l }]}>
+              {(recommendationsList || [
+                { id: 1, text: t('symptoms.rec_4'), icon: 'anemia', color: colors.sPink },
+                { id: 2, text: t('symptoms.rec_5'), icon: 'anemia', color: colors.p500 },
+                { id: 3, text: t('symptoms.rec_6'), icon: 'anemia', color: colors.sCoral },
+                { id: 4, text: t('symptoms.rec_7'), icon: 'anemia', color: colors.sYell },
+              ]).map(item => (
+                <View key={item.id} style={styles.recItem}>
+                  <Icon name={item.icon} size={sizes.scale(24)} color={item.color} wrapperStyle={styles.recIcon} wrapped />
+                  <Text style={styles.recText}>{item.text}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
 
-        <Text style={styles.sectionTitle}>{t('consultation.next_steps')}</Text>
-        <View style={styles.card}>
-          {(nextStepsList || [
-            { id: 5, text: t('symptoms.rec_4'), icon: 'anemia', color: colors.sPink },
-            { id: 6, text: t('symptoms.rec_5'), icon: 'anemia', color: colors.p500 },
-          ]).map(item => (
-            <View key={item.id} style={styles.recItem}>
-              <Icon name={item.icon} size={sizes.scale(24)} color={item.color} wrapperStyle={styles.recIcon} wrapped />
-              <Text style={styles.recText}>{item.text}</Text>
+            <Text style={styles.sectionTitle}>{t('consultation.next_steps')}</Text>
+            <View style={styles.card}>
+              {(nextStepsList || [
+                { id: 5, text: t('symptoms.rec_4'), icon: 'anemia', color: colors.sPink },
+                { id: 6, text: t('symptoms.rec_5'), icon: 'anemia', color: colors.p500 },
+              ]).map(item => (
+                <View key={item.id} style={styles.recItem}>
+                  <Icon name={item.icon} size={sizes.scale(24)} color={item.color} wrapperStyle={styles.recIcon} wrapped />
+                  <Text style={styles.recText}>{item.text}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
 
-        <View style={styles.footer}>
-          <Button
-            title={t('consultation.view_history')}
-            variant="outlined"
-            style={styles.footerBtn}
-            onPress={handleHistory}
-          />
-          <Button
-            title={t('consultation.book_next')}
-            variant="primary"
-            style={styles.footerBtn}
-            onPress={handleBookNext}
-          />
+            <View style={[styles.footer, isLandscapeLayout && styles.footerDesktop]}>
+              <Button
+                title={t('consultation.view_history')}
+                variant="outlined"
+                style={[styles.footerBtn, isLandscapeLayout && { flex: 1 }]}
+                onPress={handleHistory}
+              />
+              <Button
+                title={t('consultation.book_next')}
+                variant="primary"
+                style={[styles.footerBtn, isLandscapeLayout && { flex: 1 }]}
+                onPress={handleBookNext}
+              />
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -166,13 +175,27 @@ const themeStyles = (theme) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingTop: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.s,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : 960,
+    alignSelf: 'center',
   },
   titleContainer: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.s,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : 960,
+    alignSelf: 'center',
   },
   backButton: {
     marginRight: theme.sizes.spacing.m,
@@ -189,8 +212,28 @@ const themeStyles = (theme) => ({
     color: theme.colors.n900,
   },
   scrollContent: {
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xl,
+    width: '100%',
+    maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge
+      ? 1120
+      : theme.responsive?.isTabletPortrait
+        ? 720
+        : 960,
+    alignSelf: 'center',
+  },
+  desktopTwoColumn: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.xl,
+    alignItems: 'flex-start',
+  },
+  desktopLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1,
+    minWidth: 0,
   },
   summaryCardWrapper: {
     backgroundColor: theme.colors.white,
@@ -286,6 +329,9 @@ const themeStyles = (theme) => ({
   footer: {
     marginTop: theme.sizes.spacing.l,
     gap: theme.sizes.spacing.m,
+  },
+  footerDesktop: {
+    flexDirection: 'row',
   },
   footerBtn: {
     height: theme.sizes.scale(58),

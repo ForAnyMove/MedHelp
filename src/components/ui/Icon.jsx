@@ -80,14 +80,15 @@ export function Icon({
   if (!resolved) return null;
 
   const { type, Component: IconComponent } = resolved;
+  const isAccessible = !onPress && !!accessibilityLabel;
   let iconNode = type === 'custom' ? (
     <IconComponent
       width={size}
       height={size}
       color={color}
       style={[{ color: color }, style]}
-      accessible={!onPress && !!accessibilityLabel}
-      accessibilityRole={!onPress && accessibilityLabel ? (accessibilityRole || "image") : undefined}
+      accessible={isAccessible ? true : undefined}
+      accessibilityRole={isAccessible ? (accessibilityRole || "image") : undefined}
       accessibilityLabel={!onPress ? accessibilityLabel : undefined}
       {...rest}
     />
@@ -96,8 +97,8 @@ export function Icon({
       size={size} 
       color={color} 
       style={style} 
-      accessible={!onPress && !!accessibilityLabel}
-      accessibilityRole={!onPress && accessibilityLabel ? (accessibilityRole || "image") : undefined}
+      accessible={isAccessible ? true : undefined}
+      accessibilityRole={isAccessible ? (accessibilityRole || "image") : undefined}
       accessibilityLabel={!onPress ? accessibilityLabel : undefined}
       {...rest} 
     />

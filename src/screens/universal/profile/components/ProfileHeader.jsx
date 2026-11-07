@@ -27,7 +27,11 @@ export function ProfileHeader({ user, isSheetOpen, onEditPress, onNotificationPr
             <Icon name="close" size={sizes.scale(24)} color={colors.white} />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.notificationBtn} onPress={onNotificationPress}>
+          <TouchableOpacity 
+            style={styles.notificationBtn} 
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+            onPress={onNotificationPress}
+          >
             <Icon name="notifications" size={sizes.scale(24)} color={colors.white} />
             {(notificationController?.notifications || []).filter(n => !n.is_read).length > 0 && (
               <View style={styles.notifDot} />

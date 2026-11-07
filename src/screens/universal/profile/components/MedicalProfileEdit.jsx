@@ -291,7 +291,7 @@ export function MedicalProfileEdit({ user, type, onClose }) {
             <ActivityIndicator color={colors.p500} size="small" />
           ) : (
             <>
-              <Icon name="check" size={sizes.scale(24)} color={colors.p500} />
+              <Icon name="check" size={sizes.scale(22)} color={colors.white} />
               <Text style={styles.saveBtnText}>{t('common.save_changes', 'Save changes')}</Text>
             </>
           )}
@@ -336,8 +336,8 @@ const themeStyles = (theme) => ({
   selectedTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: /* TODO: color */ '#E0F7F4', // Light turquoise background
-    borderRadius: theme.sizes.scale(),
+    backgroundColor: '#E0F7F4',
+    borderRadius: theme.sizes.scale(16),
     paddingVertical: theme.sizes.spacing.xs,
     paddingHorizontal: theme.sizes.spacing.m,
   },
@@ -345,6 +345,7 @@ const themeStyles = (theme) => ({
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.p500,
     marginRight: theme.sizes.spacing.xs,
+    fontWeight: '600',
   },
   removeIcon: {
     marginLeft: theme.sizes.spacing.xs,
@@ -356,10 +357,10 @@ const themeStyles = (theme) => ({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.p200, // Turquoise background for search
-    borderRadius: theme.sizes.scale(),
+    backgroundColor: theme.colors.p100,
+    borderRadius: theme.sizes.borderRadius.medium,
     paddingHorizontal: theme.sizes.spacing.m,
-    height: theme.sizes.scale(),
+    height: theme.sizes.scale(44),
   },
   searchIcon: {
     marginRight: theme.sizes.spacing.s,
@@ -377,14 +378,15 @@ const themeStyles = (theme) => ({
   },
   scrollContent: {
     paddingHorizontal: theme.sizes.spacing.l,
-    paddingBottom: theme.sizes.scale(), // Space for absolute footer
+    paddingBottom: theme.sizes.scale(24),
   },
   groupSection: {
     marginBottom: theme.sizes.spacing.l,
   },
   groupTitle: {
     ...theme.sizes.typography.h4,
-    color: /* TODO: color */ '#0A333A',
+    color: '#0A333A',
+    fontWeight: '700',
     marginBottom: theme.sizes.spacing.s,
   },
   tagsContainer: {
@@ -393,10 +395,10 @@ const themeStyles = (theme) => ({
     gap: theme.sizes.spacing.s,
   },
   tag: {
-    borderWidth: theme.sizes.scale(),
+    borderWidth: 1,
     borderColor: theme.colors.p300,
     backgroundColor: 'transparent',
-    borderRadius: theme.sizes.scale(),
+    borderRadius: theme.sizes.borderRadius.medium,
     paddingVertical: theme.sizes.spacing.xs,
     paddingHorizontal: theme.sizes.spacing.m,
   },
@@ -407,9 +409,11 @@ const themeStyles = (theme) => ({
   tagText: {
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.p500,
+    fontWeight: '500',
   },
   tagTextSelected: {
     color: theme.colors.white,
+    fontWeight: '700',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -436,29 +440,30 @@ const themeStyles = (theme) => ({
     fontWeight: '600',
   },
   footer: {
-    position: 'absolute',
-    bottom: theme.sizes.scale(),
-    left: theme.sizes.scale(),
-    right: theme.sizes.scale(),
-    padding: theme.sizes.spacing.l,
-    backgroundColor: /* TODO: color */ '#FAFAFA',
-    // Gradient fade effect at bottom might be added with LinearGradient, but plain background is fine
+    padding: theme.sizes.spacing.m,
+    paddingHorizontal: theme.sizes.spacing.l,
+    backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
-    borderTopColor: /* TODO: color */ 'rgba(0,0,0,0.05)',
+    borderTopColor: 'rgba(0,0,0,0.06)',
   },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.p500,
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.sizes.scale(),
-    height: theme.sizes.scale(),
+    backgroundColor: theme.colors.p500,
+    borderRadius: theme.sizes.borderRadius.medium,
+    height: theme.sizes.scale(48),
+    minHeight: 48,
+    shadowColor: theme.colors.p500,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
   },
   saveBtnText: {
-    ...theme.sizes.typography.h4,
-    color: theme.colors.p500,
+    ...theme.sizes.typography.bodyLarge,
+    fontWeight: '700',
+    color: theme.colors.white,
     marginLeft: theme.sizes.spacing.s,
   },
   loader: {

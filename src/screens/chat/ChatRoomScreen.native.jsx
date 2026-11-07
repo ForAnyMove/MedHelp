@@ -161,7 +161,16 @@ export default function ChatRoomScreen() {
         backgroundColor: colors.white,
         height: sizes.scale(68),
       }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(chat)/list');
+            }
+          }}
+          style={styles.backButton}
+        >
           <Icon name="arrow-back" size={sizes.scale(24)} color={colors.p500} />
         </TouchableOpacity>
 

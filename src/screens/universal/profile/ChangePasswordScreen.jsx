@@ -9,6 +9,7 @@ import { Icon } from '../../../components/ui/Icon';
 import { useTheme } from '../../../theme/ThemeContext';
 import { useStyles } from '../../../theme/useStyles';
 import { useComponentContext } from '../../../context/GlobalContext';
+import { useUnsavedChangesGuard } from '../../../utils/routeValidation';
 
 const calculateStrength = (password) => {
   if (!password) return 0;
@@ -39,6 +40,9 @@ export function ChangePasswordScreen() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const isDirty = !loading && Boolean(currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0);
+  useUnsavedChangesGuard(isDirty);
 
   const strengthScore = calculateStrength(newPassword);
   const strengthLabel = STRENGTH_LABELS[strengthScore] || 'Weak';

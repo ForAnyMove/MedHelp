@@ -31,8 +31,8 @@ i18n
       en: { translation: { ...en, ...quizEn } },
       ru: { translation: { ...ru, ...quizRu } },
     },
-    lng: 'en', // Will be overridden shortly
-    fallbackLng: 'en',
+    lng: 'ru', // Default to Russian
+    fallbackLng: 'ru',
     interpolation: { escapeValue: false },
   });
 
@@ -50,6 +50,7 @@ export const getStoredLanguage = async () => {
 
 export const setAppLanguage = async (lng) => {
   try {
+    if (!lng) return;
     if (Platform.OS === 'web') {
       localStorage.setItem(LANG_KEY, lng);
     } else {
@@ -62,11 +63,15 @@ export const setAppLanguage = async (lng) => {
 };
 
 const getSystemLanguage = () => {
-  if (Platform.OS === 'web') {
-    return navigator.language.split('-')[0];
+  if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+    const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
+    if (nav.startsWith('en')) {
+      return 'en';
+    }
+    const ruLocales = ['ru', 'uk', 'be', 'kk', 'uz', 'ky'];
+    if (ruLocales.some((l) => nav.startsWith(l))) return 'ru';
   }
-  // Simplified fallback; optionally use expo-localization for true multiplatform
-  return 'en';
+  return 'ru';
 };
 
 export const initLocalization = async () => {
@@ -76,7 +81,7 @@ export const initLocalization = async () => {
     if (!lang) {
       lang = getSystemLanguage();
       const available = ['en', 'ru'];
-      if (!available.includes(lang)) lang = 'en';
+      if (!available.includes(lang)) lang = 'ru';
       await setAppLanguage(lang);
     } else {
       await i18n.changeLanguage(lang);

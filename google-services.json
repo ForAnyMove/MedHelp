@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959998070608",
+    "project_id": "medhelp-7d121",
+    "storage_bucket": "medhelp-7d121.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959998070608:android:a356abf340a1784aaa2655",
+        "android_client_info": {
+          "package_name": "com.medhelp.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqYCYI0PzQvONpEK3bmck2X47T9R7BKOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -19,7 +19,13 @@ export function mapDoctor(d) {
   if (!d) return null;
   const firstName = d.profile?.first_name ?? d.firstName ?? '';
   const lastName  = d.profile?.last_name ?? d.lastName ?? '';
-  const professionCode = d.profession_code || d.profession?.code || null;
+  const professionCodes = Array.isArray(d.professionCodes) && d.professionCodes.length > 0
+    ? d.professionCodes
+    : (d.profession_code || d.profession?.code ? [d.profession_code || d.profession?.code] : []);
+  const professionCode = professionCodes[0] || d.profession_code || d.profession?.code || null;
+  const price = d.price !== undefined && d.price !== null ? Number(d.price) || 0 : 0;
+  const minPrice = d.minPrice !== undefined && d.minPrice !== null ? Number(d.minPrice) || 0 : price;
+  const maxPrice = d.maxPrice !== undefined && d.maxPrice !== null ? Number(d.maxPrice) || 0 : price;
   return {
     id:           d.id,
     fullName:     d.fullName ?? '',
@@ -27,9 +33,12 @@ export function mapDoctor(d) {
     lastName,
     professionCode,
     profession_code: professionCode,
+    professionCodes,
     specialization: professionCode ? `professions.${professionCode}` : d.specialization && d.specialization !== 'General' ? d.specialization : 'doctors.general',
     experience:   d.experience  ?? 0,
-    price:        d.price       ?? 0,
+    price,
+    minPrice,
+    maxPrice,
     rating:       d.rating      ?? 0,
     reviewsCount: d.reviews_count ?? d.reviewsCount ?? 0,
     description:  d.about       ?? d.description ?? '',
@@ -69,13 +78,28 @@ function slotLabel(isoDate) {
  * Maps a raw consultation into the "booking" shape used by ConsultationTab.
  */
 export function mapConsultationToBooking(c) {
+  const doc = mapDoctor(c.doctor);
+  const slotPrice = c.slot?.price !== undefined && c.slot?.price !== null
+    ? Number(c.slot.price) || 0
+    : (doc?.price ?? 0);
+  const slotProfessions = Array.isArray(c.slot?.profession_codes) && c.slot.profession_codes.length > 0
+    ? c.slot.profession_codes
+    : null;
+  if (doc) {
+    doc.price = slotPrice;
+  }
   return {
     id:       c.id,
-    doctor:   mapDoctor(c.doctor),
+    doctor:   doc,
     duration: slotDurationMinutes(c.slot),
+    price:    slotPrice,
+    professionCodes: slotProfessions,
+    date:     c.slot?.start_at ?? c.date ?? c.created_at,
     slot: {
-      date:  c.slot?.start_at ?? c.created_at,
+      date:  c.slot?.start_at ?? c.date ?? c.created_at,
       label: slotLabel(c.slot?.start_at),
+      price: slotPrice,
+      professionCodes: slotProfessions,
     },
     slotId:    c.slot_id,
     createdAt: c.created_at,
@@ -127,6 +151,13 @@ export function mapConsultationToHistory(c) {
     specialty
   ].filter(Boolean).join(' · ');
 
+  const slotPrice = c.slot?.price !== undefined && c.slot?.price !== null
+    ? Number(c.slot.price) || 0
+    : (doc?.price ?? 0);
+  const slotProfessions = Array.isArray(c.slot?.profession_codes) && c.slot.profession_codes.length > 0
+    ? c.slot.profession_codes
+    : null;
+
   return {
     id:          c.id,
     doctorId:    doc?.id ?? null,
@@ -137,6 +168,8 @@ export function mapConsultationToHistory(c) {
     avatarUrl:   doc?.avatarUrl ?? null,
     date:        c.slot?.start_at ?? c.created_at,
     duration:    slotDurationMinutes(c.slot),
+    price:       slotPrice,
+    professionCodes: slotProfessions,
     diagnosis,
     status:      c.status,
     callId:      c.call_id ?? null,
@@ -180,6 +213,9 @@ export function mapConsultationForDoctor(c) {
       keyPoints: [],
     },
     date:    c.slot?.start_at ?? c.created_at,
+    duration: slotDurationMinutes(c.slot),
+    price:   c.slot?.price !== undefined && c.slot?.price !== null ? Number(c.slot.price) || 0 : 0,
+    professionCodes: Array.isArray(c.slot?.profession_codes) && c.slot.profession_codes.length > 0 ? c.slot.profession_codes : null,
     time,
     type:    'Online',
     status:  c.status,
@@ -249,7 +285,9 @@ export function mapConsultationToDoctorHistory(c) {
     cancelReason: c.cancel_reason ?? null,
     
     purpose:     c.purpose ?? null,
-    earnings:    null, // derived from doctor_profiles.price * duration/60 if needed
+    price:       c.slot?.price !== undefined && c.slot?.price !== null ? Number(c.slot.price) || 0 : 0,
+    professionCodes: Array.isArray(c.slot?.profession_codes) && c.slot.profession_codes.length > 0 ? c.slot.profession_codes : null,
+    earnings:    c.slot?.price !== undefined && c.slot?.price !== null ? Number(c.slot.price) || 0 : null,
     status:      c.status,
     format:      'online', // Assuming online default, can be derived if added to DB
   };
@@ -263,6 +301,7 @@ export function mapConsultationToDoctorHistory(c) {
  */
 export function groupSlotsForCalendar(slots = []) {
   const dateMap = {};
+  const freePrices = [];
 
   slots.forEach(slot => {
     const d     = new Date(slot.start_at);
@@ -279,19 +318,32 @@ export function groupSlotsForCalendar(slots = []) {
       };
     }
     const bookingStatus = Array.isArray(slot.booking) ? slot.booking[0]?.status : slot.booking?.status;
+    const isFree = slot.booking_id === null || bookingStatus === 'canceled';
+    const price = slot.price !== undefined && slot.price !== null ? Number(slot.price) || 0 : 0;
+    const professionCodes = Array.isArray(slot.profession_codes) && slot.profession_codes.length > 0
+      ? slot.profession_codes
+      : null;
+
+    if (isFree && price > 0) {
+      freePrices.push(price);
+    }
     
     dateMap[key].slots.push({ 
       id: slot.id, 
       time, 
       start_at: slot.start_at, 
       duration: slot.duration,
-      isFree: slot.booking_id === null || bookingStatus === 'canceled'
+      price,
+      professionCodes,
+      isFree
     });
   });
 
   const dates = Object.values(dateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
   // Unique times across all dates (for backward compat with time picker)
   const allTimes = [...new Set(dates.flatMap(d => d.slots.map(s => s.time)))].sort();
+  const minPrice = freePrices.length > 0 ? Math.min(...freePrices) : null;
+  const maxPrice = freePrices.length > 0 ? Math.max(...freePrices) : null;
 
-  return { dates, times: allTimes };
+  return { dates, times: allTimes, minPrice, maxPrice };
 }

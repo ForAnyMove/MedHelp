@@ -24,14 +24,25 @@ export const ComponentProvider = ({ children }) => {
   const userController = userManager(session, refreshSessionToken);
 
   const [loadingCounter, setLoadingCounter] = useState(0);
-  const [chatButtonConfig, setChatButtonConfig] = useState({ visible: true, animated: false });
+  const [chatButtonConfig, setChatButtonConfigState] = useState({ visible: true, animated: false });
 
-  const setAppLoading = (isLoading) => {
+  const setChatButtonConfig = React.useCallback((nextConfig) => {
+    setChatButtonConfigState(prev => {
+      const resolved = typeof nextConfig === 'function' ? nextConfig(prev) : nextConfig;
+      if (!resolved) return prev;
+      if (prev.visible === resolved.visible && prev.animated === resolved.animated) {
+        return prev;
+      }
+      return resolved;
+    });
+  }, []);
+
+  const setAppLoading = React.useCallback((isLoading) => {
     setLoadingCounter(prev => {
       if (isLoading) return prev + 1;
       return Math.max(prev - 1, 0);
     });
-  };
+  }, []);
 
   // Pass session and refreshSessionToken to every manager that makes API calls
   const consultationController = consultationManager(setAppLoading, session, refreshSessionToken);

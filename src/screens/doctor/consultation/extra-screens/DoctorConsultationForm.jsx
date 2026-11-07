@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../theme/ThemeContext';
 import { useStyles } from '../../../../theme/useStyles';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { Icon } from '../../../../components/ui/Icon';
 import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
@@ -15,13 +26,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function DoctorConsultationForm({ consultation }) {
   const { sizes, colors } = useTheme();
+  const responsive = useResponsive();
   const styles = useStyles(themeStyles);
-  const { t } = useTranslation();
-  const { goToSummary, closeSummary, backFromForm, handleTabSwitchRequest, selectedConsultation } = useDoctorDashboard();
+  const { t, i18n } = useTranslation();
+  const {
+    goToSummary,
+    closeSummary,
+    backFromForm,
+  } = useDoctorDashboard();
   const { session, refreshSessionToken } = useSession();
+
+  const isDesktopLayout =
+    !responsive?.isPortraitShell && (
+      responsive.isDesktop ||
+      responsive.isDesktopWide ||
+      responsive.isUltrawide ||
+      responsive.isTabletLandscape
+    );
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState(null);
   const [fullConsultation, setFullConsultation] = useState(consultation);
 
   const [overview, setOverview] = useState('');
@@ -41,7 +66,9 @@ export function DoctorConsultationForm({ consultation }) {
         const api = createApiClient(session, refreshSessionToken);
         const consultApi = createConsultationsApi(api);
 
-        const promises = [consultApi.getResults(consultation.id).catch(() => null)];
+        const promises = [
+          consultApi.getResults(consultation.id).catch(() => null),
+        ];
 
         if (!consultation?.patient) {
           promises.push(consultApi.getById(consultation.id).catch(() => null));
@@ -63,20 +90,31 @@ export function DoctorConsultationForm({ consultation }) {
           setPrescriptions(resData.prescriptions || '');
 
           if (resData.patient_has) {
-            const parsed = typeof resData.patient_has === 'string' ? JSON.parse(resData.patient_has) : resData.patient_has;
+            const parsed =
+              typeof resData.patient_has === 'string'
+                ? JSON.parse(resData.patient_has)
+                : resData.patient_has;
             if (parsed.length > 0) setPatientHas(parsed);
           }
           if (resData.next_steps) {
-            const parsed = typeof resData.next_steps === 'string' ? JSON.parse(resData.next_steps) : resData.next_steps;
+            const parsed =
+              typeof resData.next_steps === 'string'
+                ? JSON.parse(resData.next_steps)
+                : resData.next_steps;
             if (parsed.length > 0) setNextSteps(parsed);
           }
           if (resData.recommendations) {
-            const parsed = typeof resData.recommendations === 'string' ? JSON.parse(resData.recommendations) : resData.recommendations;
+            const parsed =
+              typeof resData.recommendations === 'string'
+                ? JSON.parse(resData.recommendations)
+                : resData.recommendations;
             if (parsed.length > 0) setRecommendations(parsed);
           }
         } else {
-          // If no result in DB, check local draft
-          const localDraftStr = await AsyncStorage.getItem(`draft_consultation_${consultation.id}`);
+          // Check local draft
+          const localDraftStr = await AsyncStorage.getItem(
+            `draft_consultation_${consultation.id}`
+          );
           if (localDraftStr) {
             try {
               const draft = JSON.parse(localDraftStr);
@@ -86,7 +124,9 @@ export function DoctorConsultationForm({ consultation }) {
               if (draft.prescriptions) setPrescriptions(draft.prescriptions);
               if (draft.patient_has?.length > 0) setPatientHas(draft.patient_has);
               if (draft.next_steps?.length > 0) setNextSteps(draft.next_steps);
-              if (draft.recommendations?.length > 0) setRecommendations(draft.recommendations);
+              if (draft.recommendations?.length > 0)
+                setRecommendations(draft.recommendations);
+              setLastSavedTime('ранее');
             } catch (e) {
               console.error('Failed to parse local draft', e);
             }
@@ -106,7 +146,7 @@ export function DoctorConsultationForm({ consultation }) {
     }
   }, [consultation?.id, session, refreshSessionToken]);
 
-  const draftRef = React.useRef();
+  const draftRef = useRef();
   draftRef.current = {
     overview,
     diagnosis_icd10: diagnosisIcd10,
@@ -114,14 +154,17 @@ export function DoctorConsultationForm({ consultation }) {
     patient_has: patientHas,
     next_steps: nextSteps,
     recommendations: recommendations,
-    prescriptions
+    prescriptions,
   };
 
-  // Immediate draft flush on component unmount to prevent data loss
+  // Immediate draft flush on component unmount
   useEffect(() => {
     return () => {
       if (consultation?.id && !isSent && draftRef.current) {
-        AsyncStorage.setItem(`draft_consultation_${consultation.id}`, JSON.stringify(draftRef.current)).catch(() => {});
+        AsyncStorage.setItem(
+          `draft_consultation_${consultation.id}`,
+          JSON.stringify(draftRef.current)
+        ).catch(() => {});
       }
     };
   }, [consultation?.id, isSent]);
@@ -132,16 +175,33 @@ export function DoctorConsultationForm({ consultation }) {
     const saveDraftLocally = async () => {
       try {
         if (draftRef.current) {
-          await AsyncStorage.setItem(`draft_consultation_${consultation.id}`, JSON.stringify(draftRef.current));
+          await AsyncStorage.setItem(
+            `draft_consultation_${consultation.id}`,
+            JSON.stringify(draftRef.current)
+          );
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          setLastSavedTime(timeStr);
         }
       } catch (e) {
         // Ignore local storage errors
       }
     };
 
-    const timeoutId = setTimeout(saveDraftLocally, 1500);
+    const timeoutId = setTimeout(saveDraftLocally, 1200);
     return () => clearTimeout(timeoutId);
-  }, [overview, diagnosisIcd10, diagnosisName, patientHas, nextSteps, recommendations, prescriptions, isLoading, isSent, consultation?.id]);
+  }, [
+    overview,
+    diagnosisIcd10,
+    diagnosisName,
+    patientHas,
+    nextSteps,
+    recommendations,
+    prescriptions,
+    isLoading,
+    isSent,
+    consultation?.id,
+  ]);
 
   const handleDynamicListChange = (setter, list, index, value) => {
     const newList = [...list];
@@ -155,8 +215,17 @@ export function DoctorConsultationForm({ consultation }) {
 
   const handleDynamicListRemove = (setter, list, index) => {
     const newList = list.filter((_, i) => i !== index);
-    if (newList.length === 0) newList.push(''); // keep at least one empty
+    if (newList.length === 0) newList.push('');
     setter(newList);
+  };
+
+  // Quick suggestion helper
+  const handleAddSuggestion = (setter, list, text) => {
+    if (list.length === 1 && list[0].trim() === '') {
+      setter([text]);
+    } else if (!list.includes(text)) {
+      setter([...list, text]);
+    }
   };
 
   const handleSave = async (isDraft) => {
@@ -165,9 +234,9 @@ export function DoctorConsultationForm({ consultation }) {
       const api = createApiClient(session, refreshSessionToken);
       const consultApi = createConsultationsApi(api);
 
-      const cleanPatientHas = patientHas.filter(i => i.trim() !== '');
-      const cleanNextSteps = nextSteps.filter(i => i.trim() !== '');
-      const cleanRecommendations = recommendations.filter(i => i.trim() !== '');
+      const cleanPatientHas = patientHas.filter((i) => i.trim() !== '');
+      const cleanNextSteps = nextSteps.filter((i) => i.trim() !== '');
+      const cleanRecommendations = recommendations.filter((i) => i.trim() !== '');
 
       const payload = {
         overview,
@@ -177,7 +246,7 @@ export function DoctorConsultationForm({ consultation }) {
         next_steps: cleanNextSteps,
         recommendations: cleanRecommendations,
         prescriptions,
-        is_draft: isDraft
+        is_draft: isDraft,
       };
 
       if (resultId) {
@@ -189,9 +258,10 @@ export function DoctorConsultationForm({ consultation }) {
       const { DeviceEventEmitter } = require('react-native');
       DeviceEventEmitter.emit('consultation_completed');
 
-      // Clear local draft only on final submission, preserve on draft save
       if (!isDraft) {
-        await AsyncStorage.removeItem(`draft_consultation_${consultation.id}`).catch(() => {});
+        await AsyncStorage.removeItem(
+          `draft_consultation_${consultation.id}`
+        ).catch(() => {});
       }
 
       setIsSaving(false);
@@ -201,7 +271,6 @@ export function DoctorConsultationForm({ consultation }) {
       } else {
         closeSummary();
       }
-
     } catch (error) {
       console.error('[DoctorConsultationForm] Save error:', error);
       setIsSaving(false);
@@ -210,324 +279,516 @@ export function DoctorConsultationForm({ consultation }) {
 
   if (isLoading) {
     return (
-      <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.screen,
+          { justifyContent: 'center', alignItems: 'center' },
+        ]}
+      >
         <ActivityIndicator size="large" color={colors.p500} />
       </View>
     );
   }
 
-  const patientName = fullConsultation?.patient?.firstName ? `${fullConsultation.patient.firstName} ${fullConsultation.patient.lastName || ''}` : t('doctor_consultation.patient_fallback', 'Patient');
+  const patientName = fullConsultation?.patient?.firstName
+    ? `${fullConsultation.patient.firstName} ${fullConsultation.patient.lastName || ''}`
+    : t('doctor_consultation.patient_fallback', 'Пациент');
 
-  const settings = fullConsultation?.patient?.user_profile_settings?.data_visibility ?? {};
+  const settings =
+    fullConsultation?.patient?.user_profile_settings?.data_visibility ?? {};
   const showDob = !settings.date_of_birth;
 
-  const age = (showDob && fullConsultation?.patient?.date_of_birth)
-    ? Math.floor((Date.now() - new Date(fullConsultation.patient.date_of_birth).getTime()) / 3.156e10)
-    : null;
+  const age =
+    showDob && fullConsultation?.patient?.date_of_birth
+      ? Math.floor(
+          (Date.now() -
+            new Date(fullConsultation.patient.date_of_birth).getTime()) /
+            3.156e10
+        )
+      : null;
 
-  const genderMap = { male: t('common.male', 'Male'), female: t('common.female', 'Female') };
-  const gender = fullConsultation?.patient?.gender ? (genderMap[fullConsultation.patient.gender] || fullConsultation.patient.gender) : null;
-  const bloodType = fullConsultation?.patient?.patient_profiles?.[0]?.blood_type || fullConsultation?.patient?.patient_profiles?.blood_type || null;
+  const genderMap = {
+    male: t('common.male', 'Мужской'),
+    female: t('common.female', 'Женский'),
+  };
+  const gender = fullConsultation?.patient?.gender
+    ? genderMap[fullConsultation.patient.gender] || fullConsultation.patient.gender
+    : null;
+  const bloodType =
+    fullConsultation?.patient?.patient_profiles?.[0]?.blood_type ||
+    fullConsultation?.patient?.patient_profiles?.blood_type ||
+    null;
 
   const formattedDate = fullConsultation?.date
-    ? new Date(fullConsultation.date).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    ? new Date(fullConsultation.date).toLocaleDateString(
+        i18n.language === 'ru' ? 'ru-RU' : 'en-US',
+        { month: 'short', day: 'numeric', year: 'numeric' }
+      )
     : '';
 
-  const metaString = [age ? t('common.years_old', { count: age, defaultValue: `${age} y.o.` }) : '', gender, bloodType].filter(Boolean).join(' • ');
-  const patientMetaFull = metaString + (formattedDate ? `\n${formattedDate}` : '');
+  const metaString = [
+    age ? t('common.years_old', { count: age, defaultValue: `${age} лет` }) : '',
+    gender,
+    bloodType,
+  ]
+    .filter(Boolean)
+    .join(' • ');
 
   const headerRight = (
-    <TouchableOpacity
-      style={styles.cancelButton}
-      onPress={backFromForm}
-    >
-      <Icon name="edit" size={sizes.scale(20)} color={colors.p500} />
-      <Text style={styles.cancelButtonText}>{t('common.cancel') || 'Cancel'}</Text>
-    </TouchableOpacity>
+    <View style={styles.headerRightContainer}>
+      {lastSavedTime && !isSent && (
+        <View style={styles.autoSaveBadge}>
+          <Icon name="Check" size={sizes.scale(13)} color={colors.p600} />
+          <Text style={styles.autoSaveText}>
+            {lastSavedTime === 'ранее'
+              ? 'Черновик'
+              : `Сохранено в ${lastSavedTime}`}
+          </Text>
+        </View>
+      )}
+      <TouchableOpacity style={styles.cancelButton} onPress={backFromForm}>
+        <Icon name="X" size={sizes.scale(20)} color={colors.n600} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Left Patient Context Panel (shown in 2-column mode or top of mobile)
+  const patientCardNode = (
+    <View style={styles.patientContextBlock}>
+      <View style={styles.patientCard}>
+        <View style={styles.patientAvatar}>
+          <Icon name="User" size={sizes.scale(22)} color={colors.white} />
+        </View>
+        <View style={styles.patientInfo}>
+          <Text style={styles.patientName}>{patientName}</Text>
+          <Text style={styles.patientMeta}>
+            {metaString || 'Медицинские данные не указаны'}
+          </Text>
+          {formattedDate ? (
+            <Text style={styles.patientDate}>{formattedDate}</Text>
+          ) : null}
+        </View>
+        <View style={styles.typeBadge}>
+          <Icon name="Stethoscope" size={sizes.scale(15)} color={colors.white} />
+        </View>
+      </View>
+
+      {/* Purpose & Clinical Context */}
+      <View style={styles.purposeCard}>
+        <Text style={styles.purposeLabel}>Причина обращения / Жалобы:</Text>
+        <Text style={styles.purposeValue}>
+          {fullConsultation?.purpose ||
+            'Плановая медицинская онлайн-консультация'}
+        </Text>
+      </View>
+
+      {/* Info Warning banner */}
+      {isSent ? (
+        <View style={styles.warningBoxSent}>
+          <Icon name="AlertCircle" size={sizes.scale(20)} color="#D97706" />
+          <Text style={styles.warningTextSent}>
+            {t(
+              'consultation.editing_sent_summary',
+              'Редактирование отправленного заключения — пациент получит уведомление об обновлении.'
+            )}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.warningBox}>
+          <Icon name="FileText" size={sizes.scale(18)} color={colors.p500} />
+          <Text style={styles.warningText}>
+            {t(
+              'consultation.private_notes_prefilled',
+              'Заполните диагноз и рекомендации. Черновик сохраняется автоматически.'
+            )}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  // Form Sections Content
+  const formSectionsNode = (
+    <View style={styles.formSectionsContainer}>
+      {/* 1. Overview */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Icon name="FileText" size={sizes.scale(20)} color={colors.p500} />
+          <Text style={styles.sectionTitle}>
+            {t('consultation.overview', 'Обзор')}
+          </Text>
+          <View style={styles.requiredBadge}>
+            <Text style={styles.requiredText}>
+              {t('consultation.required', 'Обязательно')}
+            </Text>
+          </View>
+        </View>
+        <TextInput
+          style={styles.textArea}
+          placeholder={t(
+            'consultation.eg_discussed',
+            'напр. Во время консультации обсудили результаты анализов и жалобы...'
+          )}
+          placeholderTextColor={colors.n400}
+          multiline
+          textAlignVertical="top"
+          maxLength={400}
+          value={overview}
+          onChangeText={setOverview}
+        />
+        <Text style={styles.charCount}>{overview.length}/400</Text>
+      </View>
+
+      {/* 2. Patient has (Findings) */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Icon name="Search" size={sizes.scale(20)} color={colors.p500} />
+          <Text style={styles.sectionTitle}>
+            {t('consultation.patient_has', 'Симптомы и находки')}
+          </Text>
+          <View style={styles.requiredBadge}>
+            <Text style={styles.requiredText}>
+              {t('consultation.required', 'Обязательно')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Quick Suggestion Chips */}
+        <View style={styles.suggestionsRow}>
+          {[
+            'Общая слабость и утомляемость',
+            'Головная боль',
+            'Нарушения сна',
+            'Дефицит железа',
+          ].map((item, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.suggestionChip}
+              onPress={() => handleAddSuggestion(setPatientHas, patientHas, item)}
+            >
+              <Text style={styles.suggestionChipText}>+ {item}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {patientHas.map((item, index) => (
+          <View key={index} style={styles.dynamicRow}>
+            <View style={styles.bulletDot} />
+            <Input
+              containerStyle={[styles.dynamicInputPillContainer, { flex: 1 }]}
+              inputContainerStyle={styles.dynamicInputPillInner}
+              style={styles.dynamicInput}
+              value={item}
+              onChangeText={(v) =>
+                handleDynamicListChange(setPatientHas, patientHas, index, v)
+              }
+              placeholder={t(
+                'consultation.eg_ferritin',
+                'напр. Низкий ферритин'
+              )}
+            />
+            <TouchableOpacity
+              onPress={() =>
+                handleDynamicListRemove(setPatientHas, patientHas, index)
+              }
+              style={styles.removeBtn}
+            >
+              <Icon name="Trash2" size={sizes.scale(16)} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          onPress={() => handleDynamicListAdd(setPatientHas, patientHas)}
+          style={styles.addBtn}
+        >
+          <Icon name="Plus" size={sizes.scale(16)} color={colors.p500} />
+          <Text style={styles.addBtnText}>
+            {t('consultation.add_finding', 'Добавить симптом/находку')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 3. Diagnosis */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Icon name="Stethoscope" size={sizes.scale(20)} color={colors.p500} />
+          <Text style={styles.sectionTitle}>
+            {t('consultation.diagnosis', 'Диагноз')}
+          </Text>
+          <View style={styles.requiredBadge}>
+            <Text style={styles.requiredText}>
+              {t('consultation.required', 'Обязательно')}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.diagnosisRow}>
+          <View style={styles.diagInputCol}>
+            <Input
+              label={t('consultation.icd10', 'Код МКБ-10')}
+              placeholder={t('consultation.eg_d50', 'напр. D50')}
+              value={diagnosisIcd10}
+              onChangeText={setDiagnosisIcd10}
+            />
+          </View>
+          <View style={styles.diagInputColRight}>
+            <Input
+              label={t('consultation.diagnosis_name', 'Название диагноза')}
+              placeholder={t(
+                'consultation.eg_anemia',
+                'напр. Железодефицитная анемия'
+              )}
+              value={diagnosisName}
+              onChangeText={setDiagnosisName}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* 4. Recommendations */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Icon name="ClipboardList" size={sizes.scale(20)} color={colors.p500} />
+          <Text style={styles.sectionTitle}>
+            {t('consultation.recommendations', 'Рекомендации')}
+          </Text>
+          <View style={styles.requiredBadge}>
+            <Text style={styles.requiredText}>
+              {t('consultation.required', 'Обязательно')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Quick Suggestion Chips */}
+        <View style={styles.suggestionsRow}>
+          {[
+            'ОАК + сывороточное железо',
+            'Обильный питьевой режим (1.5-2л)',
+            'Полноценный сон не менее 8ч',
+            'Прием препаратов железа',
+          ].map((item, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.suggestionChip}
+              onPress={() =>
+                handleAddSuggestion(setRecommendations, recommendations, item)
+              }
+            >
+              <Text style={styles.suggestionChipText}>+ {item}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {recommendations.map((item, index) => (
+          <View key={index} style={styles.dynamicRow}>
+            <View style={styles.bulletDot} />
+            <Input
+              containerStyle={[styles.dynamicInputPillContainer, { flex: 1 }]}
+              inputContainerStyle={styles.dynamicInputPillInner}
+              style={styles.dynamicInput}
+              value={item}
+              onChangeText={(v) =>
+                handleDynamicListChange(setRecommendations, recommendations, index, v)
+              }
+              placeholder={t(
+                'consultation.eg_supplements',
+                'напр. Рассмотрите прием препаратов железа'
+              )}
+            />
+            <TouchableOpacity
+              onPress={() =>
+                handleDynamicListRemove(setRecommendations, recommendations, index)
+              }
+              style={styles.removeBtn}
+            >
+              <Icon name="Trash2" size={sizes.scale(16)} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          onPress={() => handleDynamicListAdd(setRecommendations, recommendations)}
+          style={styles.addBtn}
+        >
+          <Icon name="Plus" size={sizes.scale(16)} color={colors.p500} />
+          <Text style={styles.addBtnText}>
+            {t('consultation.add_recommendation', 'Добавить рекомендацию')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 5. Next steps */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Icon name="ArrowRightCircle" size={sizes.scale(20)} color={colors.p500} />
+          <Text style={styles.sectionTitle}>
+            {t('consultation.next_steps', 'Следующие шаги')}
+          </Text>
+          <View style={styles.requiredBadge}>
+            <Text style={styles.requiredText}>
+              {t('consultation.required', 'Обязательно')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Quick Suggestion Chips */}
+        <View style={styles.suggestionsRow}>
+          {[
+            'Повторная консультация через 14 дней',
+            'Контрольный анализ крови через 4 недели',
+            'Дневник самочувствия и давления',
+          ].map((item, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.suggestionChip}
+              onPress={() => handleAddSuggestion(setNextSteps, nextSteps, item)}
+            >
+              <Text style={styles.suggestionChipText}>+ {item}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {nextSteps.map((item, index) => (
+          <View key={index} style={styles.dynamicRow}>
+            <View style={styles.bulletDot} />
+            <Input
+              containerStyle={[styles.dynamicInputPillContainer, { flex: 1 }]}
+              inputContainerStyle={styles.dynamicInputPillInner}
+              style={styles.dynamicInput}
+              value={item}
+              onChangeText={(v) =>
+                handleDynamicListChange(setNextSteps, nextSteps, index, v)
+              }
+              placeholder={t(
+                'consultation.eg_repeat_tests',
+                'напр. Повторите анализы через 4-6 недель'
+              )}
+            />
+            <TouchableOpacity
+              onPress={() =>
+                handleDynamicListRemove(setNextSteps, nextSteps, index)
+              }
+              style={styles.removeBtn}
+            >
+              <Icon name="Trash2" size={sizes.scale(16)} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          onPress={() => handleDynamicListAdd(setNextSteps, nextSteps)}
+          style={styles.addBtn}
+        >
+          <Icon name="Plus" size={sizes.scale(16)} color={colors.p500} />
+          <Text style={styles.addBtnText}>
+            {t('consultation.add_step', 'Добавить шаг')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 6. Prescription */}
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeaderRow}>
+          <Icon name="Pill" size={sizes.scale(20)} color={colors.p500} />
+          <Text style={styles.sectionTitle}>
+            {t('consultation.prescription', 'Рецепты и назначения')}
+          </Text>
+          <View style={styles.optionalBadge}>
+            <Text style={styles.optionalText}>
+              {t('consultation.optional', 'Опционально')}
+            </Text>
+          </View>
+        </View>
+        <TextInput
+          style={styles.textAreaSmall}
+          placeholder={t(
+            'consultation.eg_vitamin',
+            'напр. Витамин D3 5000 МЕ по 1 капс. утром во время еды 30 дней'
+          )}
+          placeholderTextColor={colors.n400}
+          multiline
+          textAlignVertical="top"
+          maxLength={250}
+          value={prescriptions}
+          onChangeText={setPrescriptions}
+        />
+        <Text style={styles.charCount}>{prescriptions.length}/250</Text>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionsBar}>
+        {!isSent && (
+          <Button
+            title={t('doctor_consultation.save_draft', 'Сохранить черновик')}
+            onPress={() => handleSave(true)}
+            variant="secondary"
+            size="large"
+            style={styles.actionBtn}
+            loading={isSaving}
+          />
+        )}
+        <Button
+          title={
+            isSent
+              ? t(
+                  'doctor_consultation.save_send',
+                  'Сохранить и уведомить пациента'
+                )
+              : t(
+                  'doctor_consultation.save_send',
+                  'Сохранить и отправить пациенту'
+                )
+          }
+          onPress={() => handleSave(false)}
+          variant="primary"
+          size="large"
+          style={styles.actionBtn}
+          loading={isSaving}
+        />
+      </View>
+    </View>
   );
 
   return (
     <SubViewScreen
-      title={t('doctor_consultation.summary_title') || 'Consultation summary'}
+      title={
+        t('doctor_consultation.summary_title', 'Заключение консультации') ||
+        'Заключение консультации'
+      }
       onBack={backFromForm}
       headerRight={headerRight}
       confirmBeforeExit={true}
-      confirmTitle={t('doctor_consultation.exit_title')}
-      confirmMessage={t('doctor_consultation.exit_desc')}
-      confirmLabel={t('doctor_consultation.exit_confirm')}
-      cancelLabel={t('common.cancel')}
+      confirmTitle={t('doctor_consultation.exit_title', 'Выйти без сохранения?')}
+      confirmMessage={t(
+        'doctor_consultation.exit_desc',
+        'Вы не сохранили результаты. Если вы выйдете, неотправленные данные останутся только в черновике.'
+      )}
+      confirmLabel={t('doctor_consultation.exit_confirm', 'Выйти')}
+      cancelLabel={t('common.cancel', 'Отмена')}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-          {/* Patient Info Card */}
-          <View style={[styles.patientCard, { backgroundColor: colors.p100 }]}>
-            <View style={[styles.patientAvatar, { backgroundColor: colors.p500 }]}>
-              <Icon name="profile" size={sizes.scale(24)} color={colors.white} />
-            </View>
-            <View style={styles.patientInfo}>
-              <Text style={styles.patientName}>{patientName}</Text>
-              <Text style={styles.patientMeta}>{patientMetaFull}</Text>
-            </View>
-
-            {/* Type badge */}
-            <View style={[styles.typeBadge, { backgroundColor: colors.p500 }]}>
-              <Icon name="stethoscope" size={sizes.scale(14)} color={colors.white} />
-            </View>
-          </View>
-
-          {/* Warning / info banner */}
-          {isSent ? (
-            <View style={[styles.warningBox, { backgroundColor: colors.warning + '22' }]}>
-              <Icon name="important" size={sizes.scale(32)} color={colors.warning} />
-              <Text style={[styles.warningText, { color: colors.warning, marginLeft: sizes.scale(12), flex: 1 }]}>
-                {t('consultation.editing_sent_summary', 'Editing a sent summary — the patient will receive a notification about the update.')}
-              </Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+        >
+          {isDesktopLayout ? (
+            <View style={styles.desktopLayoutRow}>
+              {/* Left Column: Patient Context */}
+              <View style={styles.desktopLeftCol}>{patientCardNode}</View>
+              {/* Right Column: Form Inputs */}
+              <View style={styles.desktopRightCol}>{formSectionsNode}</View>
             </View>
           ) : (
-            <View style={styles.warningBox}>
-              <Text style={styles.warningText}>{t('consultation.private_notes_prefilled', 'Your private notes have been pre-filled below. Please adjust any formatting if needed before saving.')}</Text>
+            <View style={styles.mobileLayoutCol}>
+              {patientCardNode}
+              {formSectionsNode}
             </View>
           )}
-
-          {/* Overview */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Icon name="medic-history" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.sectionTitle}>{t('consultation.overview', 'Overview')}</Text>
-              <View style={styles.requiredBadge}>
-                <Text style={styles.requiredText}>{t('consultation.required', 'Required')}</Text>
-              </View>
-            </View>
-            <TextInput
-              style={styles.textArea}
-              placeholder={t('consultation.eg_discussed', 'e.g. During the consultation we discussed your test results.')}
-              placeholderTextColor={colors.n400}
-              multiline
-              textAlignVertical="top"
-              maxLength={400}
-              value={overview}
-              onChangeText={setOverview}
-            />
-            <Text style={styles.charCount}>{overview.length}/400</Text>
-          </View>
-
-          {/* Patient has */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Icon name="search-found" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.sectionTitle}>{t('consultation.patient_has', 'Patient has')}</Text>
-              <View style={styles.requiredBadge}>
-                <Text style={styles.requiredText}>{t('consultation.required', 'Required')}</Text>
-              </View>
-            </View>
-            {patientHas.map((item, index) => (
-              <View key={index} style={styles.dynamicRow}>
-                <View style={styles.bulletDot} />
-                <Input
-                  containerStyle={[styles.dynamicInputPillContainer, { flex: 1 }]}
-                  inputContainerStyle={styles.dynamicInputPillInner}
-                  style={styles.dynamicInput}
-                  value={item}
-                  onChangeText={(v) => handleDynamicListChange(setPatientHas, patientHas, index, v)}
-                  placeholder={t('consultation.eg_ferritin', 'e.g. Low ferritin')}
-                />
-                <TouchableOpacity
-                  onPress={() => handleDynamicListRemove(setPatientHas, patientHas, index)}
-                  style={styles.removeBtn}
-                >
-                  <Icon
-                    name="close"
-                    size={sizes.scale(20)}
-                    color={colors.danger}
-                    wrapped
-                    wrapperColor={colors.danger}
-                    wrapperOpacity={0.15}
-                    wrapperSize={20}
-                    wrapperRadius={sizes.borderRadius.full}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
-            <TouchableOpacity onPress={() => handleDynamicListAdd(setPatientHas, patientHas)} style={styles.addBtn}>
-              <Icon name="plus" size={sizes.scale(20)} color={colors.p500} wrapped wrapperColor={colors.p500} wrapperOpacity={0.15} wrapperSize={20} wrapperRadius={sizes.borderRadius.full} />
-              <Text style={styles.addBtnText}>{t('consultation.add_finding', 'Add finding')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Diagnosis */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Icon name="stethoscope" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.sectionTitle}>{t('consultation.diagnosis', 'Diagnosis')}</Text>
-              <View style={styles.requiredBadge}>
-                <Text style={styles.requiredText}>{t('consultation.required', 'Required')}</Text>
-              </View>
-            </View>
-            <View style={styles.diagnosisRow}>
-              <View style={styles.diagInputCol}>
-                <Input
-                  label={t('consultation.icd10', 'ICD-10 code')}
-                  placeholder={t('consultation.eg_d50', 'e.g. D50')}
-                  value={diagnosisIcd10}
-                  onChangeText={setDiagnosisIcd10}
-                />
-              </View>
-              <View style={styles.diagInputColRight}>
-                <Input
-                  label={t('consultation.diagnosis_name', 'Diagnosis name')}
-                  placeholder={t('consultation.eg_anemia', 'e.g. Iron deficiency anemia')}
-                  value={diagnosisName}
-                  onChangeText={setDiagnosisName}
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* Recommendations */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Icon name="medical-document" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.sectionTitle}>{t('consultation.recommendations', 'Recommendations')}</Text>
-              <View style={styles.requiredBadge}>
-                <Text style={styles.requiredText}>{t('consultation.required', 'Required')}</Text>
-              </View>
-            </View>
-            {recommendations.map((item, index) => (
-              <View key={index} style={styles.dynamicRow}>
-                <View style={styles.bulletDot} />
-                <Input
-                  containerStyle={[styles.dynamicInputPillContainer, { flex: 1 }]}
-                  inputContainerStyle={styles.dynamicInputPillInner}
-                  style={styles.dynamicInput}
-                  value={item}
-                  onChangeText={(v) => handleDynamicListChange(setRecommendations, recommendations, index, v)}
-                  placeholder={t('consultation.eg_supplements', 'e.g. Consider taking iron supplements')}
-                />
-                <TouchableOpacity
-                  onPress={() => handleDynamicListRemove(setRecommendations, recommendations, index)}
-                  style={styles.removeBtn}
-                >
-                  <Icon
-                    name="close"
-                    size={sizes.scale(20)}
-                    color={colors.danger}
-                    wrapped
-                    wrapperColor={colors.danger}
-                    wrapperOpacity={0.15}
-                    wrapperSize={20}
-                    wrapperRadius={sizes.borderRadius.full}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
-            <TouchableOpacity onPress={() => handleDynamicListAdd(setRecommendations, recommendations)} style={styles.addBtn}>
-              <Icon name="plus" size={sizes.scale(20)} color={colors.p500} wrapped wrapperColor={colors.p500} wrapperOpacity={0.15} wrapperSize={20} wrapperRadius={sizes.borderRadius.full} />
-              <Text style={styles.addBtnText}>{t('consultation.add_recommendation', 'Add recommendation')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Next steps */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Icon name="next-steps" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.sectionTitle}>{t('consultation.next_steps', 'Next steps')}</Text>
-              <View style={styles.requiredBadge}>
-                <Text style={styles.requiredText}>{t('consultation.required', 'Required')}</Text>
-              </View>
-            </View>
-            {nextSteps.map((item, index) => (
-              <View key={index} style={styles.dynamicRow}>
-                <View style={styles.bulletDot} />
-                <Input
-                  containerStyle={[styles.dynamicInputPillContainer, { flex: 1 }]}
-                  inputContainerStyle={styles.dynamicInputPillInner}
-                  style={styles.dynamicInput}
-                  value={item}
-                  onChangeText={(v) => handleDynamicListChange(setNextSteps, nextSteps, index, v)}
-                  placeholder={t('consultation.eg_repeat_tests', 'e.g. Repeat tests in 4-6 weeks')}
-                />
-                <TouchableOpacity
-                  onPress={() => handleDynamicListRemove(setNextSteps, nextSteps, index)}
-                  style={styles.removeBtn}
-                >
-                  <Icon
-                    name="close"
-                    size={sizes.scale(20)}
-                    color={colors.danger}
-                    wrapped
-                    wrapperColor={colors.danger}
-                    wrapperOpacity={0.15}
-                    wrapperSize={20}
-                    wrapperRadius={sizes.borderRadius.full}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
-            <TouchableOpacity onPress={() => handleDynamicListAdd(setNextSteps, nextSteps)} style={styles.addBtn}>
-              <Icon name="plus" size={sizes.scale(20)} color={colors.p500} wrapped wrapperColor={colors.p500} wrapperOpacity={0.15} wrapperSize={20} wrapperRadius={sizes.borderRadius.full} />
-              <Text style={styles.addBtnText}>{t('consultation.add_step', 'Add step')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Prescription */}
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Icon name="pil" size={sizes.scale(24)} color={colors.p500} />
-              <Text style={styles.sectionTitle}>{t('consultation.prescription', 'Prescription')}</Text>
-              <View style={styles.optionalBadge}>
-                <Text style={styles.optionalText}>{t('consultation.optional', 'Optional')}</Text>
-              </View>
-            </View>
-            <TextInput
-              style={styles.textAreaSmall}
-              placeholder={t('consultation.eg_vitamin', 'e.g. Vitamin D 5000 IU')}
-              placeholderTextColor={colors.n400}
-              multiline
-              textAlignVertical="top"
-              maxLength={200}
-              value={prescriptions}
-              onChangeText={setPrescriptions}
-            />
-            <Text style={styles.charCount}>{prescriptions.length}/200</Text>
-          </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <View style={styles.footer}>
-        {!isSent && (
-          <Button
-            title={t('doctor_consultation.save_draft') || 'Save draft'}
-            onPress={() => handleSave(true)}
-            variant="secondary"
-            size="medium"
-            style={styles.saveDraftBtn}
-            loading={isSaving}
-          />
-        )}
-        <Button
-          title={isSent ? t('doctor_consultation.save_send', 'Save & notify to patient') : (t('doctor_consultation.save_send') || 'Save & send to patient')}
-          onPress={() => handleSave(false)}
-          variant="primary"
-          size="medium"
-          style={styles.saveSendBtnSolid}
-          iconRight={isSent ? <Icon name="send" size={sizes.scale(20)} color={colors.white} /> : undefined}
-          loading={isSaving}
-        />
-        {isSent && (
-          <Button
-            title={t('common.cancel') || 'Cancel'}
-            onPress={backFromForm}
-            variant="outlined"
-            size="medium"
-            style={styles.cancelFooterBtn}
-          />
-        )}
-      </View>
     </SubViewScreen>
   );
 }
@@ -538,38 +799,82 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.bg,
   },
   scroll: {
-    paddingBottom: theme.sizes.scale(),
+    paddingBottom: theme.sizes.scale(40),
     paddingTop: theme.sizes.spacing.s,
-    gap: theme.sizes.spacing.m,
+    paddingHorizontal: theme.sizes.spacing.m,
   },
-  cancelButton: {
+
+  // Header Right
+  headerRightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.sizes.scale(),
+    gap: 10,
   },
-  cancelButtonText: {
-    ...theme.sizes.typography.bodyMedium,
-    color: theme.colors.p500,
-    fontFamily: 'Manrope_600SemiBold',
+  autoSaveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.opacityP100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  autoSaveText: {
+    fontSize: theme.sizes.scale(11),
+    color: theme.colors.p600,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    padding: theme.sizes.spacing.xs,
+  },
+
+  // Desktop 2-column layout
+  desktopLayoutRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    maxWidth: 1140,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  desktopLeftCol: {
+    width: '35%',
+    minWidth: 320,
+    maxWidth: 380,
+  },
+  desktopRightCol: {
+    flex: 1,
+  },
+  mobileLayoutCol: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
+
+  // Patient Context Block
+  patientContextBlock: {
+    gap: theme.sizes.spacing.m,
+    marginBottom: theme.sizes.spacing.m,
   },
   patientCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
+    backgroundColor: theme.colors.white,
     borderWidth: 1,
-    borderColor: theme.colors.p500,
-    // shadow
-    shadowColor: theme.colors.p500,
-    shadowOffset: { width: theme.sizes.scale(), height: theme.sizes.scale() },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: theme.colors.n200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   patientAvatar: {
-    width: theme.sizes.scale(),
-    height: theme.sizes.scale(),
-    borderRadius: theme.sizes.scale(),
+    width: theme.sizes.scale(44),
+    height: theme.sizes.scale(44),
+    borderRadius: theme.sizes.scale(22),
+    backgroundColor: theme.colors.p500,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: theme.sizes.spacing.m,
@@ -580,50 +885,95 @@ const themeStyles = (theme) => ({
   patientName: {
     ...theme.sizes.typography.h4,
     color: theme.colors.n900,
-    fontFamily: 'Manrope_700Bold',
-    marginBottom: theme.sizes.scale(),
+    fontWeight: '700',
+    marginBottom: 2,
   },
   patientMeta: {
     ...theme.sizes.typography.caption,
-    color: theme.colors.p500,
-    lineHeight: theme.sizes.scale(),
+    color: theme.colors.n600,
+  },
+  patientDate: {
+    fontSize: theme.sizes.scale(11),
+    color: theme.colors.p600,
+    fontWeight: '600',
+    marginTop: 2,
   },
   typeBadge: {
-    width: theme.sizes.scale(),
-    height: theme.sizes.scale(),
+    width: theme.sizes.scale(32),
+    height: theme.sizes.scale(32),
     borderRadius: theme.sizes.borderRadius.full,
+    backgroundColor: theme.colors.p500,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  purposeCard: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.sizes.borderRadius.medium,
+    padding: theme.sizes.spacing.m,
+    borderWidth: 1,
+    borderColor: theme.colors.n200,
+  },
+  purposeLabel: {
+    fontSize: theme.sizes.scale(12),
+    fontWeight: '600',
+    color: theme.colors.n500,
+    marginBottom: 4,
+  },
+  purposeValue: {
+    fontSize: theme.sizes.scale(13),
+    fontWeight: '600',
+    color: theme.colors.n800,
+  },
+
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.sYell + '33',
+    gap: 8,
+    backgroundColor: theme.colors.opacityP100,
     padding: theme.sizes.spacing.m,
-    borderRadius: theme.sizes.borderRadius.large,
-    // shadow
-    shadowColor: /* TODO: color */ '#000',
-    shadowOffset: { width: theme.sizes.scale(), height: theme.sizes.scale() },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: theme.sizes.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: 'rgba(35, 211, 194, 0.3)',
   },
   warningText: {
-    ...theme.sizes.typography.caption,
-    color: theme.colors.n800,
-    lineHeight: theme.sizes.scale(),
+    fontSize: theme.sizes.scale(12),
+    color: theme.colors.p600,
     flex: 1,
+    lineHeight: 18,
   },
-  // Section card container with shadow
+  warningBoxSent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF3C7',
+    padding: theme.sizes.spacing.m,
+    borderRadius: theme.sizes.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  warningTextSent: {
+    fontSize: theme.sizes.scale(12),
+    color: '#92400E',
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  // Form Sections
+  formSectionsContainer: {
+    gap: theme.sizes.spacing.m,
+  },
   sectionCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.borderRadius.large,
     padding: theme.sizes.spacing.m,
-    shadowColor: /* TODO: color */ '#000',
-    shadowOffset: { width: theme.sizes.scale(), height: theme.sizes.scale() },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: theme.colors.n200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -632,58 +982,78 @@ const themeStyles = (theme) => ({
   },
   sectionTitle: {
     ...theme.sizes.typography.h4,
-    color: theme.colors.n700,
-    fontFamily: 'Manrope_700Bold',
+    color: theme.colors.n900,
+    fontWeight: '700',
     marginLeft: theme.sizes.spacing.s,
     flex: 1,
   },
   requiredBadge: {
-    backgroundColor: theme.colors.danger + '22',
-    paddingHorizontal: theme.sizes.scale(),
-    paddingVertical: theme.sizes.scale(),
-    borderRadius: theme.sizes.borderRadius.large,
-    marginLeft: 'auto',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   requiredText: {
-    ...theme.sizes.typography.bodyLarge,
+    fontSize: theme.sizes.scale(11),
     color: theme.colors.danger,
-    fontFamily: 'Manrope_600SemiBold',
+    fontWeight: '700',
   },
   optionalBadge: {
-    backgroundColor: theme.colors.sCyan + '22',
-    paddingHorizontal: theme.sizes.scale(),
-    paddingVertical: theme.sizes.scale(),
-    borderRadius: theme.sizes.borderRadius.large,
-    marginLeft: 'auto',
+    backgroundColor: theme.colors.n100,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   optionalText: {
-    ...theme.sizes.typography.bodyLarge,
-    color: theme.colors.sCyan,
-    fontFamily: 'Manrope_600SemiBold',
+    fontSize: theme.sizes.scale(11),
+    color: theme.colors.n500,
+    fontWeight: '600',
   },
-  textArea: {
+
+  // Suggestions Row
+  suggestionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: theme.sizes.spacing.m,
+  },
+  suggestionChip: {
     backgroundColor: theme.colors.n100,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.n300,
-    borderRadius: theme.sizes.borderRadius.large,
+    borderColor: theme.colors.n200,
+  },
+  suggestionChipText: {
+    fontSize: theme.sizes.scale(11),
+    color: theme.colors.n700,
+    fontWeight: '500',
+  },
+
+  textArea: {
+    backgroundColor: theme.colors.bg,
+    borderWidth: 1,
+    borderColor: theme.colors.n200,
+    borderRadius: theme.sizes.borderRadius.medium,
     padding: theme.sizes.spacing.m,
-    height: theme.sizes.scale(),
+    height: theme.sizes.scale(100),
     color: theme.colors.n900,
     ...theme.sizes.typography.bodyMedium,
   },
   textAreaSmall: {
-    backgroundColor: theme.colors.n100,
+    backgroundColor: theme.colors.bg,
     borderWidth: 1,
-    borderColor: theme.colors.n300,
-    borderRadius: theme.sizes.borderRadius.large,
+    borderColor: theme.colors.n200,
+    borderRadius: theme.sizes.borderRadius.medium,
     padding: theme.sizes.spacing.m,
-    height: theme.sizes.scale(),
+    height: theme.sizes.scale(80),
     color: theme.colors.n900,
     ...theme.sizes.typography.bodyMedium,
   },
   charCount: {
     alignSelf: 'flex-end',
-    marginTop: theme.sizes.scale(),
+    marginTop: 4,
     ...theme.sizes.typography.caption,
     color: theme.colors.n500,
   },
@@ -704,56 +1074,45 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.spacing.s,
   },
   dynamicInputPillContainer: {
-    marginBottom: theme.sizes.scale(),
+    marginBottom: 0,
   },
   dynamicInputPillInner: {
-    borderRadius: theme.sizes.borderRadius.large,
+    borderRadius: theme.sizes.borderRadius.medium,
   },
   dynamicInput: {
     flex: 1,
-    borderRadius: theme.sizes.borderRadius.large,
+    borderRadius: theme.sizes.borderRadius.medium,
   },
   bulletDot: {
-    width: theme.sizes.scale(),
-    height: theme.sizes.scale(),
-    borderRadius: theme.sizes.borderRadius.full,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: theme.colors.p500,
   },
   removeBtn: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 6,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.sizes.spacing.xs,
-    gap: theme.sizes.spacing.xs,
+    gap: 4,
+    alignSelf: 'flex-start',
   },
   addBtnText: {
     ...theme.sizes.typography.bodyMedium,
     color: theme.colors.p500,
-    fontFamily: 'Manrope_600SemiBold',
+    fontWeight: '700',
   },
-  footer: {
-    position: 'absolute',
-    bottom: theme.sizes.scale(),
-    left: theme.sizes.scale(),
-    right: theme.sizes.scale(),
-    paddingHorizontal: theme.sizes.spacing.l,
-    paddingVertical: theme.sizes.spacing.l,
-    backgroundColor: theme.colors.bg,
-    gap: theme.sizes.spacing.s,
+
+  // Actions Bar
+  actionsBar: {
+    flexDirection: 'row',
+    gap: theme.sizes.spacing.m,
+    marginTop: theme.sizes.spacing.s,
+    paddingTop: theme.sizes.spacing.m,
   },
-  saveDraftBtn: {
-    height: theme.sizes.scale(),
+  actionBtn: {
+    flex: 1,
   },
-  saveSendBtnSolid: {
-    height: theme.sizes.scale(),
-  },
-  cancelFooterBtn: {
-    height: theme.sizes.scale(),
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: theme.colors.p500,
-  }
 });

@@ -154,6 +154,9 @@ const themeStyles = (theme) => ({
   },
   scrollContent: {
     flexGrow: 1,
+    width: '100%',
+    maxWidth: theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 480 : undefined,
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',

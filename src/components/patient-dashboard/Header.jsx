@@ -25,7 +25,11 @@ export function Header({ onNotificationPress }) {
       </View>
       
       <View style={{flexDirection: 'row', alignItems: 'center', gap: sizes.spacing.m}}>
-        <TouchableOpacity style={styles.notifBtn} onPress={onNotificationPress}>
+        <TouchableOpacity 
+          style={styles.notifBtn} 
+          hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          onPress={onNotificationPress}
+        >
           <Icon name="notifications" size={sizes.scale(24)} color={colors.p500} />
           {(notificationController?.notifications || []).filter(n => !n.is_read).length > 0 && (
             <View style={styles.notifDot} />

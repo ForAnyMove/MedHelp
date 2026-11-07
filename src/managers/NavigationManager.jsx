@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ActivityIndicator, Platform } from 'react-native';
+import { useRouter, useSegments, usePathname, useGlobalSearchParams } from 'expo-router';
 import { useSession } from '../context/SessionContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useNotification } from '../context/NotificationContext';
@@ -12,9 +12,12 @@ export function NavigationManager({ children }) {
   const { session, isLoading, docUploadHandledThisSession } = useSession();
   const { isHandlingNotification } = useNotification();
   const segments = useSegments();
+  const pathname = usePathname();
+  const globalParams = useGlobalSearchParams();
   const router = useRouter();
   const { colors, sizes } = useTheme();
   const [isReady, setIsReady] = useState(false);
+  const intendedRouteRef = useRef(null);
 
   useEffect(() => {
     if (isLoading || isHandlingNotification) return;
@@ -22,13 +25,36 @@ export function NavigationManager({ children }) {
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
     const currentScreen = segments[segments.length - 1];
-    const isRoot = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
+    // On web, app/index.jsx renders TabScreen directly for registered users, so isRoot should not force safeReplace
+    const isRoot = (segments.length === 0 || (segments.length === 1 && segments[0] === 'index')) && Platform.OS !== 'web';
 
     const safeReplace = (path) => setTimeout(() => router.replace(path), 0);
+
+    const consumeIntendedRouteOrHome = () => {
+      if (intendedRouteRef.current) {
+        const target = intendedRouteRef.current;
+        intendedRouteRef.current = null;
+        safeReplace(target);
+      } else {
+        safeReplace('/home');
+      }
+    };
 
     // ──── NOT LOGGED IN ────
     if (!session) {
       if (!inAuthGroup) {
+        // Save deep link target if user tried to open a protected route directly
+        if (pathname && pathname !== '/' && pathname !== '/index' && !inOnboardingGroup) {
+          const cleanParams = {};
+          Object.entries(globalParams || {}).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && k !== 'screen' && k !== 'params') {
+              cleanParams[k] = String(v);
+            }
+          });
+          intendedRouteRef.current = Object.keys(cleanParams).length > 0
+            ? { pathname, params: cleanParams }
+            : pathname;
+        }
         safeReplace('/(auth)/welcome');
         return;
       }
@@ -57,7 +83,7 @@ export function NavigationManager({ children }) {
       // -- PATIENT: fully registered → only app screens --
       if (session.role === 'patient') {
         if (inAuthGroup || isRoot || inOnboardingGroup) {
-          safeReplace('/home');
+          consumeIntendedRouteOrHome();
           return;
         }
 
@@ -82,11 +108,11 @@ export function NavigationManager({ children }) {
             // ── User already handled doc-upload this session ──
             // Allow profile-created (for first-time skip flow), doc-upload (to let it route itself), and /home
             if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
             if (inAuthGroup || isRoot) {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
           } else {
@@ -102,17 +128,17 @@ export function NavigationManager({ children }) {
           if (docUploadHandledThisSession) {
             // ── Just submitted — allow profile-created, doc-upload, then /home ──
             if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
             if (inAuthGroup || isRoot) {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
           } else {
             // ── Re-login with pending → straight to app ──
             if (inAuthGroup || isRoot || inOnboardingGroup) {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
           }
@@ -120,7 +146,7 @@ export function NavigationManager({ children }) {
         } else {
           // ── verified → straight to app ──
           if (inAuthGroup || isRoot || inOnboardingGroup) {
-            safeReplace('/home');
+            consumeIntendedRouteOrHome();
             return;
           }
         }
@@ -140,11 +166,11 @@ export function NavigationManager({ children }) {
         } else if (docStatus === 'skipped') {
           if (docUploadHandledThisSession) {
             if (inOnboardingGroup && currentScreen !== 'profile-created' && currentScreen !== 'doc-upload') {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
             if (inAuthGroup || isRoot) {
-              safeReplace('/home');
+              consumeIntendedRouteOrHome();
               return;
             }
           } else {
@@ -156,16 +182,16 @@ export function NavigationManager({ children }) {
         } else {
           // pending or verified → straight to app
           if (inAuthGroup || isRoot || inOnboardingGroup) {
-            safeReplace('/home');
+            consumeIntendedRouteOrHome();
             return;
           }
         }
       }
 
       // ── RBAC: prevent cross-role access ──
-      const inDoctorGroup = segments.includes('(doctor)') || segments.includes('doctor');
-      const inPatientGroup = segments.includes('(patient)') || segments.includes('patient');
-      const inOwnerGroup = segments.includes('(owner)') || segments.includes('owner');
+      const inDoctorGroup = segments.includes('(doctor)') || segments[0] === 'patient';
+      const inPatientGroup = segments.includes('(patient)');
+      const inOwnerGroup = segments.includes('(owner)');
 
       if (session.role === 'patient' && (inDoctorGroup || inOwnerGroup)) {
         safeReplace('/home');

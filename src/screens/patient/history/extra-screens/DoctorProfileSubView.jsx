@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } fr
 import { useTranslation } from 'react-i18next';
 import { useStyles } from '../../../../theme/useStyles';
 import { useTheme } from '../../../../theme/ThemeContext';
+import { useResponsive } from '../../../../theme/useResponsive';
 import { Icon } from '../../../../components/ui/Icon';
 import { SegmentedControl } from '../../../../components/ui/SegmentedControl';
 import { useComponentContext } from '../../../../context/GlobalContext';
@@ -25,24 +26,45 @@ export function DoctorProfileSubView({ doctorId: id, onBack }) {
   const [loading, setLoading] = useState(true);
   const [reportModalVisible, setReportModalVisible] = useState(false);
 
+  // Filter patient's past consultations with this specific doctor
+  const doctorConsultations = useMemo(() => {
+    return (historyController?.pastConsultations || []).filter(
+      c => String(c.doctorId) === String(id) || String(c.doctor?.id) === String(id) || String(c.doctor?.profileId) === String(id)
+    );
+  }, [historyController?.pastConsultations, id]);
+
   useEffect(() => {
+    let isMounted = true;
     const fetchDoctorData = async () => {
       try {
         const res = await api.get(`/doctors/${id}`);
-        setDoctorData(res);
+        if (isMounted) setDoctorData(res);
       } catch (err) {
         console.error('Failed to fetch doctor data:', err);
+        if (isMounted && doctorConsultations.length > 0) {
+          const first = doctorConsultations[0];
+          const doc = first.doctor || {};
+          const nameParts = (first.doctorName || '').split(' ');
+          setDoctorData({
+            id,
+            firstName: doc.firstName || nameParts[0] || '',
+            lastName: doc.lastName || nameParts.slice(1).join(' ') || '',
+            specialization: first.specialty || doc.specialization || 'doctors.general',
+            avatarUrl: first.avatarUrl || doc.avatarUrl || null,
+            rating: doc.rating || 5.0,
+            experience: doc.experience || 0,
+            price: doc.price || first.price || 0,
+            isVerified: first.doctorIsVerified || doc.isVerified || false,
+            description: doc.description || '',
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchDoctorData();
-  }, [id, api]);
-
-  // Filter patient's past consultations with this specific doctor
-  const doctorConsultations = useMemo(() => {
-    return (historyController?.pastConsultations || []).filter(c => c.doctorId === id);
-  }, [historyController?.pastConsultations, id]);
+    return () => { isMounted = false; };
+  }, [id, api, doctorConsultations]);
 
   if (loading) {
     return (
@@ -149,6 +171,8 @@ export function DoctorProfileSubView({ doctorId: id, onBack }) {
 
 function ProfileTab({ doctorData, consultations, onVisitPress }) {
   const { sizes, colors } = useTheme();
+  const responsive = useResponsive();
+  const isLandscapeLayout = !responsive?.isPortraitShell && (responsive?.isDesktop || responsive?.isDesktopWide || responsive?.isUltrawide || responsive?.isTabletLandscape);
   const styles = useStyles(themeStyles);
   const { t, i18n } = useTranslation();
   const lang = i18n.language === 'ru' ? 'ru-RU' : 'en-US';
@@ -160,8 +184,8 @@ function ProfileTab({ doctorData, consultations, onVisitPress }) {
     </View>
   );
 
-  return (
-    <View>
+  const renderAboutAndDetails = () => (
+    <>
       <Text style={styles.sectionTitle}>{t('doctor_history.about', 'About')}</Text>
       <View style={styles.card}>
         <Text style={styles.bioText}>{doctorData.description || t('doctor_history.no_description', 'No description provided.')}</Text>
@@ -175,7 +199,11 @@ function ProfileTab({ doctorData, consultations, onVisitPress }) {
         <View style={styles.divider} />
         {renderInfoRow(t('doctor_history.consultation_price', 'Consultation price:'), `$${doctorData.price || 0}`)}
       </View>
+    </>
+  );
 
+  const renderVisits = () => (
+    <>
       <Text style={styles.sectionTitle}>{t('doctor_history.visit_history', 'Visit history with you')}</Text>
       <View style={styles.visitsContainer}>
         {consultations.length > 0 ? consultations.map((c) => {
@@ -219,6 +247,26 @@ function ProfileTab({ doctorData, consultations, onVisitPress }) {
           </View>
         )}
       </View>
+    </>
+  );
+
+  if (isLandscapeLayout) {
+    return (
+      <View style={styles.desktopSplitRow}>
+        <View style={styles.desktopLeftCol}>
+          {renderAboutAndDetails()}
+        </View>
+        <View style={styles.desktopRightCol}>
+          {renderVisits()}
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      {renderAboutAndDetails()}
+      {renderVisits()}
     </View>
   );
 }
@@ -258,7 +306,7 @@ const themeStyles = (theme) => ({
   },
   header: {
     backgroundColor: theme.colors.p400,
-    paddingTop: theme.sizes.spacing.xxl + 10,
+    paddingTop: (theme.responsive?.isTablet || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge) ? theme.sizes.spacing.l : theme.sizes.spacing.xxl + 10,
     paddingBottom: theme.sizes.spacing.l,
     borderBottomLeftRadius: theme.sizes.borderRadius.large,
     borderBottomRightRadius: theme.sizes.borderRadius.large,
@@ -266,8 +314,13 @@ const themeStyles = (theme) => ({
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
     marginBottom: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? 1120
+      : theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
   },
   backButton: {
     padding: theme.sizes.spacing.xs,
@@ -282,7 +335,12 @@ const themeStyles = (theme) => ({
   profileInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? 1120
+      : theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
   },
   avatar: {
     width: theme.sizes.scale(64),
@@ -320,8 +378,28 @@ const themeStyles = (theme) => ({
     marginBottom: theme.sizes.scale(2),
   },
   scrollContent: {
-    padding: theme.sizes.spacing.m,
+    paddingHorizontal: theme.responsive?.contentPadding || theme.sizes.spacing.m,
+    paddingTop: theme.sizes.spacing.m,
     paddingBottom: theme.sizes.spacing.xxl,
+    width: '100%',
+    maxWidth: !theme.responsive?.isPortraitShell && (theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge)
+      ? 1120
+      : theme.responsive?.isTabletPortrait ? 720 : undefined,
+    alignSelf: 'center',
+  },
+  desktopSplitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.sizes.spacing.l,
+    width: '100%',
+  },
+  desktopLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  desktopRightCol: {
+    flex: 1.15,
+    minWidth: 0,
   },
   segmented: {
     marginBottom: theme.sizes.spacing.l,

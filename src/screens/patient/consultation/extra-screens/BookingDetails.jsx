@@ -53,7 +53,11 @@ export function BookingDetails({ visible, booking, onClose, onCancel }) {
               <Icon name="price" size={sizes.scale(24)} color={colors.p500}  />
               <View style={styles.detailInfo}>
                 <Text style={styles.detailLabel}>{t('consultation.price_label')}</Text>
-                <Text style={styles.detailValue}>${booking.doctor?.price || 0}</Text>
+                <Text style={styles.detailValue}>
+                  ${booking.price !== undefined && booking.price !== null
+                    ? booking.price
+                    : (booking.doctor?.price || 0)}
+                </Text>
               </View>
             </View>
           </View>
@@ -90,6 +94,9 @@ const themeStyles = (theme) => ({
     backgroundColor: theme.colors.white,
     borderRadius: theme.sizes.scale(32),
     padding: theme.sizes.spacing.l,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',

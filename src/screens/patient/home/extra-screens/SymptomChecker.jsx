@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Platform, BackHandler } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { usePatientDashboard } from '../../../../context/PatientDashboardContext';
 import { useComponentContext } from '../../../../context/GlobalContext';
@@ -163,6 +163,23 @@ export function SymptomChecker() {
     }
   };
 
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isExitModalVisible) {
+        setExitModalVisible(false);
+        return true;
+      }
+      if (resultData) {
+        handleBackFromResult();
+        return true;
+      }
+      handleBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, [isIntro, currentQ, resultData, isExitModalVisible]);
+
   // Render Result Screen
   if (resultData) {
     return (
@@ -182,11 +199,13 @@ export function SymptomChecker() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Icon name="arrow-back" size={theme.sizes.scale(24)} color={theme.colors.p500} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('quiz.ui.INTRO_TITLE', 'Check your symptoms')}</Text>
-          <View style={{ width: theme.sizes.scale(40) }} />
+          <View style={styles.headerInner}>
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Icon name="arrow-back" size={theme.sizes.scale(24)} color={theme.colors.p500} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t('quiz.ui.INTRO_TITLE', 'Check your symptoms')}</Text>
+            <View style={{ width: theme.sizes.scale(40) }} />
+          </View>
         </View>
 
         <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
@@ -202,11 +221,14 @@ export function SymptomChecker() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Button
-            title={t('quiz.ui.INTRO_START', 'Start assessment')}
-            onPress={() => setIsIntro(false)}
-            variant="primary"
-          />
+          <View style={styles.footerInner}>
+            <Button
+              title={t('quiz.ui.INTRO_START', 'Start assessment')}
+              onPress={() => setIsIntro(false)}
+              variant="primary"
+              style={styles.footerBtn}
+            />
+          </View>
         </View>
       </View>
     );
@@ -223,11 +245,13 @@ export function SymptomChecker() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Icon name="arrow-back" size={theme.sizes.scale(24)} color={theme.colors.p500} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('quiz.ui.INTRO_TITLE', 'Check your symptoms')}</Text>
-        <View style={{ width: theme.sizes.scale(40) }} />
+        <View style={styles.headerInner}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Icon name="arrow-back" size={theme.sizes.scale(24)} color={theme.colors.p500} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('quiz.ui.INTRO_TITLE', 'Check your symptoms')}</Text>
+          <View style={{ width: theme.sizes.scale(40) }} />
+        </View>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
@@ -282,11 +306,14 @@ export function SymptomChecker() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          title={t('quiz.ui.CONTINUE', 'Continue')}
-          onPress={handleNext}
-          disabled={selections.length === 0}
-        />
+        <View style={styles.footerInner}>
+          <Button
+            title={t('quiz.ui.CONTINUE', 'Continue')}
+            onPress={handleNext}
+            disabled={selections.length === 0}
+            style={styles.footerBtn}
+          />
+        </View>
       </View>
 
       {/* Exit Confirmation Modal (Section 3: EXIT_TITLE / EXIT_BODY) */}
@@ -333,12 +360,19 @@ const themeStyles = (theme) => {
       backgroundColor: colors.white || '#fff',
     },
     header: {
+      paddingHorizontal: sizes.spacing.m,
+      paddingVertical: sizes.spacing.s,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.n200 || '#eee',
+    },
+    headerInner: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: sizes.spacing.m,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.n200 || '#eee',
+      width: '100%',
+      maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 760 : undefined,
+      alignSelf: 'center',
+      marginHorizontal: 'auto',
     },
     backButton: {
       padding: sizes.spacing.s,
@@ -352,6 +386,10 @@ const themeStyles = (theme) => {
     },
     contentContainer: {
       padding: sizes.spacing.l,
+      width: '100%',
+      maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 760 : undefined,
+      alignSelf: 'center',
+      marginHorizontal: 'auto',
     },
     introCard: {
       backgroundColor: colors.white,
@@ -467,6 +505,17 @@ const themeStyles = (theme) => {
       borderTopColor: colors.n200 || '#eee',
       backgroundColor: colors.white || '#fff',
     },
+    footerInner: {
+      width: '100%',
+      maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? 760 : undefined,
+      alignSelf: 'center',
+      marginHorizontal: 'auto',
+      alignItems: 'center',
+    },
+    footerBtn: {
+      width: '100%',
+      maxWidth: theme.responsive?.isTabletLandscape || theme.responsive?.isDesktop || theme.responsive?.isDesktopLarge ? sizes.scale(360) : '100%',
+    },
     modalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -478,6 +527,8 @@ const themeStyles = (theme) => {
       borderRadius: sizes.borderRadius.large,
       padding: sizes.spacing.xl,
       width: '85%',
+      maxWidth: sizes.scale(420),
+      alignSelf: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: sizes.scale(2) },
       shadowOpacity: 0.25,

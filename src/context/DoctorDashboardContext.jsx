@@ -17,10 +17,10 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
   
   const nav = useDashboardNavigator('dashboard', initialIndex);
 
-  const updateUrlParams = (tabName, view, id, filter, returnTabStr) => {
-    if (typeof window !== 'undefined' && window.history) {
+  const updateUrlParams = (tabName, view, id, filter, returnTabStr, options = {}) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location && window.history) {
       const searchParams = new URLSearchParams();
-      if (view) searchParams.set('view', view);
+      if (view && view !== 'dashboard' && view !== 'idle') searchParams.set('view', view);
       if (id) searchParams.set('id', id);
       if (filter) searchParams.set('filter', filter);
       if (returnTabStr) searchParams.set('returnTab', returnTabStr);
@@ -34,11 +34,24 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
       
       const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
       const newUrl = `/${tabName}${queryString}`;
-      window.history.pushState(window.history.state, '', newUrl);
+      if (Platform.OS === 'web') {
+        const currentUrl = (window.location.pathname || '') + (window.location.search || '');
+        if (currentUrl === newUrl) return;
+        const currentState = (window.history.state && typeof window.history.state === 'object') ? { ...window.history.state } : {};
+        const nextState = { ...currentState, customTab: tabName, customView: view || null };
+        if (options.replace && typeof window.history?.replaceState === 'function') {
+          window.history.replaceState(nextState, '', newUrl);
+        } else if (typeof window.history?.pushState === 'function') {
+          window.history.pushState(nextState, '', newUrl);
+        }
+        try {
+          window.dispatchEvent(new Event('medhelp:urlchange'));
+        } catch (e) {}
+      }
     }
   };
 
-  const syncStateFromUrl = (searchParams, tabName) => {
+  const syncStateFromUrl = React.useCallback((searchParams, tabName) => {
     const view = searchParams.get('view');
     const id = searchParams.get('id');
     const filter = searchParams.get('filter');
@@ -65,20 +78,27 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
         setBalanceView('dashboard');
       }
     } else if (tabName === 'consultation') {
-      if (view === 'patient-card') {
+      const selectById = (targetId) => {
+        if (!targetId) return;
+        setSelectedConsultation(prev => (prev && String(prev.id) === String(targetId) ? prev : { id: targetId }));
+      };
+      if (view === 'ongoing') {
+        setConsultationStatus('ongoing');
+        selectById(id);
+      } else if (view === 'patient-card') {
         setConsultationStatus('idle');
         nav.setCurrentView('patient-card');
-        if (id) setSelectedConsultation({ id });
+        selectById(id);
       } else if (view === 'patient-details') {
         setConsultationStatus('idle');
         nav.setCurrentView('patient-details');
-        if (id) setSelectedConsultation({ id });
+        selectById(id);
       } else if (view === 'summary') {
         setConsultationStatus('summary');
-        if (id) setSelectedConsultation({ id });
+        selectById(id);
       } else if (view === 'form') {
         setConsultationStatus('form');
-        if (id) setSelectedConsultation({ id });
+        selectById(id);
       } else {
         setConsultationStatus('idle');
         nav.setCurrentView('dashboard');
@@ -89,10 +109,10 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
         setHistoryView('all');
       } else if (view === 'detail') {
         setHistoryView('detail');
-        setHistorySelectedId(id);
+        if (id) setHistorySelectedId(id);
       } else if (view === 'patient-profile') {
         setHistoryView('patient-profile');
-        setHistoryPatientProfileId(id);
+        if (id) setHistoryPatientProfileId(id);
       } else if (view === 'ratings') {
         setHistoryView('ratings');
       } else {
@@ -101,7 +121,7 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
         setHistoryPatientProfileId(null);
       }
     }
-  };
+  }, [nav.setCurrentView]);
 
   // ── Doctor-specific state ──────────────────────────────────────────
   const [balanceView, setBalanceView] = useState('dashboard'); // 'dashboard' | 'request-payout' | 'full-history'
@@ -165,6 +185,9 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
 
   const navigateToHistoryDetail = (id, returnTab = null) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (historyView === 'all' || historyView === 'dashboard' || historyView === 'ratings') {
+      setHistoryPreviousView(historyView);
+    }
     setHistorySelectedId(id);
     setHistoryView('detail');
     const newReturnTab = returnTab || returnToTab;
@@ -175,7 +198,9 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
 
   const navigateToHistoryPatientProfile = (patientId, returnTab = null) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setHistoryPreviousView(historyView);
+    if (historyView && historyView !== 'patient-profile' && historyView !== 'detail') {
+      setHistoryPreviousView(historyView);
+    }
     setHistoryPatientProfileId(patientId);
     setHistoryView('patient-profile');
     const newReturnTab = returnTab || returnToTab;
@@ -193,59 +218,71 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
 
   const navigateBack = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const searchParams = (Platform.OS === 'web' && typeof window !== 'undefined' && window.location)
+      ? new URLSearchParams(window.location.search)
+      : null;
+    const webViewParam = searchParams ? searchParams.get('view') : null;
+    const webPrevId = searchParams ? searchParams.get('prevId') : null;
+    const webPrevView = searchParams ? searchParams.get('prevView') : null;
+    const isHistoryPath = Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.pathname?.startsWith('/history');
+
     if (nav.tabIndex === 1) {
       // Balance tab — pop balance sub-view
       if (balanceView !== 'dashboard') {
         setBalanceView('dashboard');
-        updateUrlParams('balance');
+        updateUrlParams('balance', null, null, null, null, { replace: true });
       }
-    } else if (nav.tabIndex === 3) {
-      if (historyView === 'patient-profile') {
+    } else if (nav.tabIndex === 3 || isHistoryPath) {
+      const effectiveHistoryView = (historyView && historyView !== 'dashboard') ? historyView : (webViewParam || 'dashboard');
+      const effectiveSelectedId = historySelectedId || webPrevId;
+      const effectivePrevView = historyPreviousView || webPrevView;
+
+      if (effectiveHistoryView === 'patient-profile') {
         if (returnToTab) {
           nav.setTabIndex(indexToTab.indexOf(returnToTab));
           setReturnToTab(null);
-          updateUrlParams(returnToTab);
+          updateUrlParams(returnToTab, null, null, null, null, { replace: true });
           setHistoryPreviousView(null);
           return;
         }
-        if (historyPreviousView === 'ratings') {
+        if (effectiveSelectedId) {
+          setHistorySelectedId(effectiveSelectedId);
+          setHistoryView('detail');
+          updateUrlParams('history', 'detail', effectiveSelectedId, null, null, { replace: true });
+        } else if (effectivePrevView === 'ratings') {
           setHistoryView('ratings');
-          updateUrlParams('history', 'ratings');
-        } else if (historyPreviousView === 'all') {
+          updateUrlParams('history', 'ratings', null, null, null, { replace: true });
+        } else if (effectivePrevView === 'all') {
           setHistoryView('all');
-          updateUrlParams('history', 'all');
-        } else if (historyPreviousView === 'detail' && historySelectedId) {
-          setHistoryView('detail');
-          updateUrlParams('history', 'detail', historySelectedId);
-        } else if (historySelectedId) {
-          setHistoryView('detail');
-          updateUrlParams('history', 'detail', historySelectedId);
+          updateUrlParams('history', 'all', null, null, null, { replace: true });
         } else {
           setHistoryView('dashboard');
-          updateUrlParams('history');
+          updateUrlParams('history', null, null, null, null, { replace: true });
         }
-        setHistoryPreviousView(null);
-      } else if (historyView === 'detail') {
+      } else if (effectiveHistoryView === 'detail') {
         if (returnToTab) {
           nav.setTabIndex(indexToTab.indexOf(returnToTab));
           setReturnToTab(null);
-          updateUrlParams(returnToTab);
+          updateUrlParams(returnToTab, null, null, null, null, { replace: true });
           return;
         }
-        setHistoryView('all');
-        updateUrlParams('history', 'all');
-      } else if (historyView === 'all' || historyView === 'ratings') {
+        const targetAfterDetail = (effectivePrevView && effectivePrevView !== 'detail' && effectivePrevView !== 'patient-profile')
+          ? effectivePrevView
+          : 'all';
+        setHistoryView(targetAfterDetail);
+        updateUrlParams('history', targetAfterDetail === 'dashboard' ? null : targetAfterDetail, null, null, null, { replace: true });
+      } else if (effectiveHistoryView === 'all' || effectiveHistoryView === 'ratings') {
         setHistoryView('dashboard');
-        updateUrlParams('history');
+        updateUrlParams('history', null, null, null, null, { replace: true });
       }
     } else {
       if (nav.currentView === 'patient-details') {
         nav.setCurrentView('patient-card');
-        updateUrlParams('consultation', 'patient-card', selectedConsultation?.id);
+        updateUrlParams('consultation', 'patient-card', selectedConsultation?.id, null, null, { replace: true });
       } else if (nav.currentView !== 'dashboard') {
         nav.resetToMain();
         setSelectedConsultation(null);
-        updateUrlParams(indexToTab[nav.tabIndex]);
+        updateUrlParams(indexToTab[nav.tabIndex], null, null, null, null, { replace: true });
       }
     }
   };
@@ -262,26 +299,22 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
 
   // ── Consultation lifecycle ────────────────────────────────────────
 
-  const startConsultation = async () => {
-    setConsultationStatus('ongoing');
-    if (selectedConsultation?.id) {
-      try {
-        const { createApiClient } = require('../api/apiClient');
-        const { createConsultationsApi } = require('../api/consultationsApi');
-        const { useSession } = require('./SessionContext');
-        // This is a little hacky but we don't have global session here easily. 
-        // Actually, we can just let consultationManager handle this, or fire and forget
-        // but we need session tokens. Let's just do a fetch directly or better use context if available.
-        // The cleaner way: we can just have consultationManager do the update if we pass it, but context is decoupled.
-        // Let's use the API with null session and hope the interceptor or something handles it if we can't get it, 
-        // wait we can't call hooks here. We'll leave the API call to the UI component PatientCard.
-      } catch (err) {}
+  const startConsultation = async (consultationArg) => {
+    const resolved = consultationArg || selectedConsultation;
+    if (consultationArg) {
+      setSelectedConsultation(consultationArg);
     }
+    setConsultationStatus('ongoing');
+    nav.setTabIndex(2);
+    const urlId = resolved?.id || (Platform.OS === 'web' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('id') : null);
+    updateUrlParams('consultation', 'ongoing', urlId);
   };
 
   const endConsultation = () => {
     setConsultationStatus('form'); // goes to form first
     setIsSummarySaved(false);
+    const urlId = selectedConsultation?.id || (Platform.OS === 'web' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('id') : null);
+    updateUrlParams('consultation', 'form', urlId);
   };
 
   const goToSummary = () => {
@@ -318,14 +351,14 @@ export function DoctorDashboardProvider({ children, initialTab = 'home' }) {
     if (returnToTab === 'history') {
       nav.setTabIndex(3);
       setReturnToTab(null);
-      updateUrlParams('history');
+      updateUrlParams('history', null, null, null, null, { replace: true });
     } else if (selectedConsultation?.id) {
       nav.setCurrentView('patient-card');
       nav.setTabIndex(2);
-      updateUrlParams('consultation', 'patient-card', selectedConsultation?.id);
+      updateUrlParams('consultation', 'patient-card', selectedConsultation?.id, null, null, { replace: true });
     } else {
       resetViews();
-      updateUrlParams(indexToTab[nav.tabIndex]);
+      updateUrlParams(indexToTab[nav.tabIndex], null, null, null, null, { replace: true });
     }
   };
 
